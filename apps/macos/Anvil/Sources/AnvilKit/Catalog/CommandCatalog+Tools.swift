@@ -298,6 +298,62 @@ extension CommandCatalog {
             authorities: [.confirm]
         ),
         tool(
+            "credentials_status",
+            title: "Credential status",
+            summary: "Report which provider credentials are configured. Values are never returned.",
+            route: .overview
+        ),
+        // Packages and the catalog. `build_asset_package` writes only into the tool's own
+        // package store, so it takes a plan step rather than confirmation; vendoring
+        // writes into the user's project and carries confirm.
+        tool(
+            "plan_asset_package",
+            title: "Plan a package",
+            summary: "Show where a package would be written and what it would contain. Writes nothing, and assigns no id.",
+            route: .library
+        ),
+        tool(
+            "build_asset_package",
+            title: "Build a package",
+            summary: "Package a model with its metadata, provenance and validation, then index it.",
+            lane: .packageStore,
+            route: .library,
+            durable: true
+        ),
+        tool(
+            "verify_asset_package",
+            title: "Verify a package",
+            summary: "Re-hash a package's files and confirm they still match its manifest.",
+            route: .library
+        ),
+        tool(
+            "list_catalog_assets",
+            title: "Search the catalog",
+            summary: "Search indexed packages by text, category or validation state.",
+            route: .library
+        ),
+        tool(
+            "show_catalog_asset",
+            title: "Show a catalog entry",
+            summary: "Read one indexed package's catalog record.",
+            route: .library
+        ),
+        tool(
+            "plan_vendor_admission",
+            title: "Plan vendoring",
+            summary: "Show what admitting a package into a project would copy, and any blockers. Writes nothing.",
+            route: .library
+        ),
+        tool(
+            "vendor_package_into_project",
+            title: "Vendor into a project",
+            summary: "Copy a verified package into a game project and record it in the vendor lock.",
+            lane: .packageStore,
+            route: .library,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
             "summarize_run_performance",
             title: "Summarize performance",
             summary: "Aggregate a run's metrics into per-metric distributions.",
