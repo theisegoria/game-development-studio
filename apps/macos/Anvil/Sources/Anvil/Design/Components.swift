@@ -90,13 +90,16 @@ struct ValueRow: View {
     let value: String
     var isMonospaced = false
     var tint: Color?
+    /// Widened where labels are identifiers rather than prose — an environment variable
+    /// name that is truncated cannot be meaningfully approved.
+    var labelWidth: CGFloat = 148
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Anvil.Space.regular) {
             Text(label)
                 .font(.callout)
                 .foregroundStyle(.secondary)
-                .frame(width: 148, alignment: .leading)
+                .frame(width: labelWidth, alignment: .leading)
             Text(value)
                 .font(isMonospaced ? .system(.callout, design: .monospaced) : .callout)
                 .foregroundStyle(tint ?? .primary)

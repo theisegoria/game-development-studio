@@ -72,6 +72,37 @@ enum PreviewScenes {
                     .frame(maxWidth: .infinity, alignment: .top)
                 }
             },
+            PreviewRenderer.Scene("07-scenarios", height: 1_180) {
+                Shell(selection: .scenarios) {
+                    ScenariosWorkspace(
+                        projectPath: "/Users/dev/genome",
+                        scenarios: PreviewFixtures.scenarioSummaries(),
+                        plan: PreviewFixtures.plan(),
+                        recentRuns: []
+                    ).content
+                }
+            },
+            PreviewRenderer.Scene("08-approval-execution", width: 660, height: 900) {
+                ApprovalSheet(
+                    subject: .execution(plan: PreviewFixtures.plan()),
+                    onApprove: { _ in },
+                    onCancel: {}
+                )
+            },
+            PreviewRenderer.Scene("09-approval-software-lane", width: 660, height: 900) {
+                ApprovalSheet(
+                    subject: .execution(plan: PreviewFixtures.softwarePlan()),
+                    onApprove: { _ in },
+                    onCancel: {}
+                )
+            },
+            PreviewRenderer.Scene("10-approval-spend", width: 660, height: 820) {
+                ApprovalSheet(
+                    subject: .spend(command: CommandCatalog["tool.create_3d_asset"]!),
+                    onApprove: { _ in },
+                    onCancel: {}
+                )
+            },
             PreviewRenderer.Scene("04-runs-light", colorScheme: .light) {
                 Shell(selection: .runs) {
                     RunsWorkspace(

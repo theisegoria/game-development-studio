@@ -259,6 +259,45 @@ extension CommandCatalog {
             durable: true
         ),
         tool(
+            "run_doctor",
+            title: "Check the environment",
+            summary: "Report what this environment can and cannot do, including what it cannot prove.",
+            route: .overview
+        ),
+        // The bounded optimisation loop, as plan/commit pairs. The two committing tools
+        // write a goal file into the user's project, so they carry confirm and serialize
+        // on that project — the same authority the harness requires of them.
+        tool(
+            "plan_optimization_goal",
+            title: "Plan a goal",
+            summary: "Show the bounded optimisation goal that would be created. Writes nothing.",
+            route: .performance
+        ),
+        tool(
+            "create_optimization_goal",
+            title: "Create a goal",
+            summary: "Bind a baseline run to a target metric, direction and iteration budget.",
+            lane: .project("project"),
+            route: .performance,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "plan_goal_evaluation",
+            title: "Plan an evaluation",
+            summary: "Score a candidate against a goal without consuming an iteration of its budget.",
+            route: .performance
+        ),
+        tool(
+            "evaluate_optimization_goal",
+            title: "Record an evaluation",
+            summary: "Score a candidate run against a goal and consume one iteration of its budget.",
+            lane: .project("project"),
+            route: .performance,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
             "summarize_run_performance",
             title: "Summarize performance",
             summary: "Aggregate a run's metrics into per-metric distributions.",

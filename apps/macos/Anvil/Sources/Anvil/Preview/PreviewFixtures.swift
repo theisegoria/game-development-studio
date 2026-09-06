@@ -265,4 +265,55 @@ enum PreviewFixtures {
             """
         )
     }
+
+    static func plan() -> ScenarioPlan {
+        ScenarioPlan(
+            runID: "run_1770000000_9f2b",
+            runPath: "\(workspace.path)/.game-dev/runs/run_1770000000_9f2b",
+            adapterID: "genome-game",
+            scenarioID: "gbuffer-matrix",
+            title: "G-buffer matrix",
+            executable: "/Users/dev/genome/build/genome-capture",
+            arguments: ["--scenario", "gbuffer-matrix", "--out", "{run_dir}", "--frames", "18"],
+            workingDirectory: "/Users/dev/genome",
+            timeoutSeconds: 300,
+            capabilities: [.cpu, .gpu, .metal, .performance],
+            environment: ["MTL_CAPTURE_ENABLED": "1", "MTL_SHADER_VALIDATION": "1"],
+            requiredAuthorizations: [.confirm, .allowGPU, .allowPerformance],
+            evidenceCeiling: """
+            A sealed run records what the declared process wrote, hashed against a closed \
+            roster. It does not prove the work ran on a GPU, does not admit timings as \
+            hardware measurements unless the harness allowed them, and involves no human review.
+            """
+        )
+    }
+
+    static func softwarePlan() -> ScenarioPlan {
+        ScenarioPlan(
+            runID: "run_1770000100_c4d1",
+            runPath: "\(workspace.path)/.game-dev/runs/run_1770000100_c4d1",
+            adapterID: "genome-game",
+            scenarioID: "ci-regression",
+            title: "CI regression (lavapipe)",
+            executable: "/Users/dev/genome/build/genome-capture",
+            arguments: ["--scenario", "ci-regression", "--out", "{run_dir}"],
+            workingDirectory: "/Users/dev/genome",
+            timeoutSeconds: 600,
+            capabilities: [.cpu, .vulkan, .softwareRaster],
+            environment: [
+                "VK_ICD_FILENAMES": "/usr/share/vulkan/icd.d/lvp_icd.json",
+                "LIBGL_ALWAYS_SOFTWARE": "1"
+            ],
+            requiredAuthorizations: [.confirm],
+            evidenceCeiling: "A software lane produces bit-deterministic output and no GPU evidence."
+        )
+    }
+
+    static func scenarioSummaries() -> [ScenariosWorkspace.ScenarioSummary] {
+        [
+            .init(id: "gbuffer-matrix", title: "G-buffer matrix", capabilities: [.cpu, .gpu, .metal, .performance]),
+            .init(id: "ci-regression", title: "CI regression (lavapipe)", capabilities: [.cpu, .vulkan, .softwareRaster]),
+            .init(id: "shadow-cascades", title: "Shadow cascades", capabilities: [.cpu, .gpu, .metal])
+        ]
+    }
 }

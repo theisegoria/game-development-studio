@@ -94,4 +94,41 @@ extension View {
             buttonStyle(.glass)
         }
     }
+
+    /// The primary action of a sheet or workspace.
+    @ViewBuilder
+    func anvilGlassProminentButton(isFlattened: Bool) -> some View {
+        if isFlattened {
+            buttonStyle(.borderedProminent)
+        } else {
+            buttonStyle(.glassProminent)
+        }
+    }
 }
+
+private struct AnvilScrollable: ViewModifier {
+    @Environment(\.anvilFlattensSurfaces) private var isFlattened
+    let maxHeight: CGFloat?
+
+    func body(content: Content) -> some View {
+        if isFlattened {
+            // ImageRenderer draws nothing inside a ScrollView, so a previewed view that
+            // scrolls renders as an empty void with only its chrome. Dropping the
+            // container in preview mode is the whole fix, and doing it here means no
+            // future view has to remember.
+            content
+        } else if let maxHeight {
+            ScrollView { content }.frame(maxHeight: maxHeight)
+        } else {
+            ScrollView { content }
+        }
+    }
+}
+
+extension View {
+    /// Scrolls in the app; renders in full in a design preview.
+    func anvilScrollable(maxHeight: CGFloat? = nil) -> some View {
+        modifier(AnvilScrollable(maxHeight: maxHeight))
+    }
+}
+
