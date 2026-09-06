@@ -112,10 +112,33 @@ out from the spread.
 `run_doctor` is free and reports what this environment can do — provider
 credentials as configured or not, never their values.
 
+## The asset library over MCP
+
+`plan_asset_package` and `build_asset_package` turn a model file into a
+content-addressed package with a manifest, hashes and a validation report, and
+index it. Both are free and need no authority: they write only inside the tool's
+own workspace, and an identical build reuses the existing package rather than
+duplicating it. `verify_asset_package` re-checks one against its manifest.
+
+`list_catalog_assets` and `show_catalog_asset` search what this machine has
+already built. Worth calling before generating anything — regenerating an asset
+that exists costs credits.
+
+`vendor_package_into_project` copies a package into a game project and records
+it in a vendor lock, so it takes the project-write authority below;
+`plan_vendor_admission` is free and lists every blocker first. An unknown
+license blocks by default and the result is returned as an error, because
+shipping an asset you cannot license is a legal problem rather than a technical
+one.
+
+`credentials_status` says whether each provider is configured, never what the
+value is. Ask before a paid call.
+
 ## Writing into a project over MCP
 
-`install_probe_sdk`, `install_adapter_template`, `create_optimization_goal`
-and `evaluate_optimization_goal` write files into a game project — outside the tool's own workspace, which on the CLI is a `--confirm`
+`install_probe_sdk`, `install_adapter_template`, `create_optimization_goal`,
+`evaluate_optimization_goal` and `vendor_package_into_project` write files into
+a game project — outside the tool's own workspace, which on the CLI is a `--confirm`
 action. Over MCP they are gated the same way as `run_scenario`: the handler
 refuses unless `GAME_DEV_MCP_ALLOW_PROJECT_WRITE=1` is in the server
 environment, and the transport asks you to confirm each write. Neither layer

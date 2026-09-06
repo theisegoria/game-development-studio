@@ -19,6 +19,7 @@ export const PROJECT_WRITE_TOOLS: ReadonlySet<string> = new Set([
   'install_adapter_template',
   'create_optimization_goal',
   'evaluate_optimization_goal',
+  'vendor_package_into_project',
 ]);
 
 export interface ExecutionGateOptions {

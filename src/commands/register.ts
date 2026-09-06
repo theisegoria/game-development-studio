@@ -17,6 +17,7 @@ import { registerHarnessTools } from '../tools/harness.js';
 import { registerContactSheetTools } from '../tools/contact-sheet.js';
 import { registerProjectWriteTools } from '../tools/project-writes.js';
 import { registerOptimizationTools } from '../tools/optimization.js';
+import { registerLibraryTools } from '../tools/library.js';
 import type { ToolRegistrar } from './registry.js';
 
 export function registerAssetCommands(registry: ToolRegistrar, ctx: ToolContext): void {
@@ -38,4 +39,5 @@ export function registerAssetCommands(registry: ToolRegistrar, ctx: ToolContext)
   registerContactSheetTools(registry, ctx);
   registerProjectWriteTools(registry, ctx);
   registerOptimizationTools(registry, ctx);
+  registerLibraryTools(registry, ctx);
 }

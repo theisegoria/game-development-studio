@@ -120,6 +120,18 @@ export const FREE_TOOLS: ReadonlySet<string> = new Set([
   'plan_goal_evaluation',
   'evaluate_optimization_goal',
   'run_doctor',
+  // The asset library: packaging and cataloguing write inside the tool's own
+  // workspace, content-addressed and idempotent; vendoring writes into the
+  // project and is governed by the project-write authority. No provider
+  // contact in any of them.
+  'plan_asset_package',
+  'build_asset_package',
+  'verify_asset_package',
+  'list_catalog_assets',
+  'show_catalog_asset',
+  'plan_vendor_admission',
+  'vendor_package_into_project',
+  'credentials_status',
 ]);
 
 export function isSpendingTool(tool: string): boolean {

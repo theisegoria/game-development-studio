@@ -57,6 +57,9 @@ capture contract, and the release machinery to publish it. See pull request #1.
 - `render_asset_contact_sheet`: the UV layout and every bound texture of a
   GLB as images, pure JS, so mirrored islands, layouts outside the unit square
   and flat-colour textures can be seen rather than inferred from counts.
+- The asset library on MCP: packaging, verification, catalog search, project
+  admission and credential status. Packaging is free and workspace-local;
+  vendoring takes the project-write authority and blocks an unknown license.
 - The bounded optimisation loop on MCP: `create_optimization_goal`,
   `evaluate_optimization_goal` and their free `plan_*` twins, behind the
   project-write authority; and `run_doctor` for self-diagnosis.
