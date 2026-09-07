@@ -1,5 +1,123 @@
 # Changelog
 
+## Unreleased
+
+- **OpenGL and wgpu probe examples.** `probe/examples/opengl/` renders
+  windowless through CGL on macOS or surfaceless EGL on Linux, with
+  `GL_SAMPLES_PASSED` as a hardware-measured overdraw figure and
+  `GL_KHR_debug` counted into diagnostic telemetry; verified through the
+  harness on macOS. `probe/examples/wgpu/` does the same in Rust over FFI to
+  the C SDK, compiled in CI on Linux against lavapipe. Every graphics API in
+  the capability matrix now has a shipped example.
+- **Vulkan probe example.** `probe/examples/vulkan/` renders windowless with
+  timestamp queries (attesting `TIMESTAMP_RESOLVED`), pipeline statistics
+  where the device has the feature, `VK_EXT_memory_budget` as a driver
+  report, and validation-layer messages counted into diagnostic telemetry.
+  A CPU device is declared software and attests nothing. Verified through
+  the harness on MoltenVK.
+- **Metal probe example.** `probe/examples/metal/` renders windowless on the
+  GPU, reads back through a blit, attests completion by a resolved
+  stage-boundary counter timestamp pair (falling back to command-buffer
+  status), and emits every timing with the provenance that measured it. A
+  macOS-only test drives it through the harness on a real device and CI's
+  macOS job asserts it ran.
+- **Software-lane determinism gate in CI.** `npm run verify:software-lane`
+  compiles the C probe example, captures it twice through the shipped CLI on
+  Ubuntu and macOS, and asserts the runs are byte-identical under
+  `visual compare --threshold 0` and `visual stability`, and that the forced
+  software downgrade fired. It fails rather than skips without a compiler.
+- **Measurement provenance.** Telemetry events carry a reserved `measured_by`
+  attribute and capture measurements a `measuredBy` field, from a fixed
+  vocabulary (`gpu_timestamp_query`, `pipeline_statistics_query`,
+  `driver_report`, `engine_counter`, `wall_clock`, `unknown`). The performance
+  summary groups by it, counts samples under each, and reports per metric both
+  the claim (`measuredBy`) and whether it counts
+  (`hardwareMeasurementAdmitted`, the conjunction of the claim and the run's
+  hardware-evidence admission). Goals accept `requireHardwareMeasurement`
+  and refuse any candidate whose provenance differs from the baseline. The C
+  probe SDK gains `gdprobe_emit_measured` / `gdprobe_measure_measured` and a
+  `gdprobe_measured_by` enum; the older calls record `unknown`.
+- **Cross-run stability.** `game-dev visual stability <run> <run>...` and the
+  `measure_run_stability` MCP tool capture how much a scenario differs from
+  *itself*: the per-pixel range across N runs with no code change, written as a
+  noise-floor PNG per attachment plus a `game_dev.visual_stability.v1` record.
+  `visual compare --noise-floor STABILITY.json` (MCP: `noiseFloor`) then counts
+  a pixel as changed only when it exceeds both the threshold *and* its own
+  measured noise -- the measured replacement for guessing a threshold. A high
+  floor is a finding in its own right: it names where the renderer is
+  non-deterministic.
+
+Audit of every feature, an MCP transport that can show pictures, a wider
+capture contract, and the release machinery to publish it. See pull request #1.
+
+### Fixed — answers that were confidently wrong
+
+- `doctor` checked three skill ids that no longer shipped, so its check warned
+  forever and `skill install all` could never clear it. Ids now derive from the
+  bundle the installer writes.
+- Unknown CLI flags were silently ignored: `--treshold 20` ran with threshold 0
+  and reported every pixel changed. Unknown flags are now refused by name with
+  a nearest-match suggestion.
+- Undrawn geometry was counted and never judged; a mesh outside the default
+  scene failed as "0 triangles". `has_geometry` names the cause; the partial
+  case warns.
+- `aggregation` was declared in the capture contract and read nowhere, so a
+  pre-aggregated p99 was pooled with raw samples. Grouping keys on it now.
+- The object-ID diff read only the baseline's buffer, so a deleted mesh reported
+  as "the floor changed". Both buffers are read; disappeared objects are named.
+- Binary attachments were skipped by analysis and 16-bit PNG was quantised to
+  8 bits, so depth could not show depth fighting. Attachments declare a
+  `format`; float buffers are read at capture precision.
+- The macOS legal record stayed at CLI 1.0.1 through the 1.0.2 release, which
+  broke the app build and a CI job. Fixed, with a guard that resolves every
+  named legal asset to a file with the recorded hash.
+- The app signature check lost a race with iCloud's File Provider re-attaching
+  extended attributes; it now clears immediately before verifying, with a retry.
+
+### Added — MCP, and what the model can now see
+
+- An MCP server on stdio (`game-dev-mcp`, `game-dev mcp serve`) over the same
+  registry the CLI drives, with 27 tools, typed schemas, and a release check
+  that fails if the two transports ever advertise different tool sets.
+- `game-dev mcp config --client …` generates ready-to-paste client
+  configuration with the absolute output directory resolved.
+- A money gate: no tool takes an approval argument; spending needs a
+  human-written ceiling plus per-call elicitation, and every other path fails
+  closed. Scenario execution needs `GAME_DEV_MCP_ALLOW_EXECUTION` (and GPU /
+  performance equivalents) plus per-call confirmation.
+- Results carry `visuals`; MCP returns image blocks. Reference candidates are
+  cached locally instead of handed over as expiring URLs no client fetches.
+- Capture, visual and performance analysis exposed to MCP; `plan_scenario_run`
+  and `run_scenario` behind the authority gate.
+- Prose summaries on visual and performance results, derived deterministically
+  from the statistics and phrased as consistency, never cause.
+- SSIM, anti-aliasing tolerance (`--aa-tolerance`), hitch counts, median
+  absolute deviation, the "1% low", warmup exclusion, and a noise screen that
+  reports `underpowered` rather than a verdict the data cannot support.
+- A software-rasterizer lane whose GPU and timing claims the harness refuses,
+  recording what it refused; a declared graphics environment from a hardcoded
+  allowlist; seven new attachment kinds.
+- The probe SDK (`probe/`): a C99 library engines compile in to produce valid
+  bundles, validated against the harness rather than against golden files.
+- `render_asset_contact_sheet`: the UV layout and every bound texture of a
+  GLB as images, pure JS, so mirrored islands, layouts outside the unit square
+  and flat-colour textures can be seen rather than inferred from counts.
+- MCP resources for sealed runs, their artifacts, packages and the catalog,
+  where the sealed roster is the allowlist and every read re-verifies the
+  bytes; and MCP prompts generated from the shipped skills.
+- The asset library on MCP: packaging, verification, catalog search, project
+  admission and credential status. Packaging is free and workspace-local;
+  vendoring takes the project-write authority and blocks an unknown license.
+- The bounded optimisation loop on MCP: `create_optimization_goal`,
+  `evaluate_optimization_goal` and their free `plan_*` twins, behind the
+  project-write authority; and `run_doctor` for self-diagnosis.
+- `game-dev probe install`, and over MCP `install_probe_sdk` and
+  `install_adapter_template` with free `plan_*` twins, behind
+  `GAME_DEV_MCP_ALLOW_PROJECT_WRITE` plus per-call confirmation.
+- `--dry-run` on `package build` and `catalog admit`.
+- `scripts/set-version.mjs`, a version-parity test, and a tag-driven release
+  workflow that publishes with npm provenance.
+
 ## 1.0.2
 
 Public plugin and CLI corrective release:

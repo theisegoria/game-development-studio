@@ -40,3 +40,20 @@ game-dev launch PACKAGE_ID_OR_PATH --with blender --json
 ```
 
 Without `--confirm`, launch returns a plan. Add `--confirm` only when the user asked to open the selected application.
+
+## Over MCP
+
+| CLI | MCP tool |
+| --- | --- |
+| `game-dev catalog list` | `list_catalog_assets` |
+| `game-dev catalog show` | `show_catalog_asset` |
+| `game-dev package verify` | `verify_asset_package` |
+| `game-dev vendor admit` (dry run) | `plan_vendor_admission` |
+| `game-dev vendor admit --confirm` | `vendor_package_into_project` |
+| `game-dev probe install` | `plan_probe_install`, then `install_probe_sdk` |
+
+Admitting a package and installing the probe SDK write into the project, so
+they need `GAME_DEV_MCP_ALLOW_PROJECT_WRITE=1` plus a confirmation each time.
+An unknown license blocks admission and is returned as an error. The catalog is
+also readable as `game-dev://catalog`, and a package as
+`game-dev://packages/{packageId}`.
