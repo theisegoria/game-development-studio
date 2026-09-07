@@ -1081,6 +1081,9 @@ async function dispatch(
       maximumIterations,
       allowedPaths: requestStringArray(request, 'allowedPaths'),
       ...(typeof request.id === 'string' ? { id: request.id } : {}),
+      ...(request.requireHardwareMeasurement !== undefined
+        ? { requireHardwareMeasurement: request.requireHardwareMeasurement === true }
+        : {}),
       confirm: booleanFlag(parsed, 'confirm'),
     });
     return {

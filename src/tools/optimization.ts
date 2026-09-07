@@ -36,6 +36,12 @@ const goalShape = {
   allowedPaths: z.array(z.string().min(1)).min(1).max(32)
     .describe('Project subtrees a change may touch. Never .git, .game-dev, dependencies, build output or the root.'),
   id: z.string().min(1).optional(),
+  requireHardwareMeasurement: z.boolean().default(false)
+    .describe(
+      'Refuse the goal unless the metric was measured by a GPU timestamp query, pipeline statistics '
+      + 'query or driver report AND the run admitted hardware-performance evidence. Turn this on when '
+      + 'the target is a GPU cost; a wall-clock or engine counter cannot prove one.',
+    ),
 };
 
 const evaluationShape = {
@@ -55,6 +61,7 @@ export function registerOptimizationTools(server: ToolRegistrar, ctx: ToolContex
     maximumIterations: args.maximumIterations,
     allowedPaths: args.allowedPaths,
     ...(args.id !== undefined ? { id: args.id } : {}),
+    requireHardwareMeasurement: args.requireHardwareMeasurement,
     confirm,
   });
 

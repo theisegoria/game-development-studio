@@ -42,6 +42,7 @@ typedef struct {
   char aggregation[16];
   double value;
   int32_t frame_index;
+  gdprobe_measured_by measured_by;
 } gdprobe_measurement;
 
 struct gdprobe_run {
@@ -547,12 +548,34 @@ void gdprobe_frame_end(gdprobe_frame *frame) {
 
 /* --------------------------------------------------------------- telemetry */
 
+static const char *measured_by_name(gdprobe_measured_by measured_by) {
+  switch (measured_by) {
+    case GDPROBE_MEASURED_GPU_TIMESTAMP_QUERY: return "gpu_timestamp_query";
+    case GDPROBE_MEASURED_PIPELINE_STATISTICS_QUERY: return "pipeline_statistics_query";
+    case GDPROBE_MEASURED_DRIVER_REPORT: return "driver_report";
+    case GDPROBE_MEASURED_ENGINE_COUNTER: return "engine_counter";
+    case GDPROBE_MEASURED_WALL_CLOCK: return "wall_clock";
+    case GDPROBE_MEASURED_UNKNOWN: /* fall through */
+    default: return "unknown";
+  }
+}
+
 gdprobe_status gdprobe_emit(gdprobe_run *run,
                             const char *category,
                             const char *name,
                             double value,
                             const char *unit,
                             int32_t frame_index) {
+  return gdprobe_emit_measured(run, category, name, value, unit, frame_index, GDPROBE_MEASURED_UNKNOWN);
+}
+
+gdprobe_status gdprobe_emit_measured(gdprobe_run *run,
+                                     const char *category,
+                                     const char *name,
+                                     double value,
+                                     const char *unit,
+                                     int32_t frame_index,
+                                     gdprobe_measured_by measured_by) {
   if (!run || !category || !name || !unit) return GDPROBE_ERR_ARGUMENT;
   if (!run->telemetry) {
     char path[GDPROBE_MAX_PATH];
@@ -578,7 +601,15 @@ gdprobe_status gdprobe_emit(gdprobe_run *run,
   if (frame_index >= 0) fprintf(out, ",\"frameIndex\":%d", frame_index);
   fprintf(out, ",\"value\":%.10g,\"unit\":", value);
   write_json_string(out, unit);
-  fputs(",\"attributes\":{}}\n", out);
+  /* The reserved attribute. Written only when known: the harness reads
+     absence as unknown, and a value it does write must be in the vocabulary. */
+  if (measured_by == GDPROBE_MEASURED_UNKNOWN) {
+    fputs(",\"attributes\":{}}\n", out);
+  } else {
+    fputs(",\"attributes\":{\"measured_by\":", out);
+    write_json_string(out, measured_by_name(measured_by));
+    fputs("}}\n", out);
+  }
   run->telemetry_written = 1;
   return GDPROBE_OK;
 }
@@ -589,6 +620,16 @@ gdprobe_status gdprobe_measure(gdprobe_run *run,
                                const char *unit,
                                const char *aggregation,
                                int32_t frame_index) {
+  return gdprobe_measure_measured(run, metric, value, unit, aggregation, frame_index, GDPROBE_MEASURED_UNKNOWN);
+}
+
+gdprobe_status gdprobe_measure_measured(gdprobe_run *run,
+                                        const char *metric,
+                                        double value,
+                                        const char *unit,
+                                        const char *aggregation,
+                                        int32_t frame_index,
+                                        gdprobe_measured_by measured_by) {
   if (!run || !metric || !unit) return GDPROBE_ERR_ARGUMENT;
   if (run->measurement_count >= GDPROBE_MAX_MEASUREMENTS) {
     set_error(run, "measurement limit reached");
@@ -600,6 +641,7 @@ gdprobe_status gdprobe_measure(gdprobe_run *run,
   copy_bounded(entry->aggregation, sizeof entry->aggregation, aggregation ? aggregation : "sample");
   entry->value = value;
   entry->frame_index = frame_index;
+  entry->measured_by = measured_by;
   run->measurement_count += 1;
   return GDPROBE_OK;
 }
@@ -678,6 +720,10 @@ gdprobe_status gdprobe_run_end(gdprobe_run *run) {
     fputs(",\"aggregation\":", out);
     write_json_string(out, entry->aggregation);
     if (entry->frame_index >= 0) fprintf(out, ",\"frameIndex\":%d", entry->frame_index);
+    if (entry->measured_by != GDPROBE_MEASURED_UNKNOWN) {
+      fputs(",\"measuredBy\":", out);
+      write_json_string(out, measured_by_name(entry->measured_by));
+    }
     fputc('}', out);
   }
 

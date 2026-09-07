@@ -40,6 +40,13 @@ export function describeSummary(summary: PerformanceSummary): string[] {
     );
   }
 
+  if (summary.mixedProvenanceMetrics.length > 0) {
+    lines.push(
+      `${summary.mixedProvenanceMetrics.join(', ')} arrived under more than one provenance. ` +
+      'A GPU timestamp and a wall clock for the same pass are two series; they are reported separately.',
+    );
+  }
+
   const ranked = [...summary.metrics]
     .filter((metric) => !metric.preAggregated)
     .sort((left, right) => right.hitchCount - left.hitchCount);
@@ -80,6 +87,12 @@ export function describeSummary(summary: PerformanceSummary): string[] {
     lines.push(
       'Hardware-performance evidence was not admitted for this run, so treat these as reported ' +
       'numbers rather than measured hardware timings.',
+    );
+  } else if (!summary.metrics.some((metric) => metric.hardwareMeasurementAdmitted)) {
+    lines.push(
+      'No metric declared a hardware provenance (measured_by: gpu_timestamp_query, ' +
+      'pipeline_statistics_query or driver_report), so nothing here is known to be a GPU ' +
+      'measurement rather than a number the engine reported.',
     );
   }
   return lines;

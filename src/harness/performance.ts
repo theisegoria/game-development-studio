@@ -9,6 +9,9 @@ import {
   telemetryEventSchema,
   type MetricStatistics,
   type TelemetryEvent,
+  HARDWARE_MEASUREMENT_PROVENANCE,
+  MEASURED_BY_ATTRIBUTE,
+  type MeasurementProvenance,
 } from './contracts.js';
 import { verifyRunBundle } from './run-bundle.js';
 import { describeComparison, describeSummary } from './describe-performance.js';
@@ -30,6 +33,8 @@ interface Measurement {
    * only a capture manifest can declare otherwise.
    */
   aggregation: Aggregation;
+  /** How the source said it measured this. Absent means unknown, never guessed. */
+  measuredBy: MeasurementProvenance;
   /**
    * Which frame produced it, when the source said. Both capture measurements
    * and telemetry events carry this and it was dropped at ingestion, which is
@@ -52,6 +57,14 @@ export interface PerformanceSummary {
    * are reading rather than getting a silently merged one.
    */
   mixedAggregationMetrics: string[];
+  /**
+   * Metrics whose samples claimed more than one provenance. A GPU timestamp
+   * and a wall clock for the same pass are two series; pooling them reports
+   * the median of neither.
+   */
+  mixedProvenanceMetrics: string[];
+  /** How many admitted samples arrived under each provenance. */
+  measurementProvenance: Record<MeasurementProvenance, number>;
   /** How many leading frames were excluded, and how many samples that removed. */
   warmupFramesExcluded: number;
   warmupSamplesExcluded: number;
@@ -86,6 +99,7 @@ export interface PerformanceComparison {
     baselineStandardDeviation: number;
     candidateStandardDeviation: number;
     aggregation: MetricStatistics['aggregation'];
+    measuredBy: MeasurementProvenance;
     /**
      * A rough screen for whether the delta stands out from run-to-run spread.
      *
@@ -133,7 +147,9 @@ function foreignTelemetryMeasurements(value: unknown): Measurement[] {
   const measurements: Measurement[] = [];
   const directValue = finiteNumber(event.value);
   if (directValue !== undefined && typeof event.unit === 'string' && event.unit.length > 0) {
-    measurements.push({ metric: event.name, unit: event.unit, value: directValue, source: 'foreign-telemetry', aggregation: 'sample' });
+    measurements.push({
+      metric: event.name, unit: event.unit, value: directValue, source: 'foreign-telemetry', aggregation: 'sample', measuredBy: 'unknown',
+    });
   }
   for (const [key, raw] of Object.entries(event)) {
     if (['ts', 'timestamp', 'timestamp_us', 'name', 'value', 'unit'].includes(key)) continue;
@@ -146,6 +162,7 @@ function foreignTelemetryMeasurements(value: unknown): Measurement[] {
         value: number,
         source: 'foreign-telemetry',
         aggregation: 'sample',
+        measuredBy: 'unknown',
       });
     }
   }
@@ -184,6 +201,8 @@ async function telemetryMeasurements(filePath: string, expectedRunId: string): P
           value: event.value,
           source: 'telemetry',
           aggregation: 'sample',
+          // Validated by the schema: present means from the vocabulary.
+          measuredBy: (event.attributes[MEASURED_BY_ATTRIBUTE] as MeasurementProvenance | undefined) ?? 'unknown',
           ...(event.frameIndex !== undefined ? { frameIndex: event.frameIndex } : {}),
         });
       }
@@ -212,7 +231,9 @@ function flattenProfile(
     const leaf = pathParts.at(-1) ?? '';
     const unit = inferUnit(leaf);
     if (unit !== undefined) {
-      output.push({ metric: `profile.${pathParts.join('.')}`, unit, value, source: 'profile', aggregation: 'sample' });
+      output.push({
+        metric: `profile.${pathParts.join('.')}`, unit, value, source: 'profile', aggregation: 'sample', measuredBy: 'unknown',
+      });
     }
     return;
   }
@@ -261,6 +282,8 @@ export function statistics(
   unit: string,
   values: number[],
   aggregation: Aggregation = 'sample',
+  measuredBy: MeasurementProvenance = 'unknown',
+  hardwarePerformanceEvidenceAdmitted = false,
 ): MetricStatistics {
   if (values.length === 0) throw invalidInput('cannot summarize an empty metric');
   const sorted = [...values].sort((left, right) => left - right);
@@ -276,6 +299,11 @@ export function statistics(
     // frame distribution, and this flag is what stops a consumer reading them
     // as though they were.
     preAggregated: aggregation !== 'sample',
+    measuredBy,
+    // The claim and the authority are separate things. A software lane's
+    // adapter may say "gpu_timestamp_query"; the run-level admission is what
+    // decides whether that claim counts, and this is their conjunction.
+    hardwareMeasurementAdmitted: HARDWARE_MEASUREMENT_PROVENANCE.has(measuredBy) && hardwarePerformanceEvidenceAdmitted,
     samples: sorted.length,
     min: sorted[0] ?? 0,
     max: sorted.at(-1) ?? 0,
@@ -341,6 +369,7 @@ export async function summarizeRunPerformance(
         value: measurement.value,
         source: 'capture',
         aggregation: measurement.aggregation,
+        measuredBy: measurement.measuredBy,
         ...(measurement.frameIndex !== undefined ? { frameIndex: measurement.frameIndex } : {}),
       });
     }
@@ -366,8 +395,14 @@ export async function summarizeRunPerformance(
     ? measurements.filter((m) => m.frameIndex === undefined || m.frameIndex >= warmupFrames)
     : measurements;
 
-  const grouped = new Map<string, { metric: string; unit: string; aggregation: Aggregation; values: number[] }>();
+  const grouped = new Map<string, {
+    metric: string; unit: string; aggregation: Aggregation; measuredBy: MeasurementProvenance; values: number[];
+  }>();
   const aggregationsByMetric = new Map<string, Set<Aggregation>>();
+  const provenancesByMetric = new Map<string, Set<MeasurementProvenance>>();
+  const measurementProvenance: PerformanceSummary['measurementProvenance'] = {
+    gpu_timestamp_query: 0, pipeline_statistics_query: 0, driver_report: 0, engine_counter: 0, wall_clock: 0, unknown: 0,
+  };
   const sources: PerformanceSummary['sources'] = {
     capture: 0,
     telemetry: 0,
@@ -376,21 +411,33 @@ export async function summarizeRunPerformance(
   };
   for (const measurement of admitted) {
     sources[measurement.source] += 1;
-    const key = `${measurement.metric}\u0000${measurement.unit}\u0000${measurement.aggregation}`;
-    const group = grouped.get(key)
-      ?? { metric: measurement.metric, unit: measurement.unit, aggregation: measurement.aggregation, values: [] };
+    measurementProvenance[measurement.measuredBy] += 1;
+    const key = `${measurement.metric}\u0000${measurement.unit}\u0000${measurement.aggregation}\u0000${measurement.measuredBy}`;
+    const group = grouped.get(key) ?? {
+      metric: measurement.metric, unit: measurement.unit, aggregation: measurement.aggregation,
+      measuredBy: measurement.measuredBy, values: [],
+    };
     group.values.push(measurement.value);
     grouped.set(key, group);
     const seen = aggregationsByMetric.get(measurement.metric) ?? new Set<Aggregation>();
     seen.add(measurement.aggregation);
     aggregationsByMetric.set(measurement.metric, seen);
+    const provenances = provenancesByMetric.get(measurement.metric) ?? new Set<MeasurementProvenance>();
+    provenances.add(measurement.measuredBy);
+    provenancesByMetric.set(measurement.metric, provenances);
   }
+  const admittedHardware = verified.manifest.evidence.hardwarePerformanceEvidenceAdmitted;
   const metrics = [...grouped.values()]
-    .map((group) => statistics(group.metric, group.unit, group.values, group.aggregation))
+    .map((group) => statistics(group.metric, group.unit, group.values, group.aggregation, group.measuredBy, admittedHardware))
     .sort((left, right) =>
       left.metric.localeCompare(right.metric)
       || left.unit.localeCompare(right.unit)
-      || left.aggregation.localeCompare(right.aggregation));
+      || left.aggregation.localeCompare(right.aggregation)
+      || left.measuredBy.localeCompare(right.measuredBy));
+  const mixedProvenanceMetrics = [...provenancesByMetric.entries()]
+    .filter(([, seen]) => seen.size > 1)
+    .map(([metric]) => metric)
+    .sort();
 
   // Named rather than merged. A metric arriving both raw and pre-aggregated is
   // usually an adapter emitting the same thing twice, and the caller should
@@ -410,6 +457,8 @@ export async function summarizeRunPerformance(
     metrics,
     sources,
     mixedAggregationMetrics,
+    mixedProvenanceMetrics,
+    measurementProvenance,
     warmupFramesExcluded: warmupFrames,
     warmupSamplesExcluded,
     hardwarePerformanceEvidenceAdmitted: verified.manifest.evidence.hardwarePerformanceEvidenceAdmitted,
@@ -479,12 +528,12 @@ export async function compareRunPerformance(
   // Keyed by aggregation too: comparing a baseline p99 against a candidate raw
   // sample series would be arithmetic between two different quantities.
   const candidateByKey = new Map(candidate.metrics.map(
-    (metric) => [`${metric.metric}\u0000${metric.unit}\u0000${metric.aggregation}`, metric],
+    (metric) => [`${metric.metric}\u0000${metric.unit}\u0000${metric.aggregation}\u0000${metric.measuredBy}`, metric],
   ));
   const metrics: PerformanceComparison['metrics'] = [];
   for (const baselineMetric of baseline.metrics) {
     const candidateMetric = candidateByKey.get(
-      `${baselineMetric.metric}\u0000${baselineMetric.unit}\u0000${baselineMetric.aggregation}`,
+      `${baselineMetric.metric}\u0000${baselineMetric.unit}\u0000${baselineMetric.aggregation}\u0000${baselineMetric.measuredBy}`,
     );
     if (!candidateMetric) continue;
     const baselineValue = baselineMetric[statistic];
@@ -502,6 +551,7 @@ export async function compareRunPerformance(
       baselineStandardDeviation: baselineMetric.standardDeviation,
       candidateStandardDeviation: candidateMetric.standardDeviation,
       aggregation: baselineMetric.aggregation,
+      measuredBy: baselineMetric.measuredBy,
       ...separability(baselineMetric, candidateMetric, delta),
     });
   }

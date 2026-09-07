@@ -148,6 +148,13 @@ may touch. `evaluate_optimization_goal` records exactly one candidate run and
 advances the goal to `active`, `met` or `exhausted`; a run id can be used once,
 so an iteration cannot be replayed. Both write into the project's
 `.game-dev/goals`, so both take the project-write authority below.
+Pass `requireHardwareMeasurement: true` when the target is a GPU cost. The
+goal is then refused unless the metric was measured by a GPU timestamp query,
+pipeline statistics query or driver report *and* the run admitted
+hardware-performance evidence; a wall clock or engine counter cannot prove a
+GPU cost. Every goal also refuses a candidate whose provenance differs from
+its baseline. See the `measured_by` vocabulary in `docs/adapters.md`.
+
 `plan_optimization_goal` and `plan_goal_evaluation` are free and write nothing
 — they give the same verdict without consuming an iteration.
 

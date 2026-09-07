@@ -23,6 +23,10 @@ function summary(metrics: PerformanceSummary['metrics'], overrides: Partial<Perf
     metrics,
     sources: { capture: 0, telemetry: metrics.length, 'foreign-telemetry': 0, profile: 0 },
     mixedAggregationMetrics: [],
+    mixedProvenanceMetrics: [],
+    measurementProvenance: {
+      gpu_timestamp_query: 0, pipeline_statistics_query: 0, driver_report: 0, engine_counter: 0, wall_clock: 0, unknown: 0,
+    },
     warmupFramesExcluded: 0,
     warmupSamplesExcluded: 0,
     hardwarePerformanceEvidenceAdmitted: true,

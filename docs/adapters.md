@@ -186,8 +186,39 @@ manifest can contain:
   would let an engine report a histogram that disagrees with its own pixels.
 - JSON or JSONL telemetry
 - profile files
-- numeric measurements with metric, value, unit, frame index, and aggregation
+- numeric measurements with metric, value, unit, frame index, aggregation,
+  and `measuredBy`
 - adapter evidence flags and explanatory notes
+
+### Say how a number was measured
+
+A GPU timestamp query and a counter the engine incremented look identical as
+floats. `measuredBy` on a capture measurement, or the reserved attribute
+`measured_by` on a telemetry event, is the telemetry-level evidence ceiling:
+
+| value | meaning |
+| --- | --- |
+| `gpu_timestamp_query` | `vkCmdWriteTimestamp`, `MTLCounterSampleBuffer`, wgpu timestamp writes |
+| `pipeline_statistics_query` | `VK_QUERY_TYPE_PIPELINE_STATISTICS`, `GL_SAMPLES_PASSED` |
+| `driver_report` | VRAM budgets, allocator reports, pipeline creation feedback |
+| `engine_counter` | a number your code incremented |
+| `wall_clock` | a CPU clock around a submit |
+| `unknown` | the default when nothing was said |
+
+Absence means `unknown`. A value that is present must come from this
+vocabulary; a typo is refused rather than silently becoming `unknown`, which
+would be the exact failure the field exists to prevent.
+
+The summary groups by provenance as well as metric, unit and aggregation, and
+reports `measuredBy` and `hardwareMeasurementAdmitted` per metric. The second
+is the conjunction of two separate things: the adapter's claim that hardware
+measured the value, and the run-level admission of hardware-performance
+evidence. A software lane's adapter may claim a timestamp query; it cannot mint
+the authority to have that claim believed. A goal created with
+`requireHardwareMeasurement` refuses a baseline or candidate that is not
+hardware-measured, and every goal refuses a candidate whose provenance differs
+from its baseline: a wall-clock number cannot meet a GPU-timestamp target,
+however small it is.
 
 Attachment encodings are PNG, JSON, JSONL, or binary. Paths must be relative,
 unique, non-symlinked, present, and inside staging. Limits bound frame,

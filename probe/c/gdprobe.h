@@ -209,6 +209,33 @@ gdprobe_status gdprobe_emit(gdprobe_run *run,
                             int32_t frame_index);
 
 /*
+ * How a number was measured. The telemetry-level analogue of the evidence
+ * ceiling: a GPU timestamp query and a counter the engine incremented look
+ * identical as doubles, and this is what tells them apart downstream. Say how
+ * you know, not just what you know.
+ *
+ * gdprobe_emit and gdprobe_measure record GDPROBE_MEASURED_UNKNOWN. Prefer the
+ * *_measured variants: a goal that requires a hardware measurement will refuse
+ * a metric of unknown provenance.
+ */
+typedef enum gdprobe_measured_by {
+  GDPROBE_MEASURED_UNKNOWN = 0,
+  GDPROBE_MEASURED_GPU_TIMESTAMP_QUERY,       /* vkCmdWriteTimestamp, MTLCounterSampleBuffer, wgpu timestamp writes */
+  GDPROBE_MEASURED_PIPELINE_STATISTICS_QUERY, /* VK_QUERY_TYPE_PIPELINE_STATISTICS, GL_SAMPLES_PASSED */
+  GDPROBE_MEASURED_DRIVER_REPORT,             /* VRAM budgets, allocator reports, pipeline creation feedback */
+  GDPROBE_MEASURED_ENGINE_COUNTER,            /* a number your code incremented */
+  GDPROBE_MEASURED_WALL_CLOCK                 /* a CPU clock around a submit */
+} gdprobe_measured_by;
+
+gdprobe_status gdprobe_emit_measured(gdprobe_run *run,
+                                     const char *category,
+                                     const char *name,
+                                     double value,
+                                     const char *unit,
+                                     int32_t frame_index,
+                                     gdprobe_measured_by measured_by);
+
+/*
  * Record a measurement that is already aggregated -- a p99 you computed
  * yourself, say. Use "sample" for raw per-frame values.
  *
@@ -221,6 +248,14 @@ gdprobe_status gdprobe_measure(gdprobe_run *run,
                                const char *unit,
                                const char *aggregation,
                                int32_t frame_index);
+
+gdprobe_status gdprobe_measure_measured(gdprobe_run *run,
+                                        const char *metric,
+                                        double value,
+                                        const char *unit,
+                                        const char *aggregation,
+                                        int32_t frame_index,
+                                        gdprobe_measured_by measured_by);
 
 /*
  * Finish the run: flush every attachment, then write capture.json last.

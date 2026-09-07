@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Measurement provenance.** Telemetry events carry a reserved `measured_by`
+  attribute and capture measurements a `measuredBy` field, from a fixed
+  vocabulary (`gpu_timestamp_query`, `pipeline_statistics_query`,
+  `driver_report`, `engine_counter`, `wall_clock`, `unknown`). The performance
+  summary groups by it, counts samples under each, and reports per metric both
+  the claim (`measuredBy`) and whether it counts
+  (`hardwareMeasurementAdmitted`, the conjunction of the claim and the run's
+  hardware-evidence admission). Goals accept `requireHardwareMeasurement`
+  and refuse any candidate whose provenance differs from the baseline. The C
+  probe SDK gains `gdprobe_emit_measured` / `gdprobe_measure_measured` and a
+  `gdprobe_measured_by` enum; the older calls record `unknown`.
 - **Cross-run stability.** `game-dev visual stability <run> <run>...` and the
   `measure_run_stability` MCP tool capture how much a scenario differs from
   *itself*: the per-pixel range across N runs with no code change, written as a

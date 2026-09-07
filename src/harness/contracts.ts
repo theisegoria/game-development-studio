@@ -5,6 +5,32 @@ export const GAME_DEV_ADAPTER_SCHEMA = 'game_dev.adapter.v1' as const;
 export const GAME_DEV_CAPTURE_SCHEMA = 'game_dev.capture.v1' as const;
 export const GAME_DEV_RUN_SCHEMA = 'game_dev.run.v1' as const;
 export const GAME_DEV_TELEMETRY_SCHEMA = 'game_dev.telemetry_event.v1' as const;
+
+/**
+ * How a number was measured. The telemetry-level analogue of the evidence
+ * ceiling: it distinguishes a hardware counter from a number the engine
+ * incremented, which look identical as floats.
+ *
+ * Telemetry events carry it as the reserved attribute `measured_by`; capture
+ * measurements carry it as `measuredBy`. Absence means `unknown`; a value that
+ * is present must come from this vocabulary, because a typo that silently
+ * became `unknown` would be the exact failure this field exists to prevent.
+ */
+export const MEASUREMENT_PROVENANCE = [
+  'gpu_timestamp_query',
+  'pipeline_statistics_query',
+  'driver_report',
+  'engine_counter',
+  'wall_clock',
+  'unknown',
+] as const;
+export const measurementProvenanceSchema = z.enum(MEASUREMENT_PROVENANCE);
+export type MeasurementProvenance = z.infer<typeof measurementProvenanceSchema>;
+/** Provenances that name the GPU or its driver as the thing that measured. */
+export const HARDWARE_MEASUREMENT_PROVENANCE: ReadonlySet<MeasurementProvenance> = new Set([
+  'gpu_timestamp_query', 'pipeline_statistics_query', 'driver_report',
+]);
+export const MEASURED_BY_ATTRIBUTE = 'measured_by' as const;
 export const GAME_DEV_PERFORMANCE_SUMMARY_SCHEMA = 'game_dev.performance_summary.v1' as const;
 export const GAME_DEV_PERFORMANCE_COMPARISON_SCHEMA = 'game_dev.performance_comparison.v1' as const;
 export const GAME_DEV_VISUAL_COMPARISON_SCHEMA = 'game_dev.visual_comparison.v1' as const;
@@ -332,6 +358,7 @@ export const captureManifestSchema = z.object({
     unit: z.string().min(1).max(48),
     frameIndex: z.number().int().min(0).optional(),
     aggregation: z.enum(['sample', 'mean', 'median', 'p95', 'p99', 'min', 'max']).default('sample'),
+    measuredBy: measurementProvenanceSchema.default('unknown'),
   }).strict()).max(100_000).default([]),
   adapterEvidence: z.object({
     windowless: z.boolean().optional(),
@@ -383,6 +410,13 @@ export const telemetryEventSchema = z.object({
 }).strict().superRefine((value, context) => {
   if ((value.value === undefined) !== (value.unit === undefined)) {
     context.addIssue({ code: z.ZodIssueCode.custom, message: 'value and unit must appear together' });
+  }
+  const measuredBy = value.attributes[MEASURED_BY_ATTRIBUTE];
+  if (measuredBy !== undefined && !measurementProvenanceSchema.safeParse(measuredBy).success) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `attributes.${MEASURED_BY_ATTRIBUTE} must be one of ${MEASUREMENT_PROVENANCE.join(', ')}`,
+    });
   }
 });
 
@@ -481,6 +515,14 @@ export const metricStatisticsSchema = z.object({
    * across them.
    */
   preAggregated: z.boolean().default(false),
+  /** What the source said measured these values. A claim, recorded verbatim. */
+  measuredBy: measurementProvenanceSchema.default('unknown'),
+  /**
+   * True only when the provenance names the GPU or driver AND the run admitted
+   * hardware-performance evidence. An adapter can claim a timestamp query; it
+   * cannot mint the authority to have that claim believed.
+   */
+  hardwareMeasurementAdmitted: z.boolean().default(false),
   samples: z.number().int().min(1),
   min: z.number().finite(),
   max: z.number().finite(),
@@ -525,6 +567,10 @@ export const optimizationGoalSchema = z.object({
   target: z.number().finite(),
   maximumIterations: z.number().int().min(1).max(50),
   allowedPaths: z.array(relativePathSchema).min(1).max(256),
+  /** How the baseline metric was measured; every candidate must match it. */
+  measuredBy: measurementProvenanceSchema.optional(),
+  /** When true, a candidate whose metric is not hardware-measured is refused, not evaluated. */
+  requireHardwareMeasurement: z.boolean().optional(),
   baseline: z.object({
     runId: identifier,
     runPath: z.string().min(1),
