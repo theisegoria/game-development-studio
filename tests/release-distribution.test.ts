@@ -114,6 +114,14 @@ describe('public release distribution', () => {
       '.mcp.json',
       '.app.json',
     ]));
+
+    // The probe SDK ships as source text only. A compiled example or SPIR-V
+    // blob in the roster means a local build leaked into the package that
+    // promises no native code; the extension set is the whole allowlist.
+    const probeTextExtensions = new Set(['.c', '.h', '.m', '.md', '.sh', '.vert', '.frag', '.rs', '.swift', '.toml', '.txt']);
+    const probeFiles = files.filter((relative) => relative.startsWith('probe/'));
+    expect(probeFiles).toEqual(expect.arrayContaining(['probe/c/gdprobe.c', 'probe/c/gdprobe.h', 'probe/examples/vulkan/main.c']));
+    expect(probeFiles.filter((relative) => !probeTextExtensions.has(path.extname(relative)))).toEqual([]);
   }, 30_000);
 
   it('exports repository-root marketing images and a screenshot-free plugin archive', async () => {

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Vulkan probe example.** `probe/examples/vulkan/` renders windowless with
+  timestamp queries (attesting `TIMESTAMP_RESOLVED`), pipeline statistics
+  where the device has the feature, `VK_EXT_memory_budget` as a driver
+  report, and validation-layer messages counted into diagnostic telemetry.
+  A CPU device is declared software and attests nothing. Verified through
+  the harness on MoltenVK.
 - **Metal probe example.** `probe/examples/metal/` renders windowless on the
   GPU, reads back through a blit, attests completion by a resolved
   stage-boundary counter timestamp pair (falling back to command-buffer

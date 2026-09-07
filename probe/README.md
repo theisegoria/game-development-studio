@@ -148,3 +148,8 @@ does not skip when no compiler is present; it fails.
   Attests completion by a resolved stage-boundary timestamp pair, emits
   per-pass GPU time as `gpu_timestamp_query`, the command buffer's own
   timing as `driver_report`, and the CPU clock as `wall_clock`. macOS only.
+- `examples/vulkan/` — the same scene through the best-instrumented lane:
+  timestamp queries, pipeline statistics where the device has them (the
+  honest overdraw figure), `VK_EXT_memory_budget` for VRAM, and the
+  validation layer's messages counted into diagnostic telemetry. A CPU device
+  is declared software and attests nothing. Builds with `./build.sh`.

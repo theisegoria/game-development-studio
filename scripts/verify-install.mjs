@@ -334,6 +334,21 @@ async function main() {
       `retired v0.4 MCP/app outputs leaked into the published package: ${leakedPublishedFiles.join(', ')}`,
     );
 
+    // The probe SDK ships as TEXT and is compiled by the engine's build, never
+    // by npm. A binary or SPIR-V blob under probe/ in the tarball means a
+    // developer's local build outputs leaked into the publish roster, which
+    // is exactly how a native artifact would end up in a package that
+    // promises there are none. The pack roster is what a consumer receives,
+    // so it is the roster that is audited, not the working tree.
+    const probeTextExtensions = new Set(['.c', '.h', '.m', '.md', '.sh', '.vert', '.frag', '.rs', '.swift', '.toml', '.txt']);
+    const nonTextProbeFiles = packRecord.files
+      .map((entry) => entry.path)
+      .filter((relative) => relative.startsWith('probe/') && !probeTextExtensions.has(path.extname(relative)));
+    invariant(
+      nonTextProbeFiles.length === 0,
+      `probe/ must ship only source text; compiled outputs leaked into the package: ${nonTextProbeFiles.join(', ')}`,
+    );
+
     const mcpEntry = path.join(packageRoot, 'dist', 'mcp', 'server.js');
     const mcpSource = await readFile(mcpEntry, 'utf8');
     invariant(
