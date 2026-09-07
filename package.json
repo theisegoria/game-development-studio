@@ -67,6 +67,7 @@
     "lint": "eslint src tests scripts",
     "verify": "npm run build && node scripts/verify-install.mjs && node scripts/verify-plugin.mjs",
     "verify:plugin": "node scripts/verify-plugin.mjs",
+    "verify:software-lane": "npm run build && node scripts/verify-software-lane.mjs",
     "runtime:stage": "npm run build && node scripts/build-cli-runtime.mjs --output build/GameDevelopmentStudioRuntime",
     "runtime:verify": "node scripts/verify-cli-runtime.mjs --runtime build/GameDevelopmentStudioRuntime",
     "runtime:check": "npm run runtime:stage && npm run runtime:verify",

@@ -80,6 +80,31 @@ jobs:
             if (passed < 6) { console.error('probe SDK tests did not run'); process.exit(1); }
           "
 
+  software-lane:
+    # The software-raster lane's one real promise, proven through the shipped
+    # CLI on both platforms: the same scenario captured twice is byte-identical,
+    # so `visual compare --threshold 0` is a hard regression gate -- and the
+    # harness refused every GPU and timing claim the lane could have made.
+    # The script does not skip: no compiler is a failure, not a pass.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Capture twice on the CPU and prove the outputs are byte-identical
+        run: npm run verify:software-lane
+
   blender:
     runs-on: ubuntu-latest
     steps:

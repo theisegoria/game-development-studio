@@ -131,6 +131,14 @@ TypeScript side — written independently to the same contract — seal, verify,
 decode and analyse what the C code wrote. If the two disagree about the
 contract, that test is where it shows.
 
+CI also proves the software lane's one real promise through the shipped CLI
+rather than the in-process API (`npm run verify:software-lane`): the minimal
+example is compiled under the strictest flags, captured twice, and the two
+runs must be byte-identical under `visual compare --threshold 0` and
+`visual stability`, while `capture verify` must show the forced downgrade
+fired: `rendererClass` software, no GPU or timing claim admitted. The gate
+does not skip when no compiler is present; it fails.
+
 ## Examples
 
 - `examples/minimal/` — a CPU-filled frame with two objects. No graphics API at

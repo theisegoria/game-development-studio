@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Software-lane determinism gate in CI.** `npm run verify:software-lane`
+  compiles the C probe example, captures it twice through the shipped CLI on
+  Ubuntu and macOS, and asserts the runs are byte-identical under
+  `visual compare --threshold 0` and `visual stability`, and that the forced
+  software downgrade fired. It fails rather than skips without a compiler.
 - **Measurement provenance.** Telemetry events carry a reserved `measured_by`
   attribute and capture measurements a `measuredBy` field, from a fixed
   vocabulary (`gpu_timestamp_query`, `pipeline_statistics_query`,
