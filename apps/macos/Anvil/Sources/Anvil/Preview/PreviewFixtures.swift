@@ -309,11 +309,11 @@ enum PreviewFixtures {
         )
     }
 
-    static func scenarioSummaries() -> [ScenariosWorkspace.ScenarioSummary] {
+    static func scenarioSummaries() -> [ScenarioSummary] {
         [
-            .init(id: "gbuffer-matrix", title: "G-buffer matrix", capabilities: [.cpu, .gpu, .metal, .performance]),
-            .init(id: "ci-regression", title: "CI regression (lavapipe)", capabilities: [.cpu, .vulkan, .softwareRaster]),
-            .init(id: "shadow-cascades", title: "Shadow cascades", capabilities: [.cpu, .gpu, .metal])
+            .init(id: "gbuffer-matrix", title: "G-buffer matrix", capabilities: [.cpu, .gpu, .metal, .performance], outputFormat: "game-dev-capture-v1"),
+            .init(id: "ci-regression", title: "CI regression (lavapipe)", capabilities: [.cpu, .vulkan, .softwareRaster], outputFormat: "game-dev-capture-v1"),
+            .init(id: "shadow-cascades", title: "Shadow cascades", capabilities: [.cpu, .gpu, .metal], outputFormat: "none")
         ]
     }
 }

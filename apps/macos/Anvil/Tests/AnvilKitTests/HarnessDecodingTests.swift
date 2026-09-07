@@ -140,4 +140,42 @@ struct HarnessDecodingTests {
         #expect(analysis.floatRasters.first?.hasNonFiniteSamples == true)
         #expect(!analysis.evidence.mayPresentAsGpuExecution)
     }
+
+    @Test("A scenario list decodes, and an unknown capability cannot hide a required grant")
+    func scenarioListDecodes() throws {
+        let list = try ScenarioList(payload: .object([
+            "schema": .string("game_dev.scenario_list.v1"),
+            "adapterId": .string("genome-game"),
+            "adapterVersion": .string("1.2.0"),
+            "scenarios": .array([
+                .object([
+                    "id": .string("gbuffer"), "title": .string("G-buffer"),
+                    "capabilities": .array([.string("cpu"), .string("gpu"), .string("hologram")]),
+                    "outputFormat": .string("game-dev-capture-v1")
+                ]),
+                .object([
+                    "id": .string("smoke"),
+                    "capabilities": .array([.string("cpu")]),
+                    "outputFormat": .string("none")
+                ])
+            ])
+        ]))
+        #expect(list.adapterID == "genome-game")
+        #expect(list.scenarios.count == 2)
+        // The unknown lane is dropped from the chip row only. Authorities are taken from
+        // the resolved plan, so nothing about approval depends on this list.
+        #expect(list.scenarios[0].capabilities == [.cpu, .gpu])
+        #expect(list.scenarios[0].producesCapture)
+        #expect(list.scenarios[1].title == "smoke", "A scenario without a title is named by its id")
+        #expect(!list.scenarios[1].producesCapture)
+    }
+
+    @Test("A scenario list with the wrong schema is refused")
+    func scenarioListWrongSchema() {
+        #expect(throws: ScenarioList.DecodingFailure.unexpectedSchema("game_dev.adapter.v1")) {
+            _ = try ScenarioList(payload: .object([
+                "schema": .string("game_dev.adapter.v1"), "adapterId": .string("x")
+            ]))
+        }
+    }
 }

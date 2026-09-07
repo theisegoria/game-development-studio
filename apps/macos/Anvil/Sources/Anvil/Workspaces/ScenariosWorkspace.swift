@@ -11,23 +11,13 @@ struct ScenariosWorkspace: View {
     let scenarios: [ScenarioSummary]
     let plan: ScenarioPlan?
     let recentRuns: [Run]
+    var error: String?
+    var onChooseProject: () -> Void = {}
     var onPlan: (String) -> Void = { _ in }
     var onRun: (ScenarioPlan, ApprovalGrant) -> Void = { _, _ in }
 
     @State private var selected: String?
     @State private var showingApproval = false
-
-    struct ScenarioSummary: Identifiable, Hashable {
-        let id: String
-        let title: String
-        let capabilities: [ScenarioCapability]
-
-        init(id: String, title: String, capabilities: [ScenarioCapability]) {
-            self.id = id
-            self.title = title
-            self.capabilities = capabilities
-        }
-    }
 
     var body: some View {
         ScrollView {
@@ -66,8 +56,23 @@ struct ScenariosWorkspace: View {
                         message: "Choose a project with a capture adapter, or install one from Setup. Anvil reads its scenarios from the adapter manifest.",
                         symbolName: "folder.badge.questionmark"
                     )
+                    HStack {
+                        Spacer(minLength: 0)
+                        Button("Choose Project…", action: onChooseProject)
+                            .anvilGlassProminentButton(isFlattened: false)
+                        Spacer(minLength: 0)
+                    }
                 }
             } else {
+                if let error {
+                    Panel("The adapter could not be read", symbolName: "exclamationmark.triangle.fill") {
+                        Text(error)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
                 projectPanel
                 if scenarios.isEmpty {
                     Panel {
@@ -90,7 +95,9 @@ struct ScenariosWorkspace: View {
     }
 
     private var projectPanel: some View {
-        Panel("Project", symbolName: "folder") {
+        Panel("Project", symbolName: "folder", accessory: {
+            Button("Change…", action: onChooseProject).controlSize(.small)
+        }) {
             ValueRow(label: "Path", value: projectPath, isMonospaced: true)
             ValueRow(label: "Scenarios", value: "\(scenarios.count)")
         }
@@ -114,6 +121,9 @@ struct ScenariosWorkspace: View {
                         .anvilGlassButton(isFlattened: false)
                     }
                     HStack(spacing: Anvil.Space.tight) {
+                        if !scenario.producesCapture {
+                            StatusChip(label: "no capture", symbolName: "eye.slash", tint: Anvil.Status.inert)
+                        }
                         ForEach(scenario.capabilities, id: \.self) { capability in
                             StatusChip(
                                 label: capability.label,

@@ -34,6 +34,19 @@ struct ContentView: View {
                 unreadableRunIDs: model.runs.unreadableRunIDs,
                 selection: $selectedRun
             )
+        case .visual:
+            VisualWorkspace(runs: model.runs.runs)
+        case .scenarios:
+            ScenariosWorkspace(
+                projectPath: model.projectPath,
+                scenarios: model.scenarios,
+                plan: model.plan,
+                recentRuns: model.runs.runs.filter { $0.commandID == "scenario.run" }.prefix(5).map { $0 },
+                error: model.scenarioError,
+                onChooseProject: { model.chooseProject() },
+                onPlan: { id in Task { await model.planScenario(id) } },
+                onRun: { plan, grant in model.runScenario(plan, grant: grant) }
+            )
         default:
             ComingSoon(route: route)
         }

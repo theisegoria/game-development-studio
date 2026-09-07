@@ -22,6 +22,12 @@ final class AnvilModel {
     private(set) var outputDirectory: URL
     let runs: RunStore
 
+    // Scenario flow for the selected project. Written by AnvilModel+Scenarios.
+    var scenarios: [ScenarioSummary] = []
+    var scenarioList: ScenarioList?
+    var plan: ScenarioPlan?
+    var scenarioError: String?
+
     @ObservationIgnored private let client: GameDevCLIClient
     @ObservationIgnored private let runtimeURL: URL?
     @ObservationIgnored private var didStart = false
@@ -48,6 +54,13 @@ final class AnvilModel {
     }
 
     var hasRuntime: Bool { runtimeURL != nil }
+
+    /// One-shot, buffered execution against the bound runtime. Used for the read-only
+    /// commands that return a single envelope; anything long-running goes through the
+    /// run store so it streams and is recorded.
+    func execute(_ invocation: CLIInvocation, timeout: Duration) async throws -> CLIExecutionResult {
+        try await client.execute(invocation, credentials: [:], timeout: timeout)
+    }
     var runtimeDescription: String { runtimeURL?.path ?? "not found in this app bundle" }
 
     /// Idempotent: `.task` can fire again when the view is recreated.
@@ -56,6 +69,7 @@ final class AnvilModel {
         didStart = true
         runs.restore()
         await refreshHealth()
+        await loadScenarios()
     }
 
     func refreshHealth() async {
