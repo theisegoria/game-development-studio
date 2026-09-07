@@ -144,3 +144,7 @@ does not skip when no compiler is present; it fails.
 - `examples/minimal/` — a CPU-filled frame with two objects. No graphics API at
   all, which is the point: it shows exactly what the SDK needs from an engine
   and runs anywhere a C compiler does.
+- `examples/metal/` — the same two objects rendered windowless on the GPU.
+  Attests completion by a resolved stage-boundary timestamp pair, emits
+  per-pass GPU time as `gpu_timestamp_query`, the command buffer's own
+  timing as `driver_report`, and the CPU clock as `wall_clock`. macOS only.

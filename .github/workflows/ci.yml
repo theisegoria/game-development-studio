@@ -80,6 +80,22 @@ jobs:
             if (passed < 6) { console.error('probe SDK tests did not run'); process.exit(1); }
           "
 
+      # A hosted macOS runner has a paravirtual Metal device: real GPU
+      # execution evidence, not target-hardware timing. The test declares
+      # the run attested for its own duration because it asserts the SDK's
+      # CLAIM about provenance, not the runner's hardware. Nothing this job
+      # produces is admitted anywhere else.
+      - name: Drive the Metal example on the runner's GPU
+        if: runner.os == 'macOS'
+        run: |
+          npx vitest run tests/probe-metal.test.ts --no-file-parallelism --reporter=json --outputFile=/tmp/metal.json
+          node -e "
+            const r = require('/tmp/metal.json');
+            const passed = r.numPassedTests, skipped = r.numPendingTests;
+            console.log('passed', passed, 'skipped', skipped);
+            if (passed < 4) { console.error('Metal example tests did not run'); process.exit(1); }
+          "
+
   software-lane:
     # The software-raster lane's one real promise, proven through the shipped
     # CLI on both platforms: the same scenario captured twice is byte-identical,

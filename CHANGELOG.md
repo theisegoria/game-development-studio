@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Metal probe example.** `probe/examples/metal/` renders windowless on the
+  GPU, reads back through a blit, attests completion by a resolved
+  stage-boundary counter timestamp pair (falling back to command-buffer
+  status), and emits every timing with the provenance that measured it. A
+  macOS-only test drives it through the harness on a real device and CI's
+  macOS job asserts it ran.
 - **Software-lane determinism gate in CI.** `npm run verify:software-lane`
   compiles the C probe example, captures it twice through the shipped CLI on
   Ubuntu and macOS, and asserts the runs are byte-identical under
