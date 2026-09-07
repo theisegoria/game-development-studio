@@ -10,6 +10,7 @@
 
 #include "gdprobe.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -81,9 +82,27 @@ struct gdprobe_frame {
 
 /* ---------------------------------------------------------------- helpers */
 
+/*
+ * Format into a bounded buffer and say whether it fit.
+ *
+ * Every path the SDK builds goes through here, and a path that does not fit
+ * is an error, not a silently shortened path that names the wrong file. GCC
+ * enforces this under -Wformat-truncation, which is why the return value is
+ * checked at every call site rather than discarded.
+ */
+static int format_bounded(char *out, size_t capacity, const char *format, ...) {
+  if (!out || capacity == 0) return 0;
+  va_list arguments;
+  va_start(arguments, format);
+  int needed = vsnprintf(out, capacity, format, arguments);
+  va_end(arguments);
+  return needed >= 0 && (size_t) needed < capacity;
+}
+
 static void set_error(gdprobe_run *run, const char *message) {
   if (!run) return;
-  snprintf(run->error, sizeof run->error, "%s", message);
+  /* A truncated error message is still an error message. */
+  (void) format_bounded(run->error, sizeof run->error, "%s", message);
 }
 
 static void copy_bounded(char *destination, size_t capacity, const char *source) {
@@ -345,7 +364,12 @@ gdprobe_run *gdprobe_run_begin(gdprobe_status *out_status) {
   if (manifest && manifest[0]) {
     copy_bounded(run->manifest_path, sizeof run->manifest_path, manifest);
   } else {
-    snprintf(run->manifest_path, sizeof run->manifest_path, "%s/capture.json", run->run_dir);
+    if (!format_bounded(run->manifest_path, sizeof run->manifest_path, "%s/capture.json", run->run_dir)) {
+      set_error(run, "run directory path is too long");
+      if (out_status) *out_status = GDPROBE_ERR_LIMIT;
+      free(run);
+      return NULL;
+    }
   }
   copy_bounded(run->error, sizeof run->error, "");
   run->renderer_class = GDPROBE_RENDERER_UNKNOWN;
@@ -469,24 +493,24 @@ static gdprobe_status attach_pixels(gdprobe_frame *frame,
   }
 
   char frame_dir[GDPROBE_MAX_PATH];
-  snprintf(frame_dir, sizeof frame_dir, "%s/frames", run->run_dir);
+  if (!format_bounded(frame_dir, sizeof frame_dir, "%s/frames", run->run_dir)) { set_error(run, "frame path is too long"); return GDPROBE_ERR_LIMIT; }
   if (make_directory(frame_dir) != 0) { set_error(run, "cannot create frames directory"); return GDPROBE_ERR_IO; }
-  snprintf(frame_dir, sizeof frame_dir, "%s/frames/%04u", run->run_dir, record->index);
+  if (!format_bounded(frame_dir, sizeof frame_dir, "%s/frames/%04u", run->run_dir, record->index)) { set_error(run, "frame path is too long"); return GDPROBE_ERR_LIMIT; }
   if (make_directory(frame_dir) != 0) { set_error(run, "cannot create frame directory"); return GDPROBE_ERR_IO; }
 
   gdprobe_attachment *attachment = &record->attachments[record->attachment_count];
   attachment->kind = kind;
   copy_bounded(attachment->label, sizeof attachment->label, slug);
-  if (slug[0]) {
-    snprintf(attachment->path, sizeof attachment->path, "frames/%04u/%s_%s.png",
-             record->index, kind_name(kind), slug);
-  } else {
-    snprintf(attachment->path, sizeof attachment->path, "frames/%04u/%s.png",
-             record->index, kind_name(kind));
-  }
+  int named = slug[0]
+    ? format_bounded(attachment->path, sizeof attachment->path, "frames/%04u/%s_%s.png", record->index, kind_name(kind), slug)
+    : format_bounded(attachment->path, sizeof attachment->path, "frames/%04u/%s.png", record->index, kind_name(kind));
+  if (!named) { set_error(run, "attachment path is too long"); return GDPROBE_ERR_LIMIT; }
 
   char absolute[GDPROBE_MAX_PATH * 2];
-  snprintf(absolute, sizeof absolute, "%s/%s", run->run_dir, attachment->path);
+  if (!format_bounded(absolute, sizeof absolute, "%s/%s", run->run_dir, attachment->path)) {
+    set_error(run, "attachment path is too long");
+    return GDPROBE_ERR_LIMIT;
+  }
   if (write_png_rgba(absolute, width, height, rgba, row_stride) != 0) {
     set_error(run, "failed to write attachment png");
     return GDPROBE_ERR_IO;
@@ -579,7 +603,7 @@ gdprobe_status gdprobe_emit_measured(gdprobe_run *run,
   if (!run || !category || !name || !unit) return GDPROBE_ERR_ARGUMENT;
   if (!run->telemetry) {
     char path[GDPROBE_MAX_PATH];
-    snprintf(path, sizeof path, "%s/telemetry.jsonl", run->run_dir);
+    if (!format_bounded(path, sizeof path, "%s/telemetry.jsonl", run->run_dir)) { set_error(run, "telemetry path is too long"); return GDPROBE_ERR_LIMIT; }
     run->telemetry = fopen(path, "wb");
     if (!run->telemetry) { set_error(run, "cannot open telemetry.jsonl"); return GDPROBE_ERR_IO; }
   }
@@ -667,8 +691,8 @@ gdprobe_status gdprobe_run_end(gdprobe_run *run) {
        status code and no message -- exactly the diagnosis this library
        exists to avoid. The caller releases it with gdprobe_run_discard. */
     char message[GDPROBE_ERROR_LEN];
-    snprintf(message, sizeof message, "cannot open capture manifest for writing: %s (%s)",
-             run->manifest_path, strerror(errno));
+    (void) format_bounded(message, sizeof message, "cannot open capture manifest for writing: %s (%s)",
+                          run->manifest_path, strerror(errno));
     set_error(run, message);
     return GDPROBE_ERR_IO;
   }
@@ -740,13 +764,13 @@ gdprobe_status gdprobe_run_end(gdprobe_run *run) {
   {
     size_t written = 0;
     char attestation[192];
-    snprintf(attestation, sizeof attestation, "gpu attestation: %s",
-             attestation_note(run->gpu_attestation));
+    (void) format_bounded(attestation, sizeof attestation, "gpu attestation: %s",
+                          attestation_note(run->gpu_attestation));
     write_json_string(out, attestation);
     written += 1;
     if (run->device_name[0]) {
       char device[192];
-      snprintf(device, sizeof device, "device: %s %s", run->device_name, run->driver_version);
+      (void) format_bounded(device, sizeof device, "device: %s %s", run->device_name, run->driver_version);
       fputc(',', out);
       write_json_string(out, device);
       written += 1;

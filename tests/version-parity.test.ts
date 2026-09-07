@@ -35,6 +35,10 @@ describe('every surface states the same version', () => {
     expect(manifest.version).toBe(pkg.version);
     expect(plugin.version).toBe(pkg.version);
     expect(provenance.bundledRuntime.gameDevCli.version).toBe(pkg.version);
+    // The packager's self-test dies when this literal disagrees with the
+    // provenance record; it is a version site, whatever the file extension.
+    const packager = await readFile(path.join(root, 'script', 'package_macos_release.sh'), 'utf8');
+    expect(packager).toContain(`BUNDLED_GAME_DEV_CLI="${pkg.version}"`);
     // The license asset is named after the version, so a bump that forgets the
     // rename leaves the record pointing at a file that no longer exists.
     expect(provenance.bundledRuntime.gameDevCli.licenseAssets).toContain(

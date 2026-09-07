@@ -74,6 +74,10 @@ await access(path.join(legal, oldAsset));
 await rename(path.join(legal, oldAsset), path.join(legal, newAsset));
 console.log(`renamed ${oldAsset} -> ${newAsset}`);
 await editText('script/package_macos_release.sh', `"${oldAsset}"`, `"${newAsset}"`);
+// The packager pins the CLI version it expects to find bundled, and its
+// self-test dies on a mismatch -- which is how a stale literal here turned
+// CI red once. It is a version site like the others.
+await editText('script/package_macos_release.sh', `BUNDLED_GAME_DEV_CLI="${current}"`, `BUNDLED_GAME_DEV_CLI="${next}"`);
 await editText('distribution/macos-app-repo/THIRD_PARTY_NOTICES.md', `CLI ${current},`, `CLI ${next},`);
 await editText('distribution/macos-app-repo/README.md', `CLI ${current} and`, `CLI ${next} and`);
 

@@ -25,6 +25,25 @@ import { decodeImage } from '../src/inspection/image.js';
 import { canonicalJson } from '../src/packages/format.js';
 import { GAME_DEV_ADAPTER_SCHEMA } from '../src/harness/contracts.js';
 
+// These runs ask for hardware-performance authority on purpose: the claim
+// under test is what the harness does with that authority. A hosted CI
+// runner is refused it outright, which is correct and tested elsewhere, so
+// the CI marker is cleared for the duration of this file only.
+const savedEnvironment: Record<string, string | undefined> = {};
+beforeAll(() => {
+  for (const name of ['CI', 'GAME_DEV_CI_HARDWARE_ATTESTED']) {
+    savedEnvironment[name] = process.env[name];
+    delete process.env[name];
+  }
+});
+afterAll(() => {
+  for (const [name, value] of Object.entries(savedEnvironment)) {
+    if (value === undefined) delete process.env[name];
+    else process.env[name] = value;
+  }
+});
+
+
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const sdkSource = path.join(repoRoot, 'probe', 'c', 'gdprobe.c');
 const exampleSource = path.join(repoRoot, 'probe', 'examples', 'minimal', 'main.c');

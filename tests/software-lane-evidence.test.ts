@@ -16,10 +16,29 @@
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { loadAdapter, planScenarioRun } from '../src/harness/adapter.js';
 import { executeScenarioRun } from '../src/harness/run-bundle.js';
 import { writeHarnessProject } from './helpers/harness-fixture.js';
+
+// These runs ask for hardware-performance authority on purpose: the claim
+// under test is what the harness does with that authority. A hosted CI
+// runner is refused it outright, which is correct and tested elsewhere, so
+// the CI marker is cleared for the duration of this file only.
+const savedEnvironment: Record<string, string | undefined> = {};
+beforeAll(() => {
+  for (const name of ['CI', 'GAME_DEV_CI_HARDWARE_ATTESTED']) {
+    savedEnvironment[name] = process.env[name];
+    delete process.env[name];
+  }
+});
+afterAll(() => {
+  for (const [name, value] of Object.entries(savedEnvironment)) {
+    if (value === undefined) delete process.env[name];
+    else process.env[name] = value;
+  }
+});
+
 
 let root: string;
 let projectRoot: string;

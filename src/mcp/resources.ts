@@ -66,6 +66,18 @@ function requireRunId(value: string): string {
   return decoded;
 }
 
+/**
+ * A fixed resource answers only its exact URI.
+ *
+ * `game-dev://runs/..` normalises differently across URL parsers, and one of
+ * them hands it to the list handler with the traversal folded away. Nothing
+ * was exposed by that, but a handler that answers a URI it was not
+ * registered for is a matcher bug being papered over, so it refuses.
+ */
+function requireExact(uri: URL, expected: string): void {
+  if (uri.href !== expected) throw invalidInput('resource does not exist', { uri: uri.href });
+}
+
 export function registerEvidenceResources(server: McpServer, ctx: ToolContext): void {
   const runsDir = ctx.config.runsDir;
 
@@ -77,10 +89,13 @@ export function registerEvidenceResources(server: McpServer, ctx: ToolContext): 
       description: 'Every sealed run on this machine, newest first. Read game-dev://runs/{runId} for one.',
       mimeType: 'application/json',
     },
-    async (uri) => json(uri.href, {
-      schema: 'game_dev.run_index.v1',
-      runs: (await listRunIds(runsDir)).map((runId) => ({ runId, uri: `game-dev://runs/${runId}` })),
-    }),
+    async (uri) => {
+      requireExact(uri, 'game-dev://runs');
+      return json(uri.href, {
+        schema: 'game_dev.run_index.v1',
+        runs: (await listRunIds(runsDir)).map((runId) => ({ runId, uri: `game-dev://runs/${runId}` })),
+      });
+    },
   );
 
   server.registerResource(
@@ -158,6 +173,7 @@ export function registerEvidenceResources(server: McpServer, ctx: ToolContext): 
       mimeType: 'application/json',
     },
     async (uri) => {
+      requireExact(uri, 'game-dev://catalog');
       const catalog = await AssetCatalog.open(ctx.config.catalogPath);
       try {
         const assets = catalog.list({ limit: 1000 });
