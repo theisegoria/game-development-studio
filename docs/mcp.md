@@ -69,6 +69,39 @@ read why and tell you, rather than inventing a workaround.
 **Do not add the paid tools to an always-allow list.** Approving one paid tool
 once approves every future charge through it.
 
+## Resources: browse evidence by URI
+
+A tool call per file is the wrong shape for looking at a run. These are
+readable as MCP resources, and clients may cache them because everything is
+content-addressed:
+
+| URI | Contents |
+| --- | --- |
+| `game-dev://runs` | every sealed run, newest first |
+| `game-dev://runs/{runId}` | one `run.json`, re-verified against its roster on every read, with a URI for each artifact |
+| `game-dev://runs/{runId}/artifacts/{path}` | one artifact — a frame as `image/png`, telemetry as `application/x-ndjson`, a profile as JSON |
+| `game-dev://catalog` | every package built on this machine |
+| `game-dev://packages/{packageId}` | one package manifest, re-read from disk |
+
+A URI is input the model controls, so two rules apply and both are tested.
+Run and package ids must match the pattern the harness mints, before anything
+touches the filesystem. And inside a run, **the sealed roster is the
+allowlist**: an artifact is served only if `run.json` names that exact path,
+and its bytes are re-hashed against the roster first. A file planted in the
+run directory after sealing is refused even though it exists; an artifact whose
+bytes changed after sealing is refused even though the roster names it. Every
+read is also a verification.
+
+## Prompts: the shipped skills, for every client
+
+The five skills under `skills/` already say how to sequence these tools, and
+Codex gets them as a plugin. They are served as MCP prompts too —
+`game_visual_debugging`, `game_performance_optimization`,
+`game_asset_production`, `game_asset_vendoring`, `game_development_studio` —
+each returning its `SKILL.md` with its references appended, from the same
+files the installer copies and the release check hashes. One source of truth;
+nothing is loaded until a prompt is requested.
+
 ## Profiles
 
 `GAME_DEV_MCP_PROFILE=readonly` registers only tools annotated read-only: no

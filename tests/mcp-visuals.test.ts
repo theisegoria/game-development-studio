@@ -196,7 +196,7 @@ describe('extract_pbr_trio over the two transports', () => {
   it('hands the model actual pixels, and the CLI the same JSON plus paths', async () => {
     const model = await modelWithTextures();
     const runtime = await createGameDevRuntime({ outputDir: work });
-    const server = createMcpServer(runtime);
+    const server = await createMcpServer(runtime);
     const client = new Client({ name: 'visuals', version: '0' }, { capabilities: {} });
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
     await Promise.all([client.connect(clientSide), server.connect(serverSide)]);

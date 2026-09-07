@@ -21,6 +21,8 @@ import { GAME_DEV_NAME, GAME_DEV_VERSION } from '../version.js';
 import { McpToolRegistrar, type ToolProfile } from './registrar.js';
 import { SpendGate, type SpendMode } from './spend-gate.js';
 import { ExecutionGate } from './execution-gate.js';
+import { registerEvidenceResources } from './resources.js';
+import { registerSkillPrompts } from './prompts.js';
 
 export interface McpServerOptions {
   profile?: ToolProfile;
@@ -40,10 +42,10 @@ function readSpendMode(env: NodeJS.ProcessEnv): SpendMode {
  * Builds the server without choosing a transport and without touching
  * `process.exit`, so tests can drive it over an in-memory pair.
  */
-export function createMcpServer(
+export async function createMcpServer(
   runtime: GameDevRuntime,
   options: McpServerOptions = {},
-): McpServer {
+): Promise<McpServer> {
   const server = new McpServer({ name: GAME_DEV_NAME, version: GAME_DEV_VERSION });
 
   const canElicit = (): boolean =>
@@ -83,13 +85,19 @@ export function createMcpServer(
     new ExecutionGate({ canElicit, elicit }),
   );
   registerAssetCommands(registrar, runtime.context);
+
+  // Tools are the verbs. Resources let a model browse sealed evidence by URI
+  // and prompts give every client the workflow guidance the skills already
+  // carry -- both are what "first-class" means beyond a tool list.
+  registerEvidenceResources(server, runtime.context);
+  await registerSkillPrompts(server);
   return server;
 }
 
 export async function main(env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const runtime = await createGameDevRuntime();
   const spendMode = readSpendMode(env);
-  const server = createMcpServer(runtime, {
+  const server = await createMcpServer(runtime, {
     profile: readProfile(env),
     spendMode,
     spendLimitCents: runtime.config.spendLimitCents,

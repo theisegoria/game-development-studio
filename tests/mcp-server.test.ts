@@ -58,7 +58,7 @@ async function connect(
     },
   });
 
-  const server = createMcpServer(runtime, options);
+  const server = await createMcpServer(runtime, options);
   const client = new Client(
     { name: 'test', version: '0' },
     { capabilities: elicitation ? { elicitation: {} } : {} },
