@@ -340,7 +340,7 @@ async function main() {
     // is exactly how a native artifact would end up in a package that
     // promises there are none. The pack roster is what a consumer receives,
     // so it is the roster that is audited, not the working tree.
-    const probeTextExtensions = new Set(['.c', '.h', '.m', '.md', '.sh', '.vert', '.frag', '.rs', '.swift', '.toml', '.txt']);
+    const probeTextExtensions = new Set(['.c', '.h', '.m', '.md', '.sh', '.vert', '.frag', '.rs', '.swift', '.toml', '.lock', '.txt']);
     const nonTextProbeFiles = packRecord.files
       .map((entry) => entry.path)
       .filter((relative) => relative.startsWith('probe/') && !probeTextExtensions.has(path.extname(relative)));

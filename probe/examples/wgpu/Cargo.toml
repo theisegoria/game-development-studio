@@ -1,0 +1,12 @@
+[package]
+name = "gdprobe-wgpu"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+wgpu = "24"
+pollster = "0.4"
+
+[build-dependencies]
+cc = "1"

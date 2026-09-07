@@ -153,3 +153,11 @@ does not skip when no compiler is present; it fails.
   honest overdraw figure), `VK_EXT_memory_budget` for VRAM, and the
   validation layer's messages counted into diagnostic telemetry. A CPU device
   is declared software and attests nothing. Builds with `./build.sh`.
+- `examples/opengl/` — a CGL context on macOS, a surfaceless EGL context on
+  Linux, a framebuffer object and `glReadPixels`. `GL_SAMPLES_PASSED` gives a
+  hardware-measured overdraw; `GL_KHR_debug` output is counted where the
+  context offers it. Builds with `./build.sh`.
+- `examples/wgpu/` — the same scene in Rust through wgpu, binding the C SDK
+  over FFI and compiled by cargo. Timestamp writes on the pass; pipeline
+  statistics only on backends that have them; the padded readback row stride
+  handed to the SDK as the row stride it is.

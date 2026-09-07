@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **OpenGL and wgpu probe examples.** `probe/examples/opengl/` renders
+  windowless through CGL on macOS or surfaceless EGL on Linux, with
+  `GL_SAMPLES_PASSED` as a hardware-measured overdraw figure and
+  `GL_KHR_debug` counted into diagnostic telemetry; verified through the
+  harness on macOS. `probe/examples/wgpu/` does the same in Rust over FFI to
+  the C SDK, compiled in CI on Linux against lavapipe. Every graphics API in
+  the capability matrix now has a shipped example.
 - **Vulkan probe example.** `probe/examples/vulkan/` renders windowless with
   timestamp queries (attesting `TIMESTAMP_RESOLVED`), pipeline statistics
   where the device has the feature, `VK_EXT_memory_budget` as a driver

@@ -40,3 +40,5 @@ __pycache__/
 # Probe example build outputs (compiled by the engine, never shipped)
 probe/examples/*/gdprobe-*
 probe/examples/*/*.spv
+probe/examples/wgpu/target/
+probe/examples/wgpu/Cargo.lock
