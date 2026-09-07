@@ -21,10 +21,19 @@ struct ScenariosWorkspace: View {
     @Environment(\.anvilFlattensSurfaces) private var isFlattened
 
     var body: some View {
-        ScrollView {
-            GlassEffectContainer(spacing: Anvil.Space.regular) { content }
+        Group {
+            if isFlattened {
+                // Rendered directly in a preview. `@Environment` is only populated
+                // inside a live hierarchy, so a scene must render the whole view and let
+                // the body branch, rather than reaching in for `content` from outside.
+                content
+            } else {
+                ScrollView {
+                    GlassEffectContainer(spacing: Anvil.Space.regular) { content }
+                }
+                .scrollEdgeEffectStyle(.soft, for: .top)
+            }
         }
-        .scrollEdgeEffectStyle(.soft, for: .top)
         .background(.background)
         .navigationTitle(WorkspaceRoute.scenarios.title)
         .sheet(isPresented: $showingApproval) {

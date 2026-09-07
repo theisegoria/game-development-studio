@@ -79,7 +79,7 @@ enum PreviewScenes {
                         scenarios: PreviewFixtures.scenarioSummaries(),
                         plan: PreviewFixtures.plan(),
                         recentRuns: []
-                    ).content
+                    )
                 }
             },
             PreviewRenderer.Scene("08-approval-execution", width: 660, height: 900) {
