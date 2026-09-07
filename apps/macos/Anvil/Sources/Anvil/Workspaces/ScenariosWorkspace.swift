@@ -18,6 +18,7 @@ struct ScenariosWorkspace: View {
 
     @State private var selected: String?
     @State private var showingApproval = false
+    @Environment(\.anvilFlattensSurfaces) private var isFlattened
 
     var body: some View {
         ScrollView {
@@ -59,7 +60,7 @@ struct ScenariosWorkspace: View {
                     HStack {
                         Spacer(minLength: 0)
                         Button("Choose Project…", action: onChooseProject)
-                            .anvilGlassProminentButton(isFlattened: false)
+                            .anvilGlassProminentButton(isFlattened: isFlattened)
                         Spacer(minLength: 0)
                     }
                 }
@@ -118,7 +119,7 @@ struct ScenariosWorkspace: View {
                             onPlan(scenario.id)
                         }
                         .controlSize(.small)
-                        .anvilGlassButton(isFlattened: false)
+                        .anvilGlassButton(isFlattened: isFlattened)
                     }
                     HStack(spacing: Anvil.Space.tight) {
                         if !scenario.producesCapture {
@@ -175,7 +176,7 @@ struct ScenariosWorkspace: View {
             HStack {
                 Spacer(minLength: 0)
                 Button("Review and run…") { showingApproval = true }
-                    .anvilGlassProminentButton(isFlattened: false)
+                    .anvilGlassProminentButton(isFlattened: isFlattened)
             }
             EvidenceCeilingNote(text: plan.evidenceCeiling)
         }
