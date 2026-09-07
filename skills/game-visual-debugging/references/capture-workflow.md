@@ -70,6 +70,7 @@ server's environment plus a confirmation per run; the plan needs nothing.
 | `game-dev capture verify` | `verify_capture_run` |
 | `game-dev visual analyze` | `analyze_capture_run` — the frames come back as images |
 | `game-dev visual compare` | `compare_capture_visuals` — the heatmaps come back as images |
+| `game-dev visual stability` | `measure_run_stability` — the per-pixel noise floors come back as images; feed the record to compare via `--noise-floor` / `noiseFloor` |
 
 Sealed runs are also readable as resources: `game-dev://runs`,
 `game-dev://runs/{runId}`, and `game-dev://runs/{runId}/artifacts/{path}`.

@@ -26,6 +26,7 @@ const EXPECTED_TOOLS = [
   'credentials_status',
   'evaluate_optimization_goal',
   'list_catalog_assets',
+  'measure_run_stability',
   'plan_asset_package',
   'plan_vendor_admission',
   'show_catalog_asset',

@@ -132,6 +132,8 @@ export const FREE_TOOLS: ReadonlySet<string> = new Set([
   'plan_vendor_admission',
   'vendor_package_into_project',
   'credentials_status',
+  // Noise measurement: local arithmetic over sealed runs, workspace-local output.
+  'measure_run_stability',
 ]);
 
 export function isSpendingTool(tool: string): boolean {

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Cross-run stability.** `game-dev visual stability <run> <run>...` and the
+  `measure_run_stability` MCP tool capture how much a scenario differs from
+  *itself*: the per-pixel range across N runs with no code change, written as a
+  noise-floor PNG per attachment plus a `game_dev.visual_stability.v1` record.
+  `visual compare --noise-floor STABILITY.json` (MCP: `noiseFloor`) then counts
+  a pixel as changed only when it exceeds both the threshold *and* its own
+  measured noise -- the measured replacement for guessing a threshold. A high
+  floor is a finding in its own right: it names where the renderer is
+  non-deterministic.
+
 Audit of every feature, an MCP transport that can show pictures, a wider
 capture contract, and the release machinery to publish it. See pull request #1.
 

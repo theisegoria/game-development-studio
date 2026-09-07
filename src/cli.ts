@@ -31,6 +31,7 @@ import { loadAdapter, planScenarioRun } from './harness/adapter.js';
 import { executeScenarioRun, resolveRunPath, verifyRunBundle } from './harness/run-bundle.js';
 import { installAdapterTemplate, listAdapterTemplates } from './harness/templates.js';
 import { installProbeSdk } from './harness/probe-install.js';
+import { measureRunStability } from './harness/stability.js';
 import { analyzeRunCapture, compareRunVisuals } from './harness/visual.js';
 import { compareRunPerformance, summarizeRunPerformance } from './harness/performance.js';
 import { createOptimizationGoal, evaluateOptimizationGoal } from './harness/goals.js';
@@ -78,7 +79,8 @@ Usage:
                     [--allow-gpu] [--allow-performance] [--jsonl]
   game-dev capture verify <run-id|path> [--json]
   game-dev visual analyze <run-id|path> [--json]
-  game-dev visual compare <baseline-run> <candidate-run> [--threshold 0..255] [--aa-tolerance 0..4]
+  game-dev visual compare <baseline-run> <candidate-run> [--threshold 0..255] [--aa-tolerance 0..4] [--noise-floor STABILITY.json]
+  game-dev visual stability <run> <run> [<run>...] --output NEW_DIRECTORY [--json]
                   [--output NEW_DIRECTORY] [--jsonl]
   game-dev performance summarize <run-id|path> [--warmup-frames N] [--json]
   game-dev performance compare <baseline-run> <candidate-run> [--stat median] [--json]
@@ -999,6 +1001,7 @@ async function dispatch(
       candidateRunPath: candidate,
       threshold: nonNegativeIntegerFlag(parsed, 'threshold', 0),
       antialiasTolerancePixels: nonNegativeIntegerFlag(parsed, 'aa-tolerance', 0),
+      ...(stringFlag(parsed, 'noise-floor') ? { noiseFloorPath: path.resolve(stringFlag(parsed, 'noise-floor') as string) } : {}),
       ...(output ? { outputPath: path.resolve(output) } : {}),
     });
     if (comparison.outputPath) events.emit('artifact', { kind: 'visual_comparison', path: comparison.outputPath });
@@ -1008,6 +1011,22 @@ async function dispatch(
       ...(comparison.outputPath
         ? { artifacts: [{ path: comparison.outputPath, kind: 'visual_comparison' }] }
         : {}),
+    };
+  }
+
+  if (family === 'visual' && action === 'stability') {
+    const references = parsed.positionals.slice(2);
+    if (references.length < 2) throw invalidInput('visual stability needs at least two run ids or paths');
+    const runPaths = [];
+    for (const reference of references) runPaths.push(await resolveRunPath(runtime.config.runsDir, reference));
+    const output = stringFlag(parsed, 'output');
+    if (!output) throw invalidInput('visual stability requires --output NEW_DIRECTORY');
+    const record = await measureRunStability({ runPaths, outputPath: path.resolve(output) });
+    events.emit('artifact', { kind: 'visual_stability', path: record.recordPath });
+    return {
+      operation: 'visual.stability',
+      data: record as unknown as Record<string, unknown>,
+      artifacts: [{ path: record.recordPath, kind: 'visual_stability' }],
     };
   }
 
@@ -1236,6 +1255,7 @@ function needsDurableJob(runtime: GameDevRuntime, parsed: ParsedArguments): bool
   if (family === 'skill' && action === 'install' && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'scenario' && action === 'run') return true;
   if (family === 'visual' && action === 'compare' && stringFlag(parsed, 'output') !== undefined) return true;
+  if (family === 'visual' && action === 'stability') return true;
   if (family === 'performance' && ['goal-create', 'goal-evaluate'].includes(action ?? '') && booleanFlag(parsed, 'confirm')) {
     return true;
   }

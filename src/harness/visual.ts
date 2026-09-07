@@ -67,6 +67,8 @@ export interface VisualComparison {
   baselineRunId: string;
   candidateRunId: string;
   threshold: number;
+  /** The stability record whose noise floors gated this comparison, if any. */
+  noiseFloorPath?: string;
   /**
    * Radius, in pixels, within which a difference is treated as the same content
    * landing elsewhere rather than as a change. 0 compares strictly.
@@ -147,11 +149,11 @@ interface LoadedCapture {
   manifest: CaptureManifest;
 }
 
-function attachmentIdentity(frame: CaptureManifest['frames'][number], attachment: CaptureAttachment): string {
+export function attachmentIdentity(frame: CaptureManifest['frames'][number], attachment: CaptureAttachment): string {
   return `${frame.index}:${frame.label ?? ''}:${attachment.kind}:${attachment.label ?? ''}`;
 }
 
-async function loadCapture(runPath: string): Promise<LoadedCapture> {
+export async function loadCapture(runPath: string): Promise<LoadedCapture> {
   const verified = await verifyRunBundle(runPath);
   if (!verified.manifest.captureManifest) throw invalidInput('run has no validated capture manifest', { runId: verified.manifest.runId });
   const capture = await validateCaptureManifest(verified.runPath, verified.manifest.captureManifest, {
@@ -431,6 +433,7 @@ function diffRasters(
   baselineIds?: RasterImage,
   candidateIds?: RasterImage,
   antialiasTolerancePixels = 0,
+  noise?: RasterImage,
 ): {
   meanAbsoluteError: number;
   rootMeanSquaredError: number;
@@ -478,7 +481,11 @@ function diffRasters(
           Math.floor(pixel / baseline.width), antialiasTolerancePixels),
       )
       : pixelMaximum;
-    if (tolerated > threshold) changed += 1;
+    // A measured noise floor is the principled replacement for guessing a
+    // threshold: a pixel counts as changed only if it moved by more than the
+    // threshold AND by more than it was seen to move between identical runs.
+    const floor = noise ? (noise.data[offset] ?? 0) : 0;
+    if (tolerated > threshold && tolerated > floor) changed += 1;
     heatmap[offset] = pixelMaximum;
     heatmap[offset + 1] = Math.round(pixelMaximum * 0.15);
     heatmap[offset + 2] = 0;
@@ -516,8 +523,31 @@ function diffRasters(
   };
 }
 
-function safeFileComponent(identity: string): string {
+export function safeFileComponent(identity: string): string {
   return identity.replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 160);
+}
+
+/**
+ * Read a stability record and decode each identity's noise floor raster.
+ *
+ * The record names the files; the files are not discovered by globbing, so a
+ * stray PNG beside the record cannot become somebody's noise floor.
+ */
+async function loadNoiseFloors(recordPath: string): Promise<Map<string, RasterImage>> {
+  const resolved = path.resolve(recordPath);
+  const record = JSON.parse(await fs.readFile(resolved, 'utf8')) as {
+    schema?: string;
+    attachments?: Array<{ identity: string; noiseFloorPath: string }>;
+  };
+  if (record.schema !== 'game_dev.visual_stability.v1' || !Array.isArray(record.attachments)) {
+    throw invalidInput('noise floor must be a game_dev.visual_stability.v1 record', { path: resolved });
+  }
+  const floors = new Map<string, RasterImage>();
+  for (const entry of record.attachments) {
+    const file = path.resolve(path.dirname(resolved), entry.noiseFloorPath);
+    floors.set(entry.identity, decodeImage(await fs.readFile(file)));
+  }
+  return floors;
 }
 
 export async function compareRunVisuals(options: {
@@ -526,8 +556,11 @@ export async function compareRunVisuals(options: {
   threshold?: number;
   outputPath?: string;
   antialiasTolerancePixels?: number;
+  /** A stability.json from measureRunStability; its noise floors gate the diff. */
+  noiseFloorPath?: string;
 }): Promise<VisualComparison> {
   const threshold = options.threshold ?? 0;
+  const noiseFloors = options.noiseFloorPath ? await loadNoiseFloors(options.noiseFloorPath) : undefined;
   const antialiasTolerancePixels = options.antialiasTolerancePixels ?? 0;
   if (!Number.isInteger(antialiasTolerancePixels)
     || antialiasTolerancePixels < 0 || antialiasTolerancePixels > 4) {
@@ -600,8 +633,12 @@ export async function compareRunVisuals(options: {
       findObjectIds(baseline, baselineEntry.frame.index),
       findObjectIds(candidate, candidateEntry.frame.index),
     ]);
+    const noise = noiseFloors?.get(identity);
+    if (noise && (noise.width !== baselineImage.width || noise.height !== baselineImage.height)) {
+      throw invalidInput('noise floor extent does not match the compared attachment', { identity });
+    }
     const diff = diffRasters(
-      baselineImage, candidateImage, threshold, baselineIds, candidateIds, antialiasTolerancePixels,
+      baselineImage, candidateImage, threshold, baselineIds, candidateIds, antialiasTolerancePixels, noise,
     );
     let heatmapPath: string | undefined;
     if (outputPath) {
@@ -636,6 +673,7 @@ export async function compareRunVisuals(options: {
     candidateRunId: candidate.runId,
     threshold,
     antialiasTolerancePixels,
+    ...(options.noiseFloorPath ? { noiseFloorPath: path.resolve(options.noiseFloorPath) } : {}),
     pairs,
     verdict: 'changed',
     summary: [],

@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { analyzeRunCapture, compareRunVisuals, type RasterAnalysis } from '../harness/visual.js';
 import { loadAdapter, planScenarioRun, serializableAdapterSnapshot } from '../harness/adapter.js';
 import { executeScenarioRun } from '../harness/run-bundle.js';
+import { measureRunStability } from '../harness/stability.js';
 import { invalidInput } from '../util/errors.js';
 import { compareRunPerformance, summarizeRunPerformance } from '../harness/performance.js';
 import { resolveRunPath, verifyRunBundle } from '../harness/run-bundle.js';
@@ -240,6 +241,12 @@ export function registerHarnessTools(server: ToolRegistrar, ctx: ToolContext): v
         candidate: runReference,
         threshold: z.number().int().min(0).max(255).default(0)
           .describe('A channel delta at or below this counts as unchanged.'),
+        noiseFloor: z.string().min(1).optional()
+          .describe(
+            'Path to a stability.json from measure_run_stability. A pixel then counts as changed '
+            + 'only if it moved by more than the threshold AND more than it moved between identical '
+            + 'runs -- the measured replacement for guessing a threshold.',
+          ),
         antialiasTolerancePixels: z.number().int().min(0).max(4).default(0)
           .describe(
             'Treat a difference as the same content landing elsewhere if a matching pixel exists '
@@ -267,6 +274,7 @@ export function registerHarnessTools(server: ToolRegistrar, ctx: ToolContext): v
         candidateRunPath,
         threshold: args.threshold,
         antialiasTolerancePixels: args.antialiasTolerancePixels,
+        ...(args.noiseFloor !== undefined ? { noiseFloorPath: path.resolve(args.noiseFloor) } : {}),
         outputPath,
       });
       const visuals: VisualAttachment[] = comparison.pairs
@@ -284,6 +292,41 @@ export function registerHarnessTools(server: ToolRegistrar, ctx: ToolContext): v
               : ''),
         }));
       return ok(comparison, visuals);
+    }),
+  );
+
+  server.registerTool(
+    'measure_run_stability',
+    {
+      title: 'Measure how much a scenario differs from itself',
+      description:
+        'FREE, local. Give it two or more sealed runs of the SAME scenario captured with no code ' +
+        'change. It records, per pixel, how far each attachment moved between them -- the noise ' +
+        'floor -- and writes a stability record that compare_capture_visuals can apply, so a ' +
+        'later comparison reports only change beyond what the renderer does on its own. A high ' +
+        'floor is a finding in itself: it names where the renderer is non-deterministic.',
+      inputSchema: {
+        runs: z.array(runReference).min(2).max(32),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    guard(ctx.logger, 'measure_run_stability', async (args) => {
+      const runPaths = [];
+      for (const reference of args.runs) runPaths.push(await resolve(reference));
+      const outputPath = path.join(
+        ctx.config.dataRoot,
+        'stability',
+        `${runPaths.map((run) => path.basename(run)).join('__').slice(0, 120)}__${Date.now()}`,
+      );
+      const record = await measureRunStability({ runPaths, outputPath });
+      const visuals: VisualAttachment[] = record.attachments.map((attachment) => ({
+        path: path.join(record.outputPath, attachment.noiseFloorPath),
+        mimeType: 'image/png',
+        role: 'diff_heatmap',
+        colorimetry: 'srgb',
+        label: `${attachment.identity}: noise floor, ${(attachment.unstablePixelRatio * 100).toFixed(2)}% of pixels unstable`,
+      }));
+      return ok(record, visuals);
     }),
   );
 
