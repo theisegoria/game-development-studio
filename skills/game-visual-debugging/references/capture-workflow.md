@@ -54,3 +54,22 @@ The output directory must be new. It contains deterministic heatmaps and `compar
 `--aa-tolerance N` treats a difference as the same content landing elsewhere when a matching pixel exists within N pixels, checked in both directions. Use `1` against a real renderer: anti-aliasing, a sub-pixel camera nudge and a driver's rasterisation rule all move colour by a pixel without changing what is drawn, so a strict comparison reports every edge in the frame as changed. Use `0` for a software-rasterized lane, which is bit-deterministic and should match exactly.
 
 The comparison also carries a `verdict` and a `summary` of plain sentences derived from the statistics, and names objects that appeared or disappeared between the runs. `identical` and `within-tolerance` are different outcomes: the second means pixels differ but none by more than the threshold. Compare only equivalent scene, camera, seed, resolution, renderer mode, and adapter scenario. If those controls differ, describe the result as exploratory rather than a regression verdict.
+
+## Over MCP
+
+The same operations, by tool name, for a client that has no shell. Everything
+after `plan_scenario_run` needs `GAME_DEV_MCP_ALLOW_EXECUTION=1` in the
+server's environment plus a confirmation per run; the plan needs nothing.
+
+| CLI | MCP tool |
+| --- | --- |
+| `game-dev adapter templates` | `list_adapter_templates` |
+| `game-dev adapter install` | `plan_adapter_install`, then `install_adapter_template` |
+| `game-dev scenario plan` | `plan_scenario_run` |
+| `game-dev scenario run` | `run_scenario` |
+| `game-dev capture verify` | `verify_capture_run` |
+| `game-dev visual analyze` | `analyze_capture_run` — the frames come back as images |
+| `game-dev visual compare` | `compare_capture_visuals` — the heatmaps come back as images |
+
+Sealed runs are also readable as resources: `game-dev://runs`,
+`game-dev://runs/{runId}`, and `game-dev://runs/{runId}/artifacts/{path}`.

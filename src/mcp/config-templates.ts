@@ -21,6 +21,15 @@ export interface McpConfigRequest {
   outputDir: string;
   /** Omitted means paid tools stay disabled. */
   spendLimitCents?: number | undefined;
+  /**
+   * Launch-time authorities. Each one only ENABLES a class of action; every
+   * use is still confirmed per call in the client. A model cannot grant these
+   * to itself, which is the entire reason they live in this file.
+   */
+  allowExecution?: boolean | undefined;
+  allowGpu?: boolean | undefined;
+  allowPerformance?: boolean | undefined;
+  allowProjectWrite?: boolean | undefined;
   command?: string;
 }
 
@@ -44,7 +53,35 @@ function environment(request: McpConfigRequest): Record<string, string> {
     env.ASSET_SPEND_LIMIT_CENTS = String(request.spendLimitCents);
     env.GAME_DEV_MCP_SPEND = 'elicit';
   }
+  if (request.allowExecution) env.GAME_DEV_MCP_ALLOW_EXECUTION = '1';
+  if (request.allowGpu) env.GAME_DEV_MCP_ALLOW_GPU = '1';
+  if (request.allowPerformance) env.GAME_DEV_MCP_ALLOW_PERFORMANCE = '1';
+  if (request.allowProjectWrite) env.GAME_DEV_MCP_ALLOW_PROJECT_WRITE = '1';
   return env;
+}
+
+function authorityNotes(request: McpConfigRequest): string[] {
+  const notes: string[] = [];
+  const granted: string[] = [];
+  if (request.allowExecution) granted.push('run project scenarios (GAME_DEV_MCP_ALLOW_EXECUTION)');
+  if (request.allowGpu) granted.push('use the GPU for scenarios that declare it (GAME_DEV_MCP_ALLOW_GPU)');
+  if (request.allowPerformance) {
+    granted.push('record hardware timings as evidence (GAME_DEV_MCP_ALLOW_PERFORMANCE) -- '
+      + 'this means you accept that timings from THIS machine are being recorded as evidence');
+  }
+  if (request.allowProjectWrite) {
+    granted.push('write into your game project: adapter manifests, the probe SDK, optimisation '
+      + 'goals, vendored packages (GAME_DEV_MCP_ALLOW_PROJECT_WRITE)');
+  }
+  if (granted.length > 0) {
+    notes.push('This configuration lets the server ' + granted.join('; ') + '. Each such action '
+      + 'is still confirmed with you in the client every time; the flag only makes it possible.');
+  } else {
+    notes.push('The server cannot run scenarios or write into a project with this configuration. '
+      + 'Those tools appear in the list and explain what to add. Re-run with --allow-execution, '
+      + '--allow-project-write, --allow-gpu or --allow-performance to enable them.');
+  }
+  return notes;
 }
 
 function toToml(name: string, command: string, env: Record<string, string>): string {
@@ -71,6 +108,7 @@ export function buildMcpConfig(request: McpConfigRequest): McpConfigTemplate {
       'instead of inventing a workaround.',
       'Re-run with --spend-limit-cents N to enable them.',
     ];
+  notes.push(...authorityNotes(request));
 
   const home = os.homedir();
   switch (request.client) {

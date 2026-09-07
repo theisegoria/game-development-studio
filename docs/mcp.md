@@ -29,6 +29,12 @@ and the generator avoids the mistake entirely by resolving the path for you.
 
 Add `--spend-limit-cents N` to enable paid tools. Without it they stay disabled.
 
+Add `--allow-execution`, `--allow-project-write`, `--allow-gpu` or
+`--allow-performance` to grant the corresponding authority. Each flag only makes
+a class of action *possible*; every use is still confirmed with you in the
+client. A fresh config grants nothing, and a config never widens beyond what
+you typed.
+
 ## Running it
 
 The package installs two bins:

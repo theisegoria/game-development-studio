@@ -98,3 +98,38 @@ describe('generated client configuration', () => {
     }
   });
 });
+
+describe('authority grants', () => {
+  it('emits none by default, so a fresh config cannot run or write anything', async () => {
+    const root = await workspace();
+    const payload = await run(['mcp', 'config', '--client', 'claude-desktop', '--output-dir', root, '--json']);
+
+    expect(payload.data.snippet).not.toContain('GAME_DEV_MCP_ALLOW_');
+    expect((payload.data.notes as string[]).join(' ')).toContain('cannot run scenarios or write into a project');
+  });
+
+  it('emits exactly the grants the human typed, and says each is still confirmed per call', async () => {
+    const root = await workspace();
+    const payload = await run([
+      'mcp', 'config', '--client', 'claude-desktop', '--output-dir', root,
+      '--allow-execution', '--allow-project-write', '--json',
+    ]);
+
+    expect(payload.data.snippet).toContain('"GAME_DEV_MCP_ALLOW_EXECUTION": "1"');
+    expect(payload.data.snippet).toContain('"GAME_DEV_MCP_ALLOW_PROJECT_WRITE": "1"');
+    // Not asked for, not granted: a config never widens beyond what was typed.
+    expect(payload.data.snippet).not.toContain('GAME_DEV_MCP_ALLOW_GPU');
+    expect(payload.data.snippet).not.toContain('GAME_DEV_MCP_ALLOW_PERFORMANCE');
+    expect((payload.data.notes as string[]).join(' ')).toContain('still confirmed with you in the client every time');
+  });
+
+  it('names what hardware-performance authority actually concedes', async () => {
+    const root = await workspace();
+    const payload = await run([
+      'mcp', 'config', '--client', 'generic', '--output-dir', root, '--allow-performance', '--json',
+    ]);
+
+    expect(payload.data.snippet).toContain('GAME_DEV_MCP_ALLOW_PERFORMANCE');
+    expect((payload.data.notes as string[]).join(' ')).toContain('timings from THIS machine');
+  });
+});

@@ -48,3 +48,20 @@ The first form of each command is a dry run. Confirmed evaluation appends exactl
 - Correctness and visual evidence have not regressed within the task's acceptance contract.
 - The code change stays inside the goal allowlist.
 - Claims distinguish arithmetic improvement from admitted hardware evidence and causal proof.
+
+## Over MCP
+
+| CLI | MCP tool |
+| --- | --- |
+| `game-dev performance summarize` | `summarize_run_performance` (takes `warmupFrames`) |
+| `game-dev performance compare` | `compare_run_performance` (reports `separability`) |
+| `game-dev performance goal-create` (dry run) | `plan_optimization_goal` |
+| `game-dev performance goal-create --confirm` | `create_optimization_goal` |
+| `game-dev performance goal-evaluate` (dry run) | `plan_goal_evaluation` |
+| `game-dev performance goal-evaluate --confirm` | `evaluate_optimization_goal` |
+
+Creating and recording a goal write into the project, so they need
+`GAME_DEV_MCP_ALLOW_PROJECT_WRITE=1` in the server's environment plus a
+confirmation each time. The `plan_*` tools need nothing and give the same
+verdict without consuming an iteration. Both summaries and comparisons carry a
+prose `summary`; read it before the numbers.

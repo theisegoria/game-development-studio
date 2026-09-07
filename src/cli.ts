@@ -98,7 +98,8 @@ Global options:
   --help              Show this help.
 
   game-dev mcp config --client claude-code|claude-desktop|codex|gemini|generic
-                      [--spend-limit-cents N] [--json]
+                      [--spend-limit-cents N] [--allow-execution] [--allow-project-write]
+                      [--allow-gpu] [--allow-performance] [--json]
                       Print ready-to-paste MCP client configuration with the
                       absolute output directory already resolved. Paid tools
                       stay disabled unless a spend ceiling is supplied.
@@ -393,6 +394,12 @@ async function dispatch(
       client,
       outputDir: runtime.config.outputDir,
       spendLimitCents: optionalPositiveIntegerFlag(parsed, 'spend-limit-cents'),
+      // Authorities are flags a HUMAN types here, which then land in a file the
+      // model cannot reach. That is the only path by which they can be granted.
+      allowExecution: booleanFlag(parsed, 'allow-execution'),
+      allowGpu: booleanFlag(parsed, 'allow-gpu'),
+      allowPerformance: booleanFlag(parsed, 'allow-performance'),
+      allowProjectWrite: booleanFlag(parsed, 'allow-project-write'),
     });
     return {
       operation: 'mcp.config',
