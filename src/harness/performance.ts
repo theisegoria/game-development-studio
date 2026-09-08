@@ -10,6 +10,7 @@ import {
   type MetricStatistics,
   type TelemetryEvent,
 } from './contracts.js';
+import { canonicalJson } from '../packages/format.js';
 import { verifyRunBundle } from './run-bundle.js';
 
 const MAX_TELEMETRY_BYTES = 64 * 1024 * 1024;
@@ -17,11 +18,15 @@ const MAX_TELEMETRY_LINES = 250_000;
 const MAX_PROFILE_BYTES = 32 * 1024 * 1024;
 const MAX_PROFILE_MEASUREMENTS = 100_000;
 
-interface Measurement {
+export interface Measurement {
   metric: string;
   unit: string;
   value: number;
   source: 'capture' | 'telemetry' | 'foreign-telemetry' | 'profile';
+  aggregation?: 'sample' | 'mean' | 'median' | 'p95' | 'p99' | 'min' | 'max';
+  frameIndex?: number;
+  timestampNs?: string;
+  artifact?: string;
 }
 
 export interface PerformanceSummary {
@@ -31,6 +36,11 @@ export interface PerformanceSummary {
   adapterId: string;
   scenarioId: string;
   metrics: MetricStatistics[];
+  measurements: Measurement[];
+  aggregates: Measurement[];
+  groups: Array<MetricStatistics & { source: Measurement['source'] }>;
+  controls: RunControls;
+  ambiguousMetrics: string[];
   sources: Record<Measurement['source'], number>;
   hardwarePerformanceEvidenceAdmitted: boolean;
   evidenceCeiling: string;
@@ -49,6 +59,10 @@ export interface PerformanceComparison {
     delta: number;
     percentDelta: number | null;
   }>;
+  missingBaseline: string[];
+  missingCandidate: string[];
+  incompatibleGroups: string[];
+  comparability: ControlComparison;
   hardwarePerformanceComparisonAdmitted: boolean;
   evidenceCeiling: string;
 }
@@ -130,6 +144,10 @@ async function telemetryMeasurements(filePath: string, expectedRunId: string): P
           unit: event.unit,
           value: event.value,
           source: 'telemetry',
+          aggregation: 'sample',
+          frameIndex: event.frameIndex,
+          timestampNs: String(event.timestampNs),
+          artifact: path.basename(filePath),
         });
       }
       continue;
@@ -235,6 +253,8 @@ export async function summarizeRunPerformance(runPathInput: string): Promise<Per
         unit: measurement.unit,
         value: measurement.value,
         source: 'capture',
+        aggregation: measurement.aggregation,
+        frameIndex: measurement.frameIndex,
       });
     }
     for (const relative of capture.manifest.telemetry) {
@@ -253,13 +273,16 @@ export async function summarizeRunPerformance(runPathInput: string): Promise<Per
     profile: 0,
   };
   for (const measurement of measurements) {
+    measurement.aggregation ??= 'sample';
     sources[measurement.source] += 1;
+    if (measurement.aggregation !== 'sample') continue;
     const key = `${measurement.metric}\u0000${measurement.unit}`;
     const group = grouped.get(key) ?? { metric: measurement.metric, unit: measurement.unit, values: [] };
     group.values.push(measurement.value);
     grouped.set(key, group);
   }
-  const metrics = [...grouped.values()]
+  const ambiguousMetrics = [...grouped.values()].filter((g) => new Set(measurements.filter((m) => m.metric === g.metric && m.unit === g.unit && m.aggregation === 'sample').map((m) => m.source)).size > 1).map((g) => `${g.metric} [${g.unit}]`);
+  const metrics = [...grouped.values()].filter((g) => !ambiguousMetrics.includes(`${g.metric} [${g.unit}]`))
     .map((group) => statistics(group.metric, group.unit, group.values))
     .sort((left, right) => left.metric.localeCompare(right.metric) || left.unit.localeCompare(right.unit));
 
@@ -270,6 +293,15 @@ export async function summarizeRunPerformance(runPathInput: string): Promise<Per
     adapterId: verified.manifest.adapterId,
     scenarioId: verified.manifest.scenarioId,
     metrics,
+    measurements,
+    ambiguousMetrics,
+    aggregates: measurements.filter((m) => m.aggregation !== 'sample'),
+    groups: [...new Set(measurements.map((m) => `${m.metric}\0${m.unit}\0${m.source}`))].flatMap((key) => {
+      const samples = measurements.filter((m) => `${m.metric}\0${m.unit}\0${m.source}` === key && m.aggregation === 'sample');
+      const first = samples[0];
+      return first ? [{ ...statistics(first.metric, first.unit, samples.map((m) => m.value)), source: first.source }] : [];
+    }),
+    controls: await readRunControls(verified.runPath),
     sources,
     hardwarePerformanceEvidenceAdmitted: verified.manifest.evidence.hardwarePerformanceEvidenceAdmitted,
     evidenceCeiling:
@@ -315,9 +347,55 @@ export async function compareRunPerformance(
     candidateRunId: candidate.runId,
     statistic,
     metrics,
+    missingBaseline: candidate.metrics.filter((m) => !baseline.metrics.some((b) => b.metric === m.metric && b.unit === m.unit)).map((m) => `${m.metric} [${m.unit}]`),
+    missingCandidate: baseline.metrics.filter((m) => !candidate.metrics.some((b) => b.metric === m.metric && b.unit === m.unit)).map((m) => `${m.metric} [${m.unit}]`),
+    incompatibleGroups: metrics.filter((m) => {
+      const sources = (summary: PerformanceSummary) => summary.groups.filter((g) => g.metric === m.metric && g.unit === m.unit).map((g) => g.source).sort().join(',');
+      return sources(baseline) !== sources(candidate);
+    }).map((m) => `${m.metric} [${m.unit}]`),
+    comparability: compareControls(baseline.controls, candidate.controls),
     hardwarePerformanceComparisonAdmitted:
-      baseline.hardwarePerformanceEvidenceAdmitted && candidate.hardwarePerformanceEvidenceAdmitted,
+      baseline.hardwarePerformanceEvidenceAdmitted && candidate.hardwarePerformanceEvidenceAdmitted && compareControls(baseline.controls, candidate.controls).status === 'compatible',
     evidenceCeiling:
       'The comparison reports arithmetic deltas only. Direction, target, regression status, causal explanation, and optimization success require an explicit bounded goal; hardware claims require both runs to admit hardware-performance evidence.',
   };
+}
+
+/** Controls are read only after the closed run roster has been verified. */
+export interface RunControls {
+  adapterHash: string;
+  parameters: Record<string, unknown>;
+  hardware: unknown;
+  build: unknown;
+}
+export interface ControlComparison {
+  status: 'compatible' | 'incompatible' | 'unknown';
+  differences: string[];
+  unknown: string[];
+}
+export async function readRunControls(runPath: string): Promise<RunControls> {
+  const verified = await verifyRunBundle(runPath);
+  let metadata: { hardware?: unknown; build?: unknown } = {};
+  if (verified.manifest.captureManifest) {
+    const capture = await validateCaptureManifest(verified.runPath, verified.manifest.captureManifest, { runId: verified.manifest.runId, adapterId: verified.manifest.adapterId, scenarioId: verified.manifest.scenarioId });
+    metadata = capture.manifest.adapterEvidence;
+  }
+  return {
+    adapterHash: verified.manifest.adapterManifestSha256,
+    parameters: JSON.parse(await fs.readFile(path.join(verified.runPath, 'request.json'), 'utf8')) as Record<string, unknown>,
+    hardware: metadata.hardware ?? null,
+    build: metadata.build ?? null,
+  };
+}
+export function compareControls(baseline: RunControls, candidate: RunControls): ControlComparison {
+  const differences: string[] = [];
+  const unknown: string[] = [];
+  for (const key of ['adapterHash', 'parameters', 'hardware', 'build'] as const) {
+    if (baseline[key] === null || candidate[key] === null) unknown.push(key);
+    else {
+      const comparable = (value: unknown) => key === 'build' && value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).filter(([name]) => name !== 'revision')) : value;
+      if (canonicalJson(comparable(baseline[key])) !== canonicalJson(comparable(candidate[key]))) differences.push(key);
+    }
+  }
+  return { status: differences.length ? 'incompatible' : unknown.length ? 'unknown' : 'compatible', differences, unknown };
 }

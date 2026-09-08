@@ -183,7 +183,7 @@ describe('game-dev adapter, capture, visual, and performance CLI', () => {
       operation: 'performance.summarize',
       ok: true,
       data: {
-        schema: 'game_dev.performance_summary.v1',
+        schema: 'game_dev.performance_summary.v2',
         hardwarePerformanceEvidenceAdmitted: false,
       },
     });

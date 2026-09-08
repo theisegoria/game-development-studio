@@ -29,3 +29,6 @@ export * from './skills/bundle.js';
 export * from './harness/visual.js';
 export * from './harness/performance.js';
 export * from './harness/goals.js';
+
+export * from './harness/discovery.js';
+export * from './optimization/session.js';

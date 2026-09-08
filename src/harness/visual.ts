@@ -1,3 +1,4 @@
+import { writeComparisonReport } from './report.js';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { decodeImage, encodePNG, type RasterImage } from '../inspection/image.js';
@@ -427,6 +428,7 @@ export async function compareRunVisuals(options: {
   };
   if (outputPath) {
     await fs.writeFile(path.join(outputPath, 'comparison.json'), canonicalJson(comparison), { flag: 'wx', mode: 0o600 });
+    await writeComparisonReport(comparison, outputPath);
   }
   if (pairs.length === 0) throw invalidState('runs have no matching PNG capture attachment identities');
   return comparison;

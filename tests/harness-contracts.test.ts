@@ -2,6 +2,7 @@ import { access, mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:f
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { listRuns } from '../src/harness/discovery.js';
 import { loadAdapter, planScenarioRun } from '../src/harness/adapter.js';
 import { normalizeGenomeHemeraCapture, validateCaptureManifest } from '../src/harness/capture.js';
 import { createOptimizationGoal, evaluateOptimizationGoal } from '../src/harness/goals.js';
@@ -101,6 +102,35 @@ describe('local game adapter and sealed run contract', () => {
     expect(performance.hardwarePerformanceEvidenceAdmitted).toBe(false);
   });
 
+  it('keeps supplied percentiles separate from samples and preserves telemetry coordinates', async () => {
+    const root = await temporaryRoot();
+    const project = await writeHarnessProject(root);
+    const runner = path.join(project.projectRoot, 'capture-runner.mjs');
+    const source = await readFile(runner, 'utf8');
+    await writeFile(runner, source.replace("aggregation: 'sample'", "aggregation: 'p95', frameIndex: 0"));
+    const run = await executeFixture(project, path.join(root, 'runs'), project.baselinePng, 12);
+    const summary = await summarizeRunPerformance(run.runPath);
+    expect(summary.schema).toBe('game_dev.performance_summary.v2');
+    expect(summary.metrics.some((m) => m.metric === 'render.frame_time')).toBe(false);
+    expect(summary.aggregates).toContainEqual(expect.objectContaining({ metric: 'render.frame_time', aggregation: 'p95', frameIndex: 0, value: 12 }));
+    expect(summary.measurements).toContainEqual(expect.objectContaining({ source: 'telemetry', timestampNs: '1', aggregation: 'sample' }));
+  });
+
+  it('discovers corrupt runs without hiding them and reports changed comparison controls', async () => {
+    const root = await temporaryRoot();
+    const project = await writeHarnessProject(root);
+    const runs = path.join(root, 'runs');
+    const baseline = await executeFixture(project, runs, project.baselinePng, 12);
+    const candidate = await executeFixture(project, runs, project.baselinePng, 8);
+    const comparison = await compareRunPerformance(baseline.runPath, candidate.runPath);
+    expect(comparison.comparability).toMatchObject({ status: 'incompatible', differences: ['parameters'], unknown: ['hardware', 'build'] });
+    await writeFile(path.join(candidate.runPath, 'stdout.log'), 'tampered');
+    const library = await listRuns(runs);
+    expect(library.runs).toHaveLength(2);
+    expect(library.runs.filter((r) => r.verified)).toHaveLength(1);
+    expect(library.runs.find((r) => !r.verified)?.error).toBeTruthy();
+  });
+
   it('compares pixels by semantic object region and evaluates one bounded optimization goal', async () => {
     const root = await temporaryRoot();
     const project = await writeHarnessProject(root);
@@ -118,6 +148,8 @@ describe('local game adapter and sealed run contract', () => {
     expect(color).toMatchObject({ comparable: true, changedPixelRatio: 1 });
     expect(color?.semanticRegions?.map((region) => region.objectId)).toEqual(['0x000001', '0x000002']);
     await expect(access(String(color?.heatmapPath))).resolves.toBeUndefined();
+    expect(await readFile(path.join(root, 'comparisons', 'candidate', 'report.html'), 'utf8')).toContain('data:image/png;base64,');
+    await expect(access(path.join(root, 'comparisons', 'candidate', '0-baseline.png'))).resolves.toBeUndefined();
 
     const performance = await compareRunPerformance(baseline.runPath, candidate.runPath, 'median');
     expect(performance.metrics.find((metric) => metric.metric === 'render.frame_time')).toMatchObject({

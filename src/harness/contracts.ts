@@ -5,8 +5,8 @@ export const GAME_DEV_ADAPTER_SCHEMA = 'game_dev.adapter.v1' as const;
 export const GAME_DEV_CAPTURE_SCHEMA = 'game_dev.capture.v1' as const;
 export const GAME_DEV_RUN_SCHEMA = 'game_dev.run.v1' as const;
 export const GAME_DEV_TELEMETRY_SCHEMA = 'game_dev.telemetry_event.v1' as const;
-export const GAME_DEV_PERFORMANCE_SUMMARY_SCHEMA = 'game_dev.performance_summary.v1' as const;
-export const GAME_DEV_PERFORMANCE_COMPARISON_SCHEMA = 'game_dev.performance_comparison.v1' as const;
+export const GAME_DEV_PERFORMANCE_SUMMARY_SCHEMA = 'game_dev.performance_summary.v2' as const;
+export const GAME_DEV_PERFORMANCE_COMPARISON_SCHEMA = 'game_dev.performance_comparison.v2' as const;
 export const GAME_DEV_VISUAL_COMPARISON_SCHEMA = 'game_dev.visual_comparison.v1' as const;
 export const GAME_DEV_OPTIMIZATION_GOAL_SCHEMA = 'game_dev.optimization_goal.v1' as const;
 
@@ -197,6 +197,8 @@ export const captureManifestSchema = z.object({
     aggregation: z.enum(['sample', 'mean', 'median', 'p95', 'p99', 'min', 'max']).default('sample'),
   }).strict()).max(100_000).default([]),
   adapterEvidence: z.object({
+    hardware: z.record(z.union([z.string(), z.number().finite(), z.boolean()])).optional(),
+    build: z.record(z.union([z.string(), z.number().finite(), z.boolean()])).optional(),
     windowless: z.boolean().optional(),
     graphicsApi: z.string().min(1).max(64).optional(),
     gpuExecutionReported: z.boolean().default(false),

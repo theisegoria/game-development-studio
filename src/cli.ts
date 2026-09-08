@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import path from 'node:path';
+import { planOptimization, startOptimization, readOptimization, evaluateOptimization, recoverOptimization, stopOptimization, exportOptimization } from './optimization/session.js';
 import { fileURLToPath } from 'node:url';
 import { realpathSync } from 'node:fs';
 import { parseArguments, booleanFlag, readRequest, stringFlag, type ParsedArguments } from './cli/arguments.js';
@@ -27,9 +28,10 @@ import { migrateLegacyWorkspace } from './packages/migration.js';
 import { generateUsdzPreview } from './packages/usdz.js';
 import type { AssetCategory } from './domain/asset-spec.js';
 import type { GameAssetPolicy } from './domain/asset-policy.js';
+import { listRuns } from './harness/discovery.js';
 import { loadAdapter, planScenarioRun } from './harness/adapter.js';
 import { executeScenarioRun, resolveRunPath, verifyRunBundle } from './harness/run-bundle.js';
-import { installAdapterTemplate, listAdapterTemplates } from './harness/templates.js';
+import { createSampleProject, installAdapterTemplate, listAdapterTemplates } from './harness/templates.js';
 import { analyzeRunCapture, compareRunVisuals } from './harness/visual.js';
 import { compareRunPerformance, summarizeRunPerformance } from './harness/performance.js';
 import { createOptimizationGoal, evaluateOptimizationGoal } from './harness/goals.js';
@@ -66,6 +68,7 @@ Usage:
   game-dev vendor admit <package-id|path> --project PATH [--destination RELATIVE] [--confirm]
   game-dev launch <package-id|path> --with finder|quicklook|blender [--confirm]
   game-dev migrate legacy --from OUTPUT_ROOT [--license SPDX] [--confirm]
+  game-dev adapter sample --project NEW_DIRECTORY [--confirm]
   game-dev adapter templates [--json]
   game-dev adapter install <template-id> --project PATH [--confirm]
   game-dev adapter inspect --project PATH [--manifest RELATIVE] [--json]
@@ -73,6 +76,7 @@ Usage:
   game-dev scenario plan <scenario-id> --project PATH [--request PARAMS.json] [--json]
   game-dev scenario run <scenario-id> --project PATH [--request PARAMS.json] [--confirm]
                     [--allow-gpu] [--allow-performance] [--jsonl]
+  game-dev capture list [--limit N] [--json]
   game-dev capture verify <run-id|path> [--json]
   game-dev visual analyze <run-id|path> [--json]
   game-dev visual compare <baseline-run> <candidate-run> [--threshold 0..255]
@@ -81,6 +85,13 @@ Usage:
   game-dev performance compare <baseline-run> <candidate-run> [--stat median] [--json]
   game-dev performance goal-create <baseline-run> --project PATH --request GOAL.json [--confirm]
   game-dev performance goal-evaluate <goal.json> <candidate-run> [--confirm]
+  game-dev optimization plan <baseline> --project PATH --request SPEC.json [--json]
+  game-dev optimization start <baseline> --project PATH --request SPEC.json --session-root PATH --plan-hash HASH --confirm
+  game-dev optimization status <session-directory> [--json]
+  game-dev optimization evaluate <session-directory> --confirm [--allow-gpu] [--allow-performance] [--jsonl]
+  game-dev optimization recover <session-directory> --confirm
+  game-dev optimization stop <session-directory> --confirm
+  game-dev optimization export <session-directory> --output NEW_DIRECTORY --confirm
   game-dev skill list [--json]
   game-dev skill install <skill-id|all> [--target CODEX_SKILLS_DIR] [--confirm]
 
@@ -444,6 +455,10 @@ async function dispatch(
     };
   }
 
+  if (family === 'adapter' && action === 'sample') {
+    return { operation: 'adapter.sample', data: await createSampleProject(requireFlag(parsed, 'project'), booleanFlag(parsed, 'confirm')) };
+  }
+
   if (family === 'scenario' && ['list', 'plan', 'run'].includes(action ?? '')) {
     const adapter = await loadAdapter(
       path.resolve(requireFlag(parsed, 'project')),
@@ -475,6 +490,8 @@ async function dispatch(
       runsRoot: runtime.config.runsDir,
       parameters: request,
     });
+    const expectedAdapter = stringFlag(parsed, 'expected-adapter-sha256');
+    if (expectedAdapter && expectedAdapter !== adapter.manifestSha256) throw invalidInput('adapter changed since scenario approval');
     if (action === 'plan') return { operation: 'scenario.plan', data: plan as unknown as Record<string, unknown> };
 
     const missing: string[] = [];
@@ -854,6 +871,33 @@ async function dispatch(
       operation: 'launch.execute',
       data: { ...launchPlan, ...launched, dryRun: false },
     };
+  }
+
+  if (family === 'optimization') {
+    const operation = `optimization.${action}`;
+    if (action === 'plan' || action === 'start') {
+      const baseline = await resolveRunPath(runtime.config.runsDir, requirePositional(parsed, 2, 'baseline run'));
+      const plan = await planOptimization(path.resolve(requireFlag(parsed, 'project')), baseline, await readRequest(parsed));
+      if (action === 'plan') return { operation, data: plan as unknown as Record<string, unknown> };
+      if (!booleanFlag(parsed, 'confirm')) throw invalidInput('optimization start requires --confirm and --plan-hash from the reviewed plan');
+      const session = await startOptimization(plan, path.resolve(requireFlag(parsed, 'session-root')), requireFlag(parsed, 'plan-hash'));
+      return { operation, data: session as unknown as Record<string, unknown> };
+    }
+    const directory = path.resolve(requirePositional(parsed, 2, 'session directory'));
+    if (action === 'status') return { operation, data: await readOptimization(directory) as unknown as Record<string, unknown> };
+    if (!booleanFlag(parsed, 'confirm')) throw invalidInput('optimization mutation requires --confirm');
+    if (action === 'evaluate') {
+      const session = await evaluateOptimization(directory, { allowGpu: booleanFlag(parsed, 'allow-gpu'), allowPerformance: booleanFlag(parsed, 'allow-performance'), signal }, (phase) => events.emit('progress', { phase }));
+      return { operation, data: session as unknown as Record<string, unknown>, isError: session.attempts.at(-1)?.status !== 'passed' };
+    }
+    if (action === 'recover') return { operation, data: await recoverOptimization(directory) as unknown as Record<string, unknown> };
+    if (action === 'stop') return { operation, data: await stopOptimization(directory) as unknown as Record<string, unknown> };
+    if (action === 'export') return { operation, data: await exportOptimization(directory, path.resolve(requireFlag(parsed, 'output'))) };
+    throw invalidInput('unknown optimization command');
+  }
+
+  if (family === 'capture' && action === 'list') {
+    return { operation: 'capture.list', data: await listRuns(runtime.config.runsDir, positiveIntegerFlag(parsed, 'limit', 100)) };
   }
 
   if (family === 'capture' && action === 'verify') {

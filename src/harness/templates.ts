@@ -86,3 +86,21 @@ export async function installAdapterTemplate(options: {
       'Installing an adapter writes only a declarative manifest. It executes no project command and proves no build, capture, GPU, pixel, or performance result.',
   };
 }
+
+/** Creates a new self-contained sample project; never overlays an existing project. */
+export async function createSampleProject(destinationInput: string, confirm: boolean): Promise<Record<string, unknown>> {
+  const destination = path.resolve(destinationInput);
+  const source = path.join(templatesRoot(), 'generic-sample');
+  const files = ['capture.mjs', 'test.mjs', 'src/renderer.json', 'baseline.png', 'regression.png'];
+  if (await fs.lstat(destination).catch(() => undefined)) throw invalidInput('sample destination must be a new directory');
+  if (confirm) {
+    await fs.mkdir(destination, { mode: 0o700 });
+    await fs.mkdir(path.join(destination, '.game-dev'));
+    await fs.mkdir(path.join(destination, 'src'));
+    for (const relative of files) await fs.copyFile(path.join(source, relative), path.join(destination, relative), fs.constants.COPYFILE_EXCL);
+    await fs.chmod(path.join(destination, 'capture.mjs'), 0o700);
+    await fs.copyFile(path.join(source, 'adapter.json'), path.join(destination, '.game-dev', 'adapter.json'), fs.constants.COPYFILE_EXCL);
+    await fs.writeFile(path.join(destination, '.gitignore'), '.game-dev/runs/\n.game-dev/goals/\n', { flag: 'wx' });
+  }
+  return { schema: 'game_dev.sample_project.v1', destination, files: [...files, '.game-dev/adapter.json', '.gitignore'], dryRun: !confirm, evidence: 'synthetic-only' };
+}

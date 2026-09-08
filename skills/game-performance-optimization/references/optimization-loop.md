@@ -48,3 +48,16 @@ The first form of each command is a dry run. Confirmed evaluation appends exactl
 - Correctness and visual evidence have not regressed within the task's acceptance contract.
 - The code change stays inside the goal allowlist.
 - Claims distinguish arithmetic improvement from admitted hardware evidence and causal proof.
+
+## Enforced external-agent sessions
+
+For source-edit optimization use `game-dev optimization plan/start/status/evaluate/recover/stop/export`.
+Read the installed CLI's `docs/optimization-sessions.md` contract before starting.
+The plan must bind a baseline, source snapshot, scenario parameters, explicit
+build/test commands, allowed source paths, visual limits, metric target, and
+iteration budget. Start requires the reviewed plan hash and separate session
+storage outside the original project. Edit only the returned disposable checkout.
+Every evaluation requires fresh execution authority and independent GPU/performance
+flags when applicable. Inspect failed or interrupted attempts; never silently
+retry a capture. Export the best passing patch for user review; do not apply it
+to the original checkout without explicit authorization and a fresh drift check.
