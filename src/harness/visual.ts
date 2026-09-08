@@ -33,6 +33,7 @@ export interface CaptureAnalysis {
   adapterId: string;
   scenarioId: string;
   rasters: RasterAnalysis[];
+  unsupportedAttachments: string[];
   evidence: {
     sealedRunVerified: true;
     rasterBytesDecoded: true;
@@ -71,6 +72,7 @@ export interface VisualComparison {
     heatmapPath?: string;
     reason?: string;
   }>;
+  unsupportedAttachments: string[];
   unmatchedBaseline: string[];
   unmatchedCandidate: string[];
   outputPath?: string;
@@ -181,6 +183,7 @@ export async function analyzeRunCapture(runPath: string): Promise<CaptureAnalysi
     adapterId: loaded.adapterId,
     scenarioId: loaded.scenarioId,
     rasters,
+    unsupportedAttachments: loaded.manifest.frames.flatMap((frame) => frame.attachments.filter((a) => a.encoding !== 'png').map((a) => `${frame.index}:${a.kind}:${a.encoding}`)),
     evidence: {
       sealedRunVerified: true,
       rasterBytesDecoded: true,
@@ -410,6 +413,7 @@ export async function compareRunVisuals(options: {
     candidateRunId: candidate.runId,
     threshold,
     pairs,
+    unsupportedAttachments: [baseline, candidate].flatMap((run) => run.manifest.frames.flatMap((frame) => frame.attachments.filter((a) => a.encoding !== 'png').map((a) => `${run.runId}:${frame.index}:${a.kind}:${a.encoding}`))),
     unmatchedBaseline: [...baselineAttachments.keys()].filter((key) => !candidateAttachments.has(key)).sort(),
     unmatchedCandidate: [...candidateAttachments.keys()].filter((key) => !baselineAttachments.has(key)).sort(),
     ...(outputPath ? { outputPath } : {}),

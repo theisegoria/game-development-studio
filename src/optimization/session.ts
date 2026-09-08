@@ -160,7 +160,7 @@ export async function evaluateOptimization(directory: string, authority: { allow
       attempt.value = metric.candidate;
       attempt.comparisonPath = path.join(session.directory, `comparison-${attempt.number}`);
       const visual = await compareRunVisuals({ baselineRunPath: session.plan.baseline, candidateRunPath: run.runPath, threshold: spec.visualThreshold, outputPath: attempt.comparisonPath });
-      if (visual.unmatchedBaseline.length || visual.unmatchedCandidate.length || visual.pairs.some((p) => !p.comparable || p.changedPixelRatio === undefined || p.changedPixelRatio > spec.maximumChangedPixelRatio)) throw invalidState('candidate failed the visual acceptance limit');
+      if (visual.unsupportedAttachments.length || visual.unmatchedBaseline.length || visual.unmatchedCandidate.length || visual.pairs.some((p) => !p.comparable || p.changedPixelRatio === undefined || p.changedPixelRatio > spec.maximumChangedPixelRatio)) throw invalidState('candidate failed the visual acceptance limit');
       attempt.targetMet = spec.direction === 'lower' ? metric.candidate <= spec.target : metric.candidate >= spec.target;
       attempt.status = 'passed';
       if (attempt.targetMet) {

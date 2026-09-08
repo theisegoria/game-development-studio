@@ -375,3 +375,16 @@ See [Contributing](CONTRIBUTING.md), [Security](SECURITY.md),
 MIT © 2026 Benjamin Michael Haire. Third-party providers, generated content,
 source assets, and vendored assets remain subject to their own terms and
 licenses.
+
+## Visual and performance completion upgrade
+
+The native companion provides run discovery, typed scenario parameters,
+attachment viewing, synchronized visual comparison, sample/distribution charts,
+and reviewable external-agent optimization sessions. Analysis v2 distinguishes
+raw samples from supplied aggregates and reports missing or incompatible data.
+
+Create a disposable generic project with
+`game-dev adapter sample --project NEW_DIRECTORY --confirm --json`.
+Read [the optimization session guide](docs/optimization-sessions.md) for the
+complete snapshot, build/test, capture, evaluation, and patch-review workflow.
+Synthetic samples demonstrate the workflow; they are not game-hardware results.

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Adds versioned sample-aware performance analysis, control-comparison diagnostics, verified run discovery, and self-contained visual exports.
+- Adds isolated external-agent optimization sessions with bounded attempts, source allowlists, build/test/capture gates, recovery, and drift-checked patch review.
+- Adds a deterministic generic sample adapter and native capture, metrics, session, job, and package workflows.
+- Centralizes local release identities and aligns the bundled CLI legal provenance with 1.0.2.
+
 ## 1.0.2
 
 Public plugin and CLI corrective release:

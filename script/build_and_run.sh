@@ -8,6 +8,10 @@ BUNDLE_ID="com.theisegoria.GameDevelopmentStudio"
 MIN_SYSTEM_VERSION="26.0"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+RELEASE_CONFIG="$ROOT_DIR/scripts/release-config.mjs"
+APP_VERSION="$(node "$RELEASE_CONFIG" appVersion)"
+APP_BUILD="$(node "$RELEASE_CONFIG" appBuild)"
+MIN_SYSTEM_VERSION="$(node "$RELEASE_CONFIG" minimumMacOSVersion)"
 PACKAGE_DIR="$ROOT_DIR/apps/macos/GameDevelopmentStudio"
 DIST_DIR="$PACKAGE_DIR/dist"
 FINAL_APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
@@ -154,9 +158,9 @@ cat >"$INFO_PLIST" <<PLIST
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.0.0</string>
+  <string>$APP_VERSION</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>$APP_BUILD</string>
   <key>LSApplicationCategoryType</key>
   <string>public.app-category.developer-tools</string>
   <key>LSMinimumSystemVersion</key>

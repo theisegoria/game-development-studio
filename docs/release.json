@@ -1,0 +1,10 @@
+{
+  "schema": "game_dev.release.v1",
+  "appVersion": "1.0.0",
+  "appBuild": "1",
+  "cliVersion": "1.0.2",
+  "skillsVersion": "1.0.2",
+  "nodeVersion": "25.2.1",
+  "minimumMacOSVersion": "26.0",
+  "architecture": "arm64"
+}

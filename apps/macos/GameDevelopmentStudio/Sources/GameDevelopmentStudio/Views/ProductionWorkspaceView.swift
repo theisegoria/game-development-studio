@@ -9,10 +9,10 @@ struct ProductionWorkspaceView: View {
     @State private var generatedName = ""
     @State private var spendLimitCents = 100
 
-    @State private var assetPath = ""
-    @State private var packageName = ""
+    @AppStorage("studio.production.assetPath") private var assetPath = ""
+    @AppStorage("studio.production.packageName") private var packageName = ""
     @State private var packageVersion = "1.0.0"
-    @State private var packageLicense = ""
+    @AppStorage("studio.production.packageLicense") private var packageLicense = ""
     @State private var approvalRequest: ApprovalRequest?
 
     var body: some View {
@@ -32,6 +32,8 @@ struct ProductionWorkspaceView: View {
                 }
                 .disabled(model.executionState.isRunning)
             }
+
+            JobLibraryView()
 
             MaterialCard(title: "Generate with a provider", systemImage: "sparkles") {
                 Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {

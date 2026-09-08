@@ -27,7 +27,7 @@ The first native Game Development Studio companion brings the local
 - Apple silicon (`arm64`) only
 - native app version 1.0.0, bundle identifier
   `com.theisegoria.GameDevelopmentStudio`
-- bundled `game-dev` CLI 1.0.1, production dependency closure, helper resources,
+- bundled `game-dev` CLI 1.0.2, production dependency closure, helper resources,
   and direct pinned Node runtime, all bound by an exact runtime roster
 - compiled `.app` ZIP attached to the GitHub release; no Swift or TypeScript
   project source is committed to this distribution repository

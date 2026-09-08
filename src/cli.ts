@@ -277,6 +277,7 @@ function capabilities(runtime: GameDevRuntime): Record<string, unknown> {
       'scenario',
       'capture',
       'visual',
+      'optimization',
       'performance',
       'skill',
       'migrate',

@@ -258,14 +258,22 @@ export async function summarizeRunPerformance(runPathInput: string): Promise<Per
       });
     }
     for (const relative of capture.manifest.telemetry) {
-      measurements.push(...await telemetryMeasurements(path.resolve(verified.runPath, relative), verified.manifest.runId));
+      for (const measurement of await telemetryMeasurements(path.resolve(verified.runPath, relative), verified.manifest.runId)) {
+        if (measurements.length >= MAX_TELEMETRY_LINES) throw invalidInput('run exceeds the combined measurement ceiling');
+        measurements.push(measurement);
+      }
     }
     for (const relative of capture.manifest.profiles) {
-      measurements.push(...await profileMeasurements(path.resolve(verified.runPath, relative)));
+      for (const measurement of await profileMeasurements(path.resolve(verified.runPath, relative))) {
+        if (measurements.length >= MAX_TELEMETRY_LINES) throw invalidInput('run exceeds the combined measurement ceiling');
+        measurements.push(measurement);
+      }
     }
   }
 
-  const grouped = new Map<string, { metric: string; unit: string; values: number[] }>();
+  if (measurements.length > MAX_TELEMETRY_LINES) throw invalidInput('run exceeds the combined measurement ceiling');
+  const grouped = new Map<string, { metric: string; unit: string; values: number[]; sources: Set<Measurement['source']> }>();
+  const sourceGroups = new Map<string, { metric: string; unit: string; source: Measurement['source']; values: number[] }>();
   const sources: PerformanceSummary['sources'] = {
     capture: 0,
     telemetry: 0,
@@ -277,11 +285,16 @@ export async function summarizeRunPerformance(runPathInput: string): Promise<Per
     sources[measurement.source] += 1;
     if (measurement.aggregation !== 'sample') continue;
     const key = `${measurement.metric}\u0000${measurement.unit}`;
-    const group = grouped.get(key) ?? { metric: measurement.metric, unit: measurement.unit, values: [] };
+    const group = grouped.get(key) ?? { metric: measurement.metric, unit: measurement.unit, values: [], sources: new Set<Measurement['source']>() };
     group.values.push(measurement.value);
+    group.sources.add(measurement.source);
     grouped.set(key, group);
+    const sourceKey = `${key}\0${measurement.source}`;
+    const sourceGroup = sourceGroups.get(sourceKey) ?? { metric: measurement.metric, unit: measurement.unit, source: measurement.source, values: [] };
+    sourceGroup.values.push(measurement.value);
+    sourceGroups.set(sourceKey, sourceGroup);
   }
-  const ambiguousMetrics = [...grouped.values()].filter((g) => new Set(measurements.filter((m) => m.metric === g.metric && m.unit === g.unit && m.aggregation === 'sample').map((m) => m.source)).size > 1).map((g) => `${g.metric} [${g.unit}]`);
+  const ambiguousMetrics = [...grouped.values()].filter((g) => g.sources.size > 1).map((g) => `${g.metric} [${g.unit}]`);
   const metrics = [...grouped.values()].filter((g) => !ambiguousMetrics.includes(`${g.metric} [${g.unit}]`))
     .map((group) => statistics(group.metric, group.unit, group.values))
     .sort((left, right) => left.metric.localeCompare(right.metric) || left.unit.localeCompare(right.unit));
@@ -296,11 +309,7 @@ export async function summarizeRunPerformance(runPathInput: string): Promise<Per
     measurements,
     ambiguousMetrics,
     aggregates: measurements.filter((m) => m.aggregation !== 'sample'),
-    groups: [...new Set(measurements.map((m) => `${m.metric}\0${m.unit}\0${m.source}`))].flatMap((key) => {
-      const samples = measurements.filter((m) => `${m.metric}\0${m.unit}\0${m.source}` === key && m.aggregation === 'sample');
-      const first = samples[0];
-      return first ? [{ ...statistics(first.metric, first.unit, samples.map((m) => m.value)), source: first.source }] : [];
-    }),
+    groups: [...sourceGroups.values()].map((group) => ({ ...statistics(group.metric, group.unit, group.values), source: group.source })),
     controls: await readRunControls(verified.runPath),
     sources,
     hardwarePerformanceEvidenceAdmitted: verified.manifest.evidence.hardwarePerformanceEvidenceAdmitted,

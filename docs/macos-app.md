@@ -253,3 +253,31 @@ scenario execution, GPU capture, hardware-performance measurement, long-running
 stability, pixel comparison of the app itself, assistive-technology review,
 Developer ID signing, notarization, and external human review are separate
 gates unless their own receipts or review records are produced.
+
+## Completion upgrade
+
+The native workspaces now include typed adapter parameters, a verified run
+library, attachment viewing and comparison controls, raw-sample charts and
+histograms, comparison diagnostics, and bounded external-agent sessions. Empty
+attachment and metric selections choose the first available item. Unsupported
+encodings, unmatched attachments, failed verification, unknown comparison
+controls, and separate aggregate measurements remain explicit.
+
+Paths and the selected workspace are saved as local preferences for relaunch.
+Approvals, credentials, and active execution permissions are not saved with
+navigation state. Results are retained independently per workspace during a
+session; changing output workspace clears derived library listings.
+
+Production includes durable job inspection and fresh-authorized resume. Library
+includes package selection, verification, local preview launch, and admission
+receipts. Paid operations remain optional and require fresh spend approval.
+
+See [optimization sessions](optimization-sessions.md) for the external-agent
+protocol and deterministic sample. The session chart uses the bound target;
+candidate patch application remains a separate user-reviewed operation.
+
+Native release identities are defined in [release.json](release.json), checked
+against the CLI package and skills plugin, and consumed by the bundle helper
+and release packager. Legal provenance still validates the actual rostered
+runtime, including Node and its native libraries. Historical screenshots retain
+their original provenance and are not evidence for these new workspaces.

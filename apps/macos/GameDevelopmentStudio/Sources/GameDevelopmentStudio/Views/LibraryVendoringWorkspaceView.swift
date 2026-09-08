@@ -3,8 +3,8 @@ import SwiftUI
 struct LibraryVendoringWorkspaceView: View {
     @Environment(AppModel.self) private var model
 
-    @State private var packageReference = ""
-    @State private var projectPath = ""
+    @AppStorage("studio.library.packageReference") private var packageReference = ""
+    @AppStorage("studio.library.projectPath") private var projectPath = ""
     @State private var destination = "Assets/Vendor"
     @State private var plannedSignature: String?
     @State private var approvalRequest: ApprovalRequest?
@@ -32,6 +32,8 @@ struct LibraryVendoringWorkspaceView: View {
                     .disabled(model.executionState.isRunning)
                 }
             }
+
+            PackageLibraryView(selected: $packageReference)
 
             MaterialCard(title: "Vendor into a project", systemImage: "arrow.down.doc") {
                 Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {

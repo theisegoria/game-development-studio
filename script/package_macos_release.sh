@@ -5,12 +5,18 @@ APP_PRODUCT="GameDevelopmentStudio"
 APP_DISPLAY_NAME="Game Development Studio"
 BUNDLE_IDENTIFIER="com.theisegoria.GameDevelopmentStudio"
 MINIMUM_SYSTEM_VERSION="26.0"
-BUNDLED_GAME_DEV_CLI="1.0.1"
+BUNDLED_GAME_DEV_CLI=""
 CLI_RUNTIME_ROSTER_SCHEMA="game_dev.cli_runtime_roster.v1"
 EXPECTED_ARCHITECTURES="arm64"
 RELEASE_REPOSITORY="theisegoria/game-development-studio-macos"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+RELEASE_CONFIG="$ROOT_DIR/scripts/release-config.mjs"
+BUNDLED_GAME_DEV_CLI="$(node "$RELEASE_CONFIG" cliVersion)"
+APP_VERSION="$(node "$RELEASE_CONFIG" appVersion)"
+APP_BUILD="$(node "$RELEASE_CONFIG" appBuild)"
+MINIMUM_SYSTEM_VERSION="$(node "$RELEASE_CONFIG" minimumMacOSVersion)"
+EXPECTED_ARCHITECTURES="$(node "$RELEASE_CONFIG" architecture)"
 PACKAGE_DIR="$ROOT_DIR/apps/macos/GameDevelopmentStudio"
 DEFAULT_APP="$PACKAGE_DIR/dist/$APP_PRODUCT.app"
 TEMPLATE_DIR="$ROOT_DIR/distribution/macos-app-repo"
@@ -27,7 +33,7 @@ THIRD_PARTY_LICENSE_SOURCE_DIR="$TEMPLATE_DIR/legal/third-party-licenses"
 THIRD_PARTY_LICENSE_PATHS=(
   "brotli-1.2.0-MIT.txt"
   "c-ares-1.34.6-MIT.txt"
-  "game-development-studio-1.0.1-MIT.txt"
+  "game-development-studio-${BUNDLED_GAME_DEV_CLI}-MIT.txt"
   "icu4c-78.3-ICU.txt"
   "libuv-1.51.0-BSD-2-Clause-tree.h.txt"
   "libuv-1.51.0-ISC-inet.c.txt"
@@ -195,8 +201,8 @@ assert_safe_version() {
   local version="$1"
   [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
     || die "version must be an exact numeric semantic version"
-  [[ "$version" == "1.0.0" ]] \
-    || die "this audited release lane is pinned to version 1.0.0"
+  [[ "$version" == "$APP_VERSION" ]] \
+    || die "version must match docs/release.json"
 }
 
 assert_no_symlinks() {
@@ -323,7 +329,7 @@ validate_third_party_provenance() {
   [[ -f "$provenance" ]] || die "third-party provenance is missing: $provenance"
   [[ "$(json_value "$provenance" "schema")" == "game_dev.macos_bundled_third_party_provenance.v1" ]] \
     || die "third-party provenance schema mismatch"
-  [[ "$(json_value "$provenance" "release.appVersion")" == "1.0.0" ]] \
+  [[ "$(json_value "$provenance" "release.appVersion")" == "$APP_VERSION" ]] \
     || die "third-party provenance app version mismatch"
   [[ "$(json_value "$provenance" "release.bundleIdentifier")" == "$BUNDLE_IDENTIFIER" ]] \
     || die "third-party provenance bundle identifier mismatch"
@@ -587,8 +593,8 @@ validate_app_bundle() {
     || die "unexpected application category"
 
   bundle_version="$(plist_value "$plist" CFBundleVersion)"
-  [[ "$bundle_version" == "1" ]] \
-    || die "bundle build version must be exactly 1 for release 1.0.0"
+  [[ "$bundle_version" == "$APP_BUILD" ]] \
+    || die "bundle build version must match docs/release.json"
 
   /usr/bin/file "$binary" | /usr/bin/grep -q 'Mach-O' \
     || die "app executable is not Mach-O"
@@ -976,7 +982,7 @@ validate_public_repository() {
     || die "README does not disclose the notarization state"
   /usr/bin/grep -Fq 'no Swift or TypeScript project source' "$repository/README.md" \
     || die "README does not disclose the binary-only repository boundary"
-  /usr/bin/grep -Fq 'bundled, roster-verified `game-dev` CLI 1.0.1' "$repository/README.md" \
+  /usr/bin/grep -Fq "bundled, roster-verified \`game-dev\` CLI $BUNDLED_GAME_DEV_CLI" "$repository/README.md" \
     || die "README does not disclose the bundled game-dev CLI version"
 
   for file in "$repository"/screenshots/*.png; do

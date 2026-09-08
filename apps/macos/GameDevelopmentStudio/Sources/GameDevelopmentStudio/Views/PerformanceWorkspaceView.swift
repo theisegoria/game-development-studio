@@ -3,15 +3,16 @@ import SwiftUI
 struct PerformanceWorkspaceView: View {
     @Environment(AppModel.self) private var model
 
-    @State private var runReference = ""
-    @State private var baselineReference = ""
-    @State private var candidateReference = ""
+    @AppStorage("studio.performance.runReference") private var runReference = ""
+    @AppStorage("studio.performance.baselineReference") private var baselineReference = ""
+    @AppStorage("studio.performance.candidateReference") private var candidateReference = ""
     @State private var statistic = "median"
 
-    private let statistics = ["mean", "median", "p95", "p99"]
+    private let statistics = ["min", "max", "mean", "median", "p95", "p99"]
 
     var body: some View {
         WorkspaceScaffold(section: .performance) {
+            RunLibraryView(selectRun: { runReference = $0 }, selectBaseline: { baselineReference = $0 }, selectCandidate: { candidateReference = $0 })
             MaterialCard(title: "Summarize a sealed run", systemImage: "chart.bar.doc.horizontal") {
                 TextField("Run ID or path", text: $runReference)
                     .textFieldStyle(.roundedBorder)
@@ -66,6 +67,14 @@ struct PerformanceWorkspaceView: View {
 
                 EvidenceNote(text: "This view proves deterministic arithmetic over admitted telemetry. Hardware comparability, timer quality, statistical significance, and causal attribution remain separate claims.")
             }
+
+            if let summary = model.operationResults["performance.summarize"]?.data.decoded(PerformanceModel.self) {
+                PerformanceChartsView(summary: summary)
+            }
+            if let comparison = model.operationResults["performance.compare"]?.data.decoded(PerformanceComparisonModel.self) {
+                PerformanceDeltaView(comparison: comparison)
+            }
+            OptimizationSessionView(baseline: baselineReference)
 
             MaterialCard(title: "Hardware capture authority", systemImage: "lock.shield") {
                 Text("Hardware timings are admitted only by a scenario that explicitly declares performance capture. Use Visual Debugging to plan that scenario; its approval sheet grants process, GPU, and performance authority independently for one run.")

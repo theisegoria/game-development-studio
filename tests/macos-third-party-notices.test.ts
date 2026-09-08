@@ -77,7 +77,7 @@ async function readJson<T>(file: string): Promise<T> {
 const expectedLicenseAssets = [
   'brotli-1.2.0-MIT.txt',
   'c-ares-1.34.6-MIT.txt',
-  'game-development-studio-1.0.1-MIT.txt',
+  'game-development-studio-1.0.2-MIT.txt',
   'icu4c-78.3-ICU.txt',
   'libuv-1.51.0-BSD-2-Clause-tree.h.txt',
   'libuv-1.51.0-ISC-inet.c.txt',
@@ -142,7 +142,7 @@ function runtimeRosterFor(dylibs: readonly string[]) {
 function provenanceFor(dylibs: readonly string[]) {
   return {
     bundledRuntime: {
-      gameDevCli: { version: '1.0.1' },
+      gameDevCli: { version: '1.0.2' },
       node: { version: '25.2.1' },
       nonSystemDylibCount: dylibs.length,
       nonSystemDylibs: [{ runtimeFiles: [...dylibs] }],
@@ -152,9 +152,20 @@ function provenanceFor(dylibs: readonly string[]) {
 }
 
 describe('macOS bundled-runtime third-party notices', () => {
+  it('binds the release descriptor to the package, plugin, and native legal identities', async () => {
+    const release = await readJson<Record<string, string>>(path.join(sourceRoot, 'docs/release.json'));
+    const pkg = await readJson<{ version: string }>(path.join(sourceRoot, 'package.json'));
+    const plugin = await readJson<{ version: string }>(path.join(sourceRoot, '.codex-plugin/plugin.json'));
+    const provenance = await readJson<Provenance>(path.join(sourceRoot, 'distribution/macos-app-repo/THIRD_PARTY_PROVENANCE.json'));
+    expect(release.cliVersion).toBe(pkg.version);
+    expect(release.skillsVersion).toBe(plugin.version);
+    expect(release.cliVersion).toBe(provenance.bundledRuntime.gameDevCli.version);
+    expect(release.nodeVersion).toBe(provenance.bundledRuntime.node.version.replace(/^v/, ''));
+    expect(release.appVersion).toBe(provenance.release.appVersion);
+  });
   it('rejects a staged runtime dylib filename that the legal provenance does not declare', () => {
     const provenance = provenanceFor(expectedDylibs);
-    const runtimePackage = { version: '1.0.1' };
+    const runtimePackage = { version: '1.0.2' };
 
     expect(() => validateMacOSRuntimeProvenanceBinding({
       provenance,
@@ -176,7 +187,7 @@ describe('macOS bundled-runtime third-party notices', () => {
   it('rejects a staged Node version that the legal provenance does not declare', () => {
     expect(() => validateMacOSRuntimeProvenanceBinding({
       provenance: provenanceFor(expectedDylibs),
-      runtimePackage: { version: '1.0.1' },
+      runtimePackage: { version: '1.0.2' },
       runtimeRoster: runtimeRosterFor(expectedDylibs),
       nodeVersion: 'v25.2.2',
     })).toThrow('staged Node version does not match third-party provenance');
@@ -188,7 +199,7 @@ describe('macOS bundled-runtime third-party notices', () => {
       path.join(distributionRoot, 'THIRD_PARTY_PROVENANCE.json'),
     );
 
-    expect(notice).toContain('`game-dev` CLI 1.0.1');
+    expect(notice).toContain('`game-dev` CLI 1.0.2');
     expect(notice).toContain('Node.js 25.2.1');
     expect(notice).toContain('18 non-system dynamic libraries');
     expect(notice).not.toContain('No provider SDK, game engine, Blender build, Node.js runtime, or `game-dev` CLI is bundled');
@@ -198,7 +209,7 @@ describe('macOS bundled-runtime third-party notices', () => {
       bundleIdentifier: 'com.theisegoria.GameDevelopmentStudio',
       licenseDirectory: 'ThirdPartyLicenses',
     });
-    expect(provenance.bundledRuntime.gameDevCli.version).toBe('1.0.1');
+    expect(provenance.bundledRuntime.gameDevCli.version).toBe('1.0.2');
     expect(provenance.bundledRuntime.node.version).toBe('25.2.1');
     expect(provenance.bundledRuntime.nonSystemDylibCount).toBe(18);
     expect(provenance.bundledRuntime.nonSystemDylibs.flatMap((item) => item.runtimeFiles).sort())

@@ -106,6 +106,9 @@ function safeChildEnvironment(plan: ScenarioRunPlan): NodeJS.ProcessEnv {
     const value = process.env[name];
     if (value !== undefined) environment[name] = value;
   }
+  // A bundled Studio runtime must not require a second global Node install for
+  // project-owned scripts using /usr/bin/env node. Keep other tools discoverable.
+  environment.PATH = [path.dirname(process.execPath), environment.PATH ?? ''].filter(Boolean).join(path.delimiter);
   environment.GAME_DEV_RUN_ID = plan.runId;
   environment.GAME_DEV_RUN_DIR = plan.runPath;
   environment.GAME_DEV_ADAPTER_ID = plan.adapterId;

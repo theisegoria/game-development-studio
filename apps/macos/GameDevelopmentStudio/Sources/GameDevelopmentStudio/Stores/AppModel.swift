@@ -5,12 +5,26 @@ import OSLog
 @MainActor
 @Observable
 public final class AppModel {
-    public var selectedWorkspace: WorkspaceSection = .production
+    public var selectedWorkspace: WorkspaceSection = .production {
+        didSet {
+            defaults.set(selectedWorkspace.rawValue, forKey: "studio.workspace")
+            latestResult = workspaceResults[selectedWorkspace]
+        }
+    }
+    public private(set) var workspaceResults: [WorkspaceSection: CLIResultEnvelope] = [:]
+    public private(set) var operationResults: [String: CLIResultEnvelope] = [:]
     public var searchText = ""
     public var inspectorPresented = true
 
     public var outputDirectory: String {
-        didSet { defaults.set(outputDirectory, forKey: PreferenceKey.outputDirectory) }
+        didSet {
+            defaults.set(outputDirectory, forKey: PreferenceKey.outputDirectory)
+            if oldValue != outputDirectory {
+                operationResults.removeValue(forKey: "capture.list")
+                operationResults.removeValue(forKey: "catalog.list")
+                operationResults.removeValue(forKey: "job.list")
+            }
+        }
     }
 
     public var cliExecutable: String {
@@ -50,6 +64,7 @@ public final class AppModel {
             self.cliExecutable = Self.bundledRuntimePath ?? ""
         }
 
+        self.selectedWorkspace = WorkspaceSection(rawValue: defaults.string(forKey: "studio.workspace") ?? "") ?? .production
         for provider in CredentialProvider.allCases {
             credentialStates[provider] = CredentialState(provider: provider, isConfigured: false)
         }
@@ -305,14 +320,15 @@ public final class AppModel {
         await execute(label: "Scenario discovery", arguments: ["scenario", "list", "--project", project])
     }
 
-    public func planScenario(id: String, project: String) async {
+    public func planScenario(id: String, project: String, parameters: [String: JSONValue] = [:]) async {
         guard
             let id = required(id, label: "Scenario ID"),
             let project = required(project, label: "Project path")
         else { return }
         await execute(
             label: "Scenario plan",
-            arguments: ["scenario", "plan", id, "--project", project]
+            arguments: ["scenario", "plan", id, "--project", project, "--request", "-"],
+            standardInput: try? JSONEncoder().encode(parameters)
         )
     }
 
@@ -322,6 +338,8 @@ public final class AppModel {
         allowGPU: Bool,
         allowPerformance: Bool,
         confirmed: Bool,
+        parameters: [String: JSONValue] = [:],
+        expectedAdapterHash: String? = nil,
         expectedExecutableIdentity: GameDevCLIExecutableIdentity? = nil,
         expectedOutputDirectory: String? = nil
     ) async {
@@ -337,12 +355,14 @@ public final class AppModel {
             let project = required(project, label: "Project path")
         else { return }
 
-        var arguments = ["scenario", "run", id, "--project", project, "--confirm"]
+        var arguments = ["scenario", "run", id, "--project", project, "--confirm", "--request", "-"]
+        if let expectedAdapterHash { arguments += ["--expected-adapter-sha256", expectedAdapterHash] }
         if allowGPU { arguments.append("--allow-gpu") }
         if allowPerformance { arguments.append("--allow-performance") }
         await execute(
             label: "Scenario run",
             arguments: arguments,
+            standardInput: try? JSONEncoder().encode(parameters),
             timeout: .seconds(900),
             requiresTrustedExecutable: true,
             expectedExecutableIdentity: expectedExecutableIdentity,
@@ -355,7 +375,7 @@ public final class AppModel {
         await execute(label: "Visual analysis", arguments: ["visual", "analyze", reference])
     }
 
-    public func compareVisuals(baseline: String, candidate: String, threshold: Int) async {
+    public func compareVisuals(baseline: String, candidate: String, threshold: Int, outputPath: String? = nil, expectedExecutableIdentity: GameDevCLIExecutableIdentity? = nil) async {
         guard
             let baseline = required(baseline, label: "Baseline run"),
             let candidate = required(candidate, label: "Candidate run")
@@ -369,8 +389,10 @@ public final class AppModel {
             arguments: [
                 "visual", "compare", baseline, candidate,
                 "--threshold", String(threshold),
-            ],
-            timeout: .seconds(600)
+            ] + (outputPath.map { ["--output", $0] } ?? []),
+            timeout: .seconds(600),
+            requiresTrustedExecutable: outputPath != nil,
+            expectedExecutableIdentity: expectedExecutableIdentity
         )
     }
 
@@ -402,6 +424,29 @@ public final class AppModel {
                 "--stat", stat,
             ]
         )
+    }
+
+    public func refreshRuns() async { await execute(label: "Run library", arguments: ["capture", "list"]) }
+
+    public func listJobs() async { await execute(label: "Durable jobs", arguments: ["job", "list"]) }
+    public func showJob(_ id: String) async { await execute(label: "Job details", arguments: ["job", "show", id, "--detail"]) }
+    public func verifyPackage(_ reference: String) async { await execute(label: "Package verification", arguments: ["package", "verify", reference]) }
+
+    public func runReviewedOperation(arguments: [String], request: JSONValue? = nil,
+                                     identity: GameDevCLIExecutableIdentity, output: String,
+                                     providers: Set<CredentialProvider> = []) async {
+        await execute(label: arguments.prefix(2).joined(separator: " "), arguments: arguments,
+                      standardInput: request.flatMap { try? JSONEncoder().encode($0) },
+                      credentialProviders: providers, timeout: .seconds(3600), requiresTrustedExecutable: true,
+                      expectedExecutableIdentity: identity, expectedOutputDirectory: output)
+    }
+
+    public func inspectOperation(arguments: [String], request: JSONValue? = nil) async {
+        let allowed = Set(["optimization.plan", "optimization.status", "performance.goal-create", "job.show", "launch"])
+        let operation = arguments.prefix(2).joined(separator: ".")
+        guard allowed.contains(operation) || arguments.first == "launch" else { return }
+        guard !arguments.contains("--confirm") else { return }
+        await execute(label: operation, arguments: arguments, standardInput: request.flatMap { try? JSONEncoder().encode($0) })
     }
 
     /// Performs the no-secret executable handshake used to bind an approval to
@@ -506,6 +551,7 @@ public final class AppModel {
         }
 
         let token = UUID()
+        let workspace = selectedWorkspace
         currentOperationToken = token
         executionState = .running(label)
 
@@ -575,7 +621,9 @@ public final class AppModel {
                 Self.logger.notice("Cancelled \(label, privacy: .public)")
                 return
             }
-            latestResult = result.envelope
+            workspaceResults[workspace] = result.envelope
+            operationResults[result.envelope.operation] = result.envelope
+            if selectedWorkspace == workspace { latestResult = result.envelope }
             history.insert(result.envelope, at: 0)
             if history.count > 50 { history.removeLast(history.count - 50) }
 
