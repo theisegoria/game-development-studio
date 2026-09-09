@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased (local patch)
+
+- `package build` no longer fails on Windows with `EPERM: operation not
+  permitted, fsync`. `fsyncDirectory` (`src/packages/format.ts`) issued an
+  `fsync` on a directory handle for write durability, which Windows rejects with
+  `EPERM` (and `EISDIR` on some open paths); the catch only tolerated `EINVAL`
+  and `ENOTSUP`, so it rethrew and aborted the build. It now also skips `EPERM`
+  and `EISDIR`, matching the best-effort directory-fsync handling already in
+  `src/storage/jobs.ts`. The per-file `handle.sync()` calls still run, so file
+  durability is unchanged; only the (unsupported on Windows) directory flush is
+  skipped.
+
 ## 1.0.2
 
 Public plugin and CLI corrective release:
