@@ -178,7 +178,9 @@ async function fsyncDirectory(directory: string): Promise<void> {
       await handle.close();
     }
   } catch (error) {
-    if (!['EINVAL', 'ENOTSUP'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
+    // Directory fsync is unsupported on some platforms/filesystems; Windows reports EPERM
+    // (or EISDIR on open). Per-file syncs already make the bytes durable; rename is atomic.
+    if (!['EINVAL', 'ENOTSUP', 'EPERM', 'EISDIR'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
   }
 }
 
