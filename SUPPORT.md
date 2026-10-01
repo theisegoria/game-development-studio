@@ -5,7 +5,13 @@ Use
 for installation questions, reproducible defects, feature requests, and
 documentation problems.
 
-Before filing:
+If `game-dev` is not recognized, see the
+[Windows source-build and PATH guide](https://github.com/theisegoria/game-development-studio/blob/2a4edcb0a834d682683fb0c28d71b7659b74bd89/docs/windows-install.md).
+The skills plugin does not contain the CLI. For installation failures, report
+which setup step failed and the Node/npm versions instead of requiring a doctor
+report from a command that is not installed.
+
+Before filing (when the CLI is installed):
 
 1. run `game-dev --version`
 2. run `game-dev doctor --json`

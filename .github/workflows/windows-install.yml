@@ -1,0 +1,52 @@
+name: Windows CLI installation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Build and exercise the installed Windows shim
+        shell: pwsh
+        run: |
+          npm.cmd ci
+          if ($LASTEXITCODE -ne 0) { throw 'npm ci failed' }
+          npm.cmd run build
+          if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
+          $expectedVersion = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $packJson = npm.cmd pack --ignore-scripts --json
+          if ($LASTEXITCODE -ne 0) { throw 'Pack failed' }
+          $pack = @($packJson | ConvertFrom-Json)[0]
+          $tarball = (Resolve-Path -LiteralPath $pack.filename).Path
+          $cliPrefix = Join-Path $env:RUNNER_TEMP 'CLI install with spaces'
+          npm.cmd install --global --prefix "$cliPrefix" --ignore-scripts "$tarball"
+          if ($LASTEXITCODE -ne 0) { throw 'Install failed' }
+          $env:Path = "$cliPrefix;$env:Path"
+          Set-Location $env:RUNNER_TEMP
+          $shim = (Get-Command game-dev.cmd).Source
+          if ($shim -ne (Join-Path $cliPrefix 'game-dev.cmd')) { throw "Wrong shim: $shim" }
+          $version = game-dev.cmd --version
+          if ($LASTEXITCODE -ne 0 -or $version.Trim() -ne $expectedVersion) { throw "Wrong version: $version" }
+          $workspace = Join-Path $env:RUNNER_TEMP 'CLI smoke workspace'
+          foreach ($command in @('capabilities', 'doctor')) {
+            $output = game-dev.cmd $command --output-dir "$workspace" --json
+            if ($LASTEXITCODE -ne 0) { throw "$command failed" }
+            $result = $output | ConvertFrom-Json
+            if ($result.schema -ne 'game_dev.result.v1' -or $result.operation -ne $command -or $result.ok -ne $true -or $result.data.version -ne $expectedVersion) { throw "Unexpected $command response" }
+          }
