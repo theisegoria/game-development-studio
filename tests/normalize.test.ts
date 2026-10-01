@@ -21,7 +21,7 @@ import os from 'node:os';
 import { findBlender, packagedScript, requireBlender, runBlenderScript } from '../src/util/blender.js';
 import { callCLICommand } from './helpers/cli-harness.js';
 
-const blender = findBlender();
+const blender = process.env.GAME_DEV_TEST_BLENDER === '1' ? findBlender() : undefined;
 const haveBlender = Boolean(blender);
 
 // A real mesh confirmed to carry NO UV coordinates — the case this tool exists
