@@ -109,6 +109,13 @@ export async function createOptimizationGoal(options: {
   maximumIterations: number;
   allowedPaths: string[];
   id?: string;
+  /**
+   * Refuse to bind the goal unless the baseline metric was measured by the GPU
+   * or driver AND the run admitted hardware-performance evidence. Off by
+   * default so a wall-clock goal is still expressible; on, it makes the loop
+   * unable to chase a number the engine merely reported.
+   */
+  requireHardwareMeasurement?: boolean;
   confirm: boolean;
 }): Promise<OptimizationGoalResult> {
   if (!Number.isFinite(options.target)) throw invalidInput('optimization target must be finite');
@@ -122,6 +129,13 @@ export async function createOptimizationGoal(options: {
   const allowedPaths = await validateAllowedPaths(projectRoot, options.allowedPaths);
   const baselineSummary = await summarizeRunPerformance(options.baselineRunPath);
   const metric = goalMetric(baselineSummary, options.metric, options.unit);
+  if (options.requireHardwareMeasurement && !metric.hardwareMeasurementAdmitted) {
+    throw invalidInput('goal requires a hardware-measured metric, and the baseline does not provide one', {
+      metric: metric.metric,
+      measuredBy: metric.measuredBy,
+      hardwarePerformanceEvidenceAdmitted: baselineSummary.hardwarePerformanceEvidenceAdmitted,
+    });
+  }
   const statistic = options.statistic ?? 'median';
   const id = goalId(options.id);
   const goal: OptimizationGoal = optimizationGoalSchema.parse({
@@ -137,6 +151,8 @@ export async function createOptimizationGoal(options: {
     target: options.target,
     maximumIterations: options.maximumIterations,
     allowedPaths,
+    measuredBy: metric.measuredBy,
+    requireHardwareMeasurement: options.requireHardwareMeasurement ?? false,
     baseline: {
       runId: baselineSummary.runId,
       runPath: baselineSummary.runPath,
@@ -208,6 +224,24 @@ export async function evaluateOptimizationGoal(options: {
     throw invalidInput('candidate run has already been used by this goal');
   }
   const metric = goalMetric(candidate, goal.metric, goal.unit);
+  // A candidate measured differently from the baseline is not a candidate for
+  // this goal: a wall-clock number cannot meet a GPU-timestamp target, however
+  // small it is. Goals written before provenance existed carry no claim and
+  // are evaluated as before.
+  if (goal.measuredBy !== undefined && metric.measuredBy !== goal.measuredBy) {
+    throw invalidState('candidate metric provenance does not match the goal baseline', {
+      metric: metric.metric,
+      baselineMeasuredBy: goal.measuredBy,
+      candidateMeasuredBy: metric.measuredBy,
+    });
+  }
+  if (goal.requireHardwareMeasurement && !metric.hardwareMeasurementAdmitted) {
+    throw invalidState('goal requires a hardware-measured metric, and the candidate does not provide one', {
+      metric: metric.metric,
+      measuredBy: metric.measuredBy,
+      hardwarePerformanceEvidenceAdmitted: candidate.hardwarePerformanceEvidenceAdmitted,
+    });
+  }
   const candidateValue = metric[goal.statistic];
   const targetMet = goal.direction === 'lower' ? candidateValue <= goal.target : candidateValue >= goal.target;
   const iteration = goal.state.iterations.length + 1;

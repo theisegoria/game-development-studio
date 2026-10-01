@@ -90,6 +90,50 @@ export const FREE_TOOLS: ReadonlySet<string> = new Set([
   'validate_game_asset',
   'get_spend_report',
   'batch_prepare_meshes',
+  // Harness analysis: local arithmetic over sealed evidence. Free in the sense
+  // this set means -- no provider is contacted -- even though
+  // compare_capture_visuals writes heatmaps.
+  'verify_capture_run',
+  'analyze_capture_run',
+  'compare_capture_visuals',
+  'summarize_run_performance',
+  'compare_run_performance',
+  // Scenario execution runs the project's own binary. It contacts no provider,
+  // so it is free in the only sense this set measures -- its risk is governed
+  // by the separate execution authority, not by the spend ceiling.
+  'plan_scenario_run',
+  'run_scenario',
+  // A diagram of local accessor and texture data. Writes thumbnails into the
+  // workspace, contacts no provider.
+  'render_asset_contact_sheet',
+  // Project writes: files copied into the user's project. Governed by the
+  // project-write authority, not by the spend ceiling; no provider contact.
+  'plan_probe_install',
+  'install_probe_sdk',
+  'list_adapter_templates',
+  'plan_adapter_install',
+  'install_adapter_template',
+  // The optimisation loop and self-diagnosis: local arithmetic and local
+  // checks. Goal writes are governed by the project-write authority.
+  'plan_optimization_goal',
+  'create_optimization_goal',
+  'plan_goal_evaluation',
+  'evaluate_optimization_goal',
+  'run_doctor',
+  // The asset library: packaging and cataloguing write inside the tool's own
+  // workspace, content-addressed and idempotent; vendoring writes into the
+  // project and is governed by the project-write authority. No provider
+  // contact in any of them.
+  'plan_asset_package',
+  'build_asset_package',
+  'verify_asset_package',
+  'list_catalog_assets',
+  'show_catalog_asset',
+  'plan_vendor_admission',
+  'vendor_package_into_project',
+  'credentials_status',
+  // Noise measurement: local arithmetic over sealed runs, workspace-local output.
+  'measure_run_stability',
 ]);
 
 export function isSpendingTool(tool: string): boolean {

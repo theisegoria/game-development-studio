@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Buffer } from 'node:buffer';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -149,6 +150,77 @@ function usage() {
   return 'Usage: node scripts/verify-macos-runtime-provenance.mjs --runtime <GameDevelopmentStudioRuntime> --provenance <THIRD_PARTY_PROVENANCE.json> --node-version <vX.Y.Z>';
 }
 
+/**
+ * Check that every legal asset the provenance names is actually on disk, with
+ * the bytes it claims.
+ *
+ * Nothing validated this before. The pure binding validator never touches the
+ * filesystem, so `legalAssets[].path` and `licenseAssets[]` were free text: the
+ * 1.0.2 release bumped the CLI version and left the record naming
+ * `game-development-studio-1.0.1-MIT.txt`, and the only symptom was an
+ * unrelated version assertion failing further down. A shipped legal record
+ * pointing at a file that does not exist should fail loudly and immediately.
+ */
+export async function verifyLegalAssets(provenancePath, provenance) {
+  const legalRoot = path.join(path.dirname(path.resolve(provenancePath)), 'legal', 'third-party-licenses');
+  const entries = provenance.legalAssets;
+  invariant(Array.isArray(entries) && entries.length > 0, 'provenance legalAssets must be a non-empty array');
+
+  const known = new Set();
+  for (const entry of entries) {
+    invariant(isPlainObject(entry), 'each legalAssets entry must be an object');
+    const { path: name, sha256, bytes } = entry;
+    invariant(typeof name === 'string' && name.length > 0, 'legalAssets entry path must be a non-empty string');
+    invariant(!name.includes('/') && !name.includes('\\') && name !== '.' && name !== '..',
+      `legalAssets entry path must be a bare filename: ${name}`);
+
+    let contents;
+    try {
+      contents = await readFile(path.join(legalRoot, name));
+    } catch {
+      throw new Error(`provenance names a legal asset that is not present: ${name}`);
+    }
+    invariant(contents.byteLength === bytes,
+      `legal asset ${name} is ${contents.byteLength} bytes but provenance records ${bytes}`);
+    const digest = createHash('sha256').update(contents).digest('hex');
+    invariant(digest === sha256,
+      `legal asset ${name} hashes to ${digest} but provenance records ${sha256}`);
+    known.add(name);
+  }
+
+  for (const [component, record] of Object.entries(provenance.bundledRuntime ?? {})) {
+    for (const asset of (isPlainObject(record) ? record.licenseAssets : undefined) ?? []) {
+      invariant(known.has(asset),
+        `bundledRuntime.${component} names license asset ${asset}, which is not in legalAssets`);
+    }
+  }
+
+  for (const pkg of provenance.npmProductionPackages ?? []) {
+    invariant(Array.isArray(pkg.licenseAssets) && pkg.licenseAssets.length > 0, `missing npm license assets: ${pkg.name}`);
+    for (const asset of pkg.licenseAssets) invariant(known.has(asset), `npm package ${pkg.name} names an unrostered license asset: ${asset}`);
+  }
+  return entries.length;
+}
+
+/** Require the legal roster to cover exactly the package roots actually staged. */
+export async function verifyNpmRuntimeBinding(runtimeRoot, runtimeRoster, provenance) {
+  const packagePattern = /^app\/(node_modules\/(?:@[^/]+\/)?[^/]+(?:\/node_modules\/(?:@[^/]+\/)?[^/]+)*)\/package\.json$/;
+  const actual = runtimeRoster.entries.filter((entry) => entry.type === 'file' && packagePattern.test(entry.path))
+    .map((entry) => packagePattern.exec(entry.path)[1]).sort(compareUtf8);
+  invariant(Array.isArray(provenance.npmProductionPackages), 'missing npm production package provenance');
+  const declared = provenance.npmProductionPackages.map((pkg) => pkg.installPath);
+  invariant(declared.every((name) => typeof name === 'string' && packagePattern.test(`app/${name}/package.json`)
+    && !name.split('/').some((part) => part === '.' || part === '..' || part.includes('\\'))), 'invalid npm install path');
+  invariant(new Set(declared).size === declared.length, 'duplicate npm install path');
+  invariant(sameSortedNames(actual, [...declared].sort(compareUtf8)), 'staged npm package paths do not exactly match third-party provenance');
+  for (const pkg of provenance.npmProductionPackages) {
+    const metadata = JSON.parse(await readFile(path.join(runtimeRoot, 'payload/app', pkg.installPath, 'package.json'), 'utf8'));
+    invariant(metadata.name === pkg.name && metadata.version === pkg.lockedVersion && metadata.license === pkg.license,
+      `staged npm identity does not match third-party provenance: ${pkg.installPath}`);
+  }
+  return declared.length;
+}
+
 async function main() {
   const options = parseArguments(process.argv.slice(2));
   if (options.help) {
@@ -161,12 +233,18 @@ async function main() {
     readFile(path.join(runtimeRoot, 'payload', 'app', 'package.json'), 'utf8').then(JSON.parse),
     readFile(path.resolve(options.provenance), 'utf8').then(JSON.parse),
   ]);
-  console.log(JSON.stringify(validateMacOSRuntimeProvenanceBinding({
-    runtimeRoster,
-    runtimePackage,
-    provenance,
-    nodeVersion: options.nodeVersion,
-  })));
+  const npmPackagesVerified = await verifyNpmRuntimeBinding(runtimeRoot, runtimeRoster, provenance);
+  const legalAssetsVerified = await verifyLegalAssets(options.provenance, provenance);
+  console.log(JSON.stringify({
+    ...validateMacOSRuntimeProvenanceBinding({
+      runtimeRoster,
+      runtimePackage,
+      provenance,
+      nodeVersion: options.nodeVersion,
+    }),
+    legalAssetsVerified,
+    npmPackagesVerified,
+  }));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

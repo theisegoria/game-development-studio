@@ -63,3 +63,24 @@ game-dev package verify PACKAGE_ID_OR_PATH --json
 Use `game-dev tool call NAME --request request.json` only for an installed local operation not represented by a higher-level command. Prefer the high-level command because its durable receipt and approval behavior are clearer.
 
 Package metadata should bind the original source digest, provider and job identity when applicable, prompts, generation parameters, transformations, license, and validation policy. An optional USDZ file is a preview artifact; the portable GLB remains the canonical game asset.
+
+## Over MCP
+
+| CLI | MCP tool |
+| --- | --- |
+| `game-dev tool call <name>` | the tool itself, by the same name |
+| `game-dev provider leonardo image-generate` | `generate_asset_reference` / `create_game_prop` — candidates come back as images |
+| `game-dev provider tripo generate` | `create_3d_asset` |
+| `game-dev job show` / `job list` | `get_asset_job` / `list_asset_jobs` |
+| `game-dev asset inspect` | `inspect_asset` |
+| `game-dev asset validate` | `validate_game_asset` |
+| `game-dev asset normalize` | `normalize_mesh` |
+| (no CLI form) | `render_asset_contact_sheet` — UV layout and textures as images |
+| `game-dev package build` | `plan_asset_package`, then `build_asset_package` |
+| `game-dev package verify` | `verify_asset_package` |
+| `game-dev credentials status` | `credentials_status` |
+| `game-dev doctor` | `run_doctor` |
+
+Paid tools are disabled over MCP unless the server was configured with a spend
+ceiling, and each charge is confirmed in the client. Everything else here is
+free and needs no authority.

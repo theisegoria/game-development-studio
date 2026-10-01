@@ -126,8 +126,16 @@ describe('game-dev adapter, capture, visual, and performance CLI', () => {
     });
     await expect(access(String(gpuBlocked.payload.error.plan.runPath))).rejects.toMatchObject({ code: 'ENOENT' });
 
+    const changedAdapter = await run([
+      'scenario', 'run', 'capture', '--input', parameters, '--confirm',
+      '--expected-adapter-sha256', '0'.repeat(64), ...common,
+    ]);
+    expect(changedAdapter.code).toBe(2);
+    expect(changedAdapter.payload.error.message).toMatch(/adapter changed since scenario approval/);
+
     const executed = await run([
       'scenario', 'run', 'capture',
+      '--expected-adapter-sha256', String(planned.payload.data.adapterManifestSha256),
       '--input', parameters,
       '--confirm',
       ...common,

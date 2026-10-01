@@ -275,3 +275,14 @@ contract. An upstream-profile CI bundle is not a published release and must
 not be represented as Developer ID signed or notarized. The pinned URLs,
 hashes, license corpus, and profile tests must be reviewed together when
 updating the upstream Node version.
+
+### Updating production dependency notices
+
+After changing the lockfile and installing its existing dependencies, run
+`node scripts/sync-npm-notices.mjs` to reconcile both runtime profiles. The tool
+does not install packages: it copies upstream root license/notice files without
+changing their bytes and records each production install path, version, declared
+license and lock integrity. Missing or inconsistent license evidence stops the
+update. Review the resulting source notices; this inventory is not a legal
+compliance determination. Tests compare the complete production closure and
+upstream bytes, and staging verifies the package identities actually shipped.

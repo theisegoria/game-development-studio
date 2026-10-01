@@ -56,7 +56,7 @@ export async function planOptimization(projectInput: string, baselineInput: stri
   const originalRequest = JSON.parse(await fs.readFile(path.join(baseline.runPath, 'request.json'), 'utf8')) as unknown;
   if (canonicalJson(originalRequest) !== canonicalJson(request.parameters)) throw invalidInput('baseline parameters differ from optimization request');
   const summary = await summarizeRunPerformance(baseline.runPath);
-  if (!summary.metrics.some((m) => m.metric === request.metric && m.unit === request.unit)) throw invalidInput('goal requires a raw-sample baseline metric and matching unit');
+  if (summary.metrics.filter((m) => m.metric === request.metric && m.unit === request.unit).length !== 1) throw invalidInput('goal requires one unambiguous raw-sample baseline metric and matching unit');
   const files = await snapshotFiles(project, request.includeUntracked);
   const fields = { schema: 'game_dev.optimization_plan.v1' as const, project, baseline: baseline.runPath, baselineHash: baseline.manifestSha256,
     sourceHash: snapshotHash(files), files, adapterHash: adapter.manifestSha256, request };

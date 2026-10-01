@@ -45,7 +45,8 @@ await fs.copyFile(objectIds, path.join(runDir, 'captures', 'objects.png'));
 await fs.writeFile(path.join(runDir, 'telemetry.jsonl'), [
   JSON.stringify({
     schema: 'game_dev.telemetry_event.v1', runId, sequence: 0, timestampNs: '1',
-    category: 'performance', name: 'frame_time', value: frameTime, unit: 'ms', attributes: {},
+    category: 'performance', name: 'frame_time', value: frameTime, unit: 'ms',
+    attributes: mode === 'gpu-timed' ? { measured_by: 'gpu_timestamp_query' } : {},
   }),
   JSON.stringify({
     schema: 'game_dev.telemetry_event.v1', runId, sequence: 1, timestampNs: '2',
@@ -60,12 +61,31 @@ await fs.writeFile(path.join(runDir, 'capture.json'), JSON.stringify({
     { kind: 'object_id', path: 'captures/objects.png', encoding: 'png' },
   ] }],
   telemetry: ['telemetry.jsonl'], profiles: ['profile.json'],
-  measurements: [{ metric: 'render.frame_time', value: frameTime, unit: 'ms', aggregation: 'sample' }],
-  adapterEvidence: {
-    windowless: true, graphicsApi: 'fixture', gpuExecutionReported: false,
-    gpuCompletionIdentityReported: false, hardwarePerformanceReported: false,
-    pixelVisualInspectionPerformed: false, notes: ['synthetic test fixture'],
-  },
+  measurements: [{
+    metric: 'render.frame_time', value: frameTime, unit: 'ms', aggregation: 'sample',
+    ...(mode === 'gpu-timed' ? { measuredBy: 'gpu_timestamp_query' } : {}),
+  }],
+  adapterEvidence: mode === 'gpu-timed'
+    ? {
+      windowless: true, graphicsApi: 'fixture', rendererClass: 'hardware', gpuExecutionReported: true,
+      gpuCompletionIdentityReported: true, hardwarePerformanceReported: true,
+      pixelVisualInspectionPerformed: false, notes: ['fixture reporting a timestamp query'],
+    }
+    : mode === 'lying-software'
+    // Deliberately incoherent: a CPU rasterizer claiming GPU execution,
+    // completion identity and hardware timing all at once. The harness must
+    // refuse all three rather than record what it was told.
+    ? {
+      windowless: true, graphicsApi: 'lavapipe', rendererClass: 'software',
+      gpuExecutionReported: true, gpuCompletionIdentityReported: true,
+      hardwarePerformanceReported: true, pixelVisualInspectionPerformed: false,
+      notes: ['fixture claiming hardware it does not have'],
+    }
+    : {
+      windowless: true, graphicsApi: 'fixture', gpuExecutionReported: false,
+      gpuCompletionIdentityReported: false, hardwarePerformanceReported: false,
+      pixelVisualInspectionPerformed: false, notes: ['synthetic test fixture'],
+    },
 }));
 if (mode === 'symlink') await fs.symlink('/etc/passwd', path.join(runDir, 'unsafe-link'));
 console.log(JSON.stringify({ runId, frameTime, mode }));
@@ -105,7 +125,7 @@ export async function writeHarnessProject(root: string): Promise<{
       source: { type: 'project_path', required: true, mustExist: true, kind: 'file' },
       objectIds: { type: 'project_path', required: true, mustExist: true, kind: 'file' },
       frameTime: { type: 'integer', required: true, minimum: 1, maximum: 1000 },
-      mode: { type: 'enum', required: false, default: 'normal', values: ['normal', 'symlink'] },
+      mode: { type: 'enum', required: false, default: 'normal', values: ['normal', 'symlink', 'lying-software', 'gpu-timed'] },
     },
     outputs: { format: 'game-dev-capture-v1', path: 'capture.json' },
   });

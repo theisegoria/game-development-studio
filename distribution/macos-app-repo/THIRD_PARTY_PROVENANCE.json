@@ -208,52 +208,1276 @@
   "npmProductionPackages": [
     {
       "name": "@gltf-transform/core",
-      "declaredRange": "^4.1.1",
+      "installPath": "node_modules/@gltf-transform/core",
       "lockedVersion": "4.4.2",
       "lockIntegrity": "sha512-qsWKwNSwK+2s834Mt4xbYcyHqCrgNFP7hIv5s487JxebngRfDgelpghNF+kSswGb2/NuapasfK3UViFoSJJoMg==",
       "license": "MIT",
       "licenseAssets": [
         "npm-gltf-transform-core-4.4.2-MIT.txt"
+      ],
+      "licenseSources": [
+        "LICENSE.md"
       ]
     },
     {
-      "name": "property-graph",
-      "declaredRange": "^4.1.0",
-      "lockedVersion": "4.1.0",
-      "lockIntegrity": "sha512-AvPcP7XECNWy4LGmFQ77k7un4lSKM4eS29PTvW4ck95uYeLxXPWJM7hLuBqK91FaHqCcgJvIUCuNJjjxKE7VKQ==",
+      "name": "@hono/node-server",
+      "installPath": "node_modules/@hono/node-server",
+      "lockedVersion": "2.1.1",
+      "lockIntegrity": "sha512-ELuehkj5VCBdgEw9zs+ivkKwyzzUCSQuE96YmiPvn1ECBoZCczbFXJLeEGMTYjphP6gydh4pHMqEYPVMYUVgQg==",
       "license": "MIT",
       "licenseAssets": [
-        "npm-property-graph-4.1.0-MIT.txt"
+        "npm-hono-node-server-2.1.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "@modelcontextprotocol/sdk",
+      "installPath": "node_modules/@modelcontextprotocol/sdk",
+      "lockedVersion": "1.30.0",
+      "lockIntegrity": "sha512-xKd8OIzlqNzcqcNumGAa6g+PW2kjD5vrpcKOnfldAUPP3j7lnqMPwlTXQm8gF+UwH72z0lqaRbjr9hqGz0eITA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-modelcontextprotocol-sdk-1.30.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "accepts",
+      "installPath": "node_modules/accepts",
+      "lockedVersion": "2.0.0",
+      "lockIntegrity": "sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-accepts-2.0.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "ajv",
+      "installPath": "node_modules/ajv",
+      "lockedVersion": "8.20.0",
+      "lockIntegrity": "sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-ajv-8.20.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "ajv-formats",
+      "installPath": "node_modules/ajv-formats",
+      "lockedVersion": "3.0.1",
+      "lockIntegrity": "sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-ajv-formats-3.0.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "body-parser",
+      "installPath": "node_modules/body-parser",
+      "lockedVersion": "2.3.0",
+      "lockIntegrity": "sha512-2cGmJupaNgg+QUwVLAucDuWuoMZ6EX9iHDRswZ5lsNYEmwPaRknMPCLZz07yTzVq/83p4o/wzbDZbBrTvGGTIw==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-body-parser-2.3.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "content-type",
+      "installPath": "node_modules/body-parser/node_modules/content-type",
+      "lockedVersion": "2.1.0",
+      "lockIntegrity": "sha512-mj7UPXE0jaqaOsukNZRUEfEi2AcL7C/vwmwcHV0O97eO1E1pxBZuyjlZrx5seTaNBg1U6+o35wpa35Qfcc+7ag==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-content-type-2.1.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "bytes",
+      "installPath": "node_modules/bytes",
+      "lockedVersion": "3.1.2",
+      "lockIntegrity": "sha512-/Nf7TyzTx6S3yRJObOAV7956r8cr2+Oj8AC5dt8wSP3BQAoeX58NoHyCU8P8zGkNXStjTSi6fzO6F0pBdcYbEg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-bytes-3.1.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "call-bind-apply-helpers",
+      "installPath": "node_modules/call-bind-apply-helpers",
+      "lockedVersion": "1.0.2",
+      "lockIntegrity": "sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-call-bind-apply-helpers-1.0.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "call-bound",
+      "installPath": "node_modules/call-bound",
+      "lockedVersion": "1.0.4",
+      "lockIntegrity": "sha512-+ys997U96po4Kx/ABpBCqhA9EuxJaQWDQg7295H4hBphv3IZg0boBKuwYpt4YXp6MZ5AmZQnU/tyMTlRpaSejg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-call-bound-1.0.4-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "content-disposition",
+      "installPath": "node_modules/content-disposition",
+      "lockedVersion": "1.1.0",
+      "lockIntegrity": "sha512-5jRCH9Z/+DRP7rkvY83B+yGIGX96OYdJmzngqnw2SBSxqCFPd0w2km3s5iawpGX8krnwSGmF0FW5Nhr0Hfai3g==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-content-disposition-1.1.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "content-type",
+      "installPath": "node_modules/content-type",
+      "lockedVersion": "1.0.5",
+      "lockIntegrity": "sha512-nTjqfcBFEipKdXCv4YDQWCfmcLZKm81ldF0pAopTvyrFGVbcR6P/VAAd5G7N+0tTr8QqiU0tFadD6FK4NtJwOA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-content-type-1.0.5-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "cookie",
+      "installPath": "node_modules/cookie",
+      "lockedVersion": "0.7.2",
+      "lockIntegrity": "sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-cookie-0.7.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "cookie-signature",
+      "installPath": "node_modules/cookie-signature",
+      "lockedVersion": "1.2.2",
+      "lockIntegrity": "sha512-D76uU73ulSXrD1UXF4KE2TMxVVwhsnCgfAyTg9k8P6KGZjlXKrOLe4dJQKI3Bxi5wjesZoFXJWElNWBjPZMbhg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-cookie-signature-1.2.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "cors",
+      "installPath": "node_modules/cors",
+      "lockedVersion": "2.8.6",
+      "lockIntegrity": "sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-cors-2.8.6-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "cross-spawn",
+      "installPath": "node_modules/cross-spawn",
+      "lockedVersion": "7.0.6",
+      "lockIntegrity": "sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-cross-spawn-7.0.6-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "debug",
+      "installPath": "node_modules/debug",
+      "lockedVersion": "4.4.3",
+      "lockIntegrity": "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-debug-4.4.3-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "depd",
+      "installPath": "node_modules/depd",
+      "lockedVersion": "2.0.0",
+      "lockIntegrity": "sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-depd-2.0.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "dunder-proto",
+      "installPath": "node_modules/dunder-proto",
+      "lockedVersion": "1.0.1",
+      "lockIntegrity": "sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-dunder-proto-1.0.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "ee-first",
+      "installPath": "node_modules/ee-first",
+      "lockedVersion": "1.1.1",
+      "lockIntegrity": "sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-ee-first-1.1.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "encodeurl",
+      "installPath": "node_modules/encodeurl",
+      "lockedVersion": "2.0.0",
+      "lockIntegrity": "sha512-Q0n9HRi4m6JuGIV1eFlmvJB7ZEVxu93IrMyiMsGC0lrMJMWzRgx6WGquyfQgZVb31vhGgXnfmPNNXmxnOkRBrg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-encodeurl-2.0.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "es-define-property",
+      "installPath": "node_modules/es-define-property",
+      "lockedVersion": "1.0.1",
+      "lockIntegrity": "sha512-e3nRfgfUZ4rNGL232gUgX06QNyyez04KdjFrF+LTRoOXmrOgFKDg4BCdsjW8EnT69eqdYGmRpJwiPVYNrCaW3g==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-es-define-property-1.0.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "es-errors",
+      "installPath": "node_modules/es-errors",
+      "lockedVersion": "1.3.0",
+      "lockIntegrity": "sha512-Zf5H2Kxt2xjTvbJvP2ZWLEICxA6j+hAmMzIlypy4xcBg1vKVnx89Wy0GbS+kf5cwCVFFzdCFh2XSCFNULS6csw==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-es-errors-1.3.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "es-object-atoms",
+      "installPath": "node_modules/es-object-atoms",
+      "lockedVersion": "1.1.2",
+      "lockIntegrity": "sha512-HWcBoN6NileqtSydK2FqHbS/LoDd2pqrnQHLyJzBj4kOp/ky2MWMN694xOfkK8/SnUsW2DH7EfyVlydKCsm1Zw==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-es-object-atoms-1.1.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "escape-html",
+      "installPath": "node_modules/escape-html",
+      "lockedVersion": "1.0.3",
+      "lockIntegrity": "sha512-NiSupZ4OeuGwr68lGIeym/ksIZMJodUGOSCZ/FSnTxcrekbvqrgdUxlJOMpijaKZVjAJrWrGs/6Jy8OMuyj9ow==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-escape-html-1.0.3-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "etag",
+      "installPath": "node_modules/etag",
+      "lockedVersion": "1.8.1",
+      "lockIntegrity": "sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-etag-1.8.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "eventsource",
+      "installPath": "node_modules/eventsource",
+      "lockedVersion": "3.0.7",
+      "lockIntegrity": "sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-eventsource-3.0.7-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "eventsource-parser",
+      "installPath": "node_modules/eventsource-parser",
+      "lockedVersion": "3.1.1",
+      "lockIntegrity": "sha512-EKN1vKAMcZ8MlYMpaNuxN6R9yakzH6uajHcHVTqWJzvu5pWw9DyhbP35HH8MVBQ+dZjAfDxk+A8NiR9KWaXiyQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-eventsource-parser-3.1.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "express",
+      "installPath": "node_modules/express",
+      "lockedVersion": "5.2.1",
+      "lockIntegrity": "sha512-hIS4idWWai69NezIdRt2xFVofaF4j+6INOpJlVOLDO8zXGpUVEVzIYk12UUi2JzjEzWL3IOAxcTubgz9Po0yXw==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-express-5.2.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "express-rate-limit",
+      "installPath": "node_modules/express-rate-limit",
+      "lockedVersion": "8.7.0",
+      "lockIntegrity": "sha512-hOwV7WOxXfjRpAM1DSJWZDXx3GhplwD8IfwuwvogD8i1Qnkgosw/H45s4ZnFAUHDAhPjlY9hLBvJhKmGMyY26g==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-express-rate-limit-8.7.0-license.txt"
+      ],
+      "licenseSources": [
+        "license"
+      ]
+    },
+    {
+      "name": "fast-deep-equal",
+      "installPath": "node_modules/fast-deep-equal",
+      "lockedVersion": "3.1.3",
+      "lockIntegrity": "sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-fast-deep-equal-3.1.3-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "fast-uri",
+      "installPath": "node_modules/fast-uri",
+      "lockedVersion": "3.1.7",
+      "lockIntegrity": "sha512-dOvZVzjdZdz7phd9v6jCbwxrBW3fK6n8Rc0CtdmM4bumzMnxywBYhuph6J819RRw/ku+rLbelwfMunktuzVVHg==",
+      "license": "BSD-3-Clause",
+      "licenseAssets": [
+        "npm-fast-uri-3.1.7-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "finalhandler",
+      "installPath": "node_modules/finalhandler",
+      "lockedVersion": "2.1.1",
+      "lockIntegrity": "sha512-S8KoZgRZN+a5rNwqTxlZZePjT/4cnm0ROV70LedRHZ0p8u9fRID0hJUZQpkKLzro8LfmC8sx23bY6tVNxv8pQA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-finalhandler-2.1.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "forwarded",
+      "installPath": "node_modules/forwarded",
+      "lockedVersion": "0.2.0",
+      "lockIntegrity": "sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-forwarded-0.2.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "fresh",
+      "installPath": "node_modules/fresh",
+      "lockedVersion": "2.0.0",
+      "lockIntegrity": "sha512-Rx/WycZ60HOaqLKAi6cHRKKI7zxWbJ31MhntmtwMoaTeF7XFH9hhBp8vITaMidfljRQ6eYWCKkaTK+ykVJHP2A==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-fresh-2.0.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "function-bind",
+      "installPath": "node_modules/function-bind",
+      "lockedVersion": "1.1.2",
+      "lockIntegrity": "sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-function-bind-1.1.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "get-intrinsic",
+      "installPath": "node_modules/get-intrinsic",
+      "lockedVersion": "1.3.0",
+      "lockIntegrity": "sha512-9fSjSaos/fRIVIp+xSJlE6lfwhES7LNtKaCBIamHsjr2na1BiABJPo0mOjjz8GJDURarmCPGqaiVg5mfjb98CQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-get-intrinsic-1.3.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "get-proto",
+      "installPath": "node_modules/get-proto",
+      "lockedVersion": "1.0.1",
+      "lockIntegrity": "sha512-sTSfBjoXBp89JvIKIefqw7U2CCebsc74kiY6awiGogKtoSGbgjYE/G/+l9sF3MWFPNc9IcoOC4ODfKHfxFmp0g==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-get-proto-1.0.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "gopd",
+      "installPath": "node_modules/gopd",
+      "lockedVersion": "1.2.0",
+      "lockIntegrity": "sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-gopd-1.2.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "has-symbols",
+      "installPath": "node_modules/has-symbols",
+      "lockedVersion": "1.1.0",
+      "lockIntegrity": "sha512-1cDNdwJ2Jaohmb3sg4OmKaMBwuC48sYni5HUw2DvsC8LjGTLK9h+eb1X6RyuOHe4hT0ULCW68iomhjUoKUqlPQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-has-symbols-1.1.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "hasown",
+      "installPath": "node_modules/hasown",
+      "lockedVersion": "2.0.4",
+      "lockIntegrity": "sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-hasown-2.0.4-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "hono",
+      "installPath": "node_modules/hono",
+      "lockedVersion": "4.13.5",
+      "lockIntegrity": "sha512-O6+/eCYRkzzzy0rPWwKLiGBR1nFuUPZynnwjxN1MBA62NNqbT0wQEzQyK2gSO5yDIDB336sXQleAhOHrzlYyKw==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-hono-4.13.5-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "http-errors",
+      "installPath": "node_modules/http-errors",
+      "lockedVersion": "2.0.1",
+      "lockIntegrity": "sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-http-errors-2.0.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "iconv-lite",
+      "installPath": "node_modules/iconv-lite",
+      "lockedVersion": "0.7.3",
+      "lockIntegrity": "sha512-IKXpvIzjnC9XTAUbVBcMfGS0EPaIXtW6v+zr+RRp+hqULEpo0owZax6wyRwPOJbWbzjYspQwusTsfVr0ifh4uQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-iconv-lite-0.7.3-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "inherits",
+      "installPath": "node_modules/inherits",
+      "lockedVersion": "2.0.4",
+      "lockIntegrity": "sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==",
+      "license": "ISC",
+      "licenseAssets": [
+        "npm-inherits-2.0.4-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "ip-address",
+      "installPath": "node_modules/ip-address",
+      "lockedVersion": "10.7.0",
+      "lockIntegrity": "sha512-BGFsyJd5mpXp3rK6jIdADLNgpJUK1jnjzvYF8lK+VyDab9JAmqN0YOKDdP17HlgKb2+ehPgDc8EtnRLbGCAMhA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-ip-address-10.7.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "ipaddr.js",
+      "installPath": "node_modules/ipaddr.js",
+      "lockedVersion": "1.9.1",
+      "lockIntegrity": "sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-ipaddr.js-1.9.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "is-promise",
+      "installPath": "node_modules/is-promise",
+      "lockedVersion": "4.0.0",
+      "lockIntegrity": "sha512-hvpoI6korhJMnej285dSg6nu1+e6uxs7zG3BYAm5byqDsgJNWwxzM6z6iZiAgQR4TJ30JmBTOwqZUw3WlyH3AQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-is-promise-4.0.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "isexe",
+      "installPath": "node_modules/isexe",
+      "lockedVersion": "2.0.0",
+      "lockIntegrity": "sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==",
+      "license": "ISC",
+      "licenseAssets": [
+        "npm-isexe-2.0.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "jose",
+      "installPath": "node_modules/jose",
+      "lockedVersion": "6.2.10",
+      "lockIntegrity": "sha512-iiW7J9qRFlGxvCOIBDBDxFePQSn7ZMAnrYGhrrOo6siO/MIqwfyilLR27pkfDgUk+raLuzADS8A3S/KLBisc0g==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-jose-6.2.10-LICENSE-md.txt"
+      ],
+      "licenseSources": [
+        "LICENSE.md"
       ]
     },
     {
       "name": "jpeg-js",
-      "declaredRange": "^0.4.4",
+      "installPath": "node_modules/jpeg-js",
       "lockedVersion": "0.4.4",
       "lockIntegrity": "sha512-WZzeDOEtTOBK4Mdsar0IqEU5sMr3vSV2RqkAIzUEV2BHnUfKGyswWFPFwK5EeDo93K3FohSHbLAjj0s1Wzd+dg==",
       "license": "BSD-3-Clause",
       "licenseAssets": [
         "npm-jpeg-js-0.4.4-BSD-3-Clause.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "json-schema-traverse",
+      "installPath": "node_modules/json-schema-traverse",
+      "lockedVersion": "1.0.0",
+      "lockIntegrity": "sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-json-schema-traverse-1.0.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "json-schema-typed",
+      "installPath": "node_modules/json-schema-typed",
+      "lockedVersion": "8.0.2",
+      "lockIntegrity": "sha512-fQhoXdcvc3V28x7C7BMs4P5+kNlgUURe2jmUT1T//oBRMDrqy1QPelJimwZGo7Hg9VPV3EQV5Bnq4hbFy2vetA==",
+      "license": "BSD-2-Clause",
+      "licenseAssets": [
+        "npm-json-schema-typed-8.0.2-LICENSE-md.txt"
+      ],
+      "licenseSources": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "math-intrinsics",
+      "installPath": "node_modules/math-intrinsics",
+      "lockedVersion": "1.1.0",
+      "lockIntegrity": "sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-math-intrinsics-1.1.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "media-typer",
+      "installPath": "node_modules/media-typer",
+      "lockedVersion": "1.1.1",
+      "lockIntegrity": "sha512-yz3xRaG20c6/BOzvYoDaGtPmGscs7YivItZEEqe6GbwNfHuxu9YNmvnEkMzKldAGY4/80pRcQRZSEnhquk9XuQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-media-typer-1.1.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "merge-descriptors",
+      "installPath": "node_modules/merge-descriptors",
+      "lockedVersion": "2.0.0",
+      "lockIntegrity": "sha512-Snk314V5ayFLhp3fkUREub6WtjBfPdCPY1Ln8/8munuLuiYhsABgBVWsozAG+MWMbVEvcdcpbi9R7ww22l9Q3g==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-merge-descriptors-2.0.0-license.txt"
+      ],
+      "licenseSources": [
+        "license"
+      ]
+    },
+    {
+      "name": "mime-db",
+      "installPath": "node_modules/mime-db",
+      "lockedVersion": "1.54.0",
+      "lockIntegrity": "sha512-aU5EJuIN2WDemCcAp2vFBfp/m4EAhWJnUNSSw0ixs7/kXbd6Pg64EmwJkNdFhB8aWt1sH2CTXrLxo/iAGV3oPQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-mime-db-1.54.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "mime-types",
+      "installPath": "node_modules/mime-types",
+      "lockedVersion": "3.0.2",
+      "lockIntegrity": "sha512-Lbgzdk0h4juoQ9fCKXW4by0UJqj+nOOrI9MJ1sSj4nI8aI2eo1qmvQEie4VD1glsS250n15LsWsYtCugiStS5A==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-mime-types-3.0.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "ms",
+      "installPath": "node_modules/ms",
+      "lockedVersion": "2.1.3",
+      "lockIntegrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-ms-2.1.3-license-md.txt"
+      ],
+      "licenseSources": [
+        "license.md"
+      ]
+    },
+    {
+      "name": "negotiator",
+      "installPath": "node_modules/negotiator",
+      "lockedVersion": "1.1.0",
+      "lockIntegrity": "sha512-NMPBRMJgiQHjbd8phG3Vebdx4kZ1H121rbl5IkMqeOsahptB9BKo/d7oJ3zTXqTgagn2bWlNSXkh0QUGM31RYg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-negotiator-1.1.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "content-type",
+      "installPath": "node_modules/negotiator/node_modules/content-type",
+      "lockedVersion": "2.1.0",
+      "lockIntegrity": "sha512-mj7UPXE0jaqaOsukNZRUEfEi2AcL7C/vwmwcHV0O97eO1E1pxBZuyjlZrx5seTaNBg1U6+o35wpa35Qfcc+7ag==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-content-type-2.1.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "object-assign",
+      "installPath": "node_modules/object-assign",
+      "lockedVersion": "4.1.1",
+      "lockIntegrity": "sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-object-assign-4.1.1-license.txt"
+      ],
+      "licenseSources": [
+        "license"
+      ]
+    },
+    {
+      "name": "object-inspect",
+      "installPath": "node_modules/object-inspect",
+      "lockedVersion": "1.13.4",
+      "lockIntegrity": "sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-object-inspect-1.13.4-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "on-finished",
+      "installPath": "node_modules/on-finished",
+      "lockedVersion": "2.4.1",
+      "lockIntegrity": "sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-on-finished-2.4.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "once",
+      "installPath": "node_modules/once",
+      "lockedVersion": "1.4.0",
+      "lockIntegrity": "sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==",
+      "license": "ISC",
+      "licenseAssets": [
+        "npm-once-1.4.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "parseurl",
+      "installPath": "node_modules/parseurl",
+      "lockedVersion": "1.3.3",
+      "lockIntegrity": "sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-parseurl-1.3.3-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "path-key",
+      "installPath": "node_modules/path-key",
+      "lockedVersion": "3.1.1",
+      "lockIntegrity": "sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-path-key-3.1.1-license.txt"
+      ],
+      "licenseSources": [
+        "license"
+      ]
+    },
+    {
+      "name": "path-to-regexp",
+      "installPath": "node_modules/path-to-regexp",
+      "lockedVersion": "8.4.2",
+      "lockIntegrity": "sha512-qRcuIdP69NPm4qbACK+aDogI5CBDMi1jKe0ry5rSQJz8JVLsC7jV8XpiJjGRLLol3N+R5ihGYcrPLTno6pAdBA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-path-to-regexp-8.4.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "pkce-challenge",
+      "installPath": "node_modules/pkce-challenge",
+      "lockedVersion": "5.0.1",
+      "lockIntegrity": "sha512-wQ0b/W4Fr01qtpHlqSqspcj3EhBvimsdh0KlHhH8HRZnMsEa0ea2fTULOXOS9ccQr3om+GcGRk4e+isrZWV8qQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-pkce-challenge-5.0.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
       ]
     },
     {
       "name": "pngjs",
-      "declaredRange": "^7.0.0",
+      "installPath": "node_modules/pngjs",
       "lockedVersion": "7.0.0",
       "lockIntegrity": "sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==",
       "license": "MIT",
       "licenseAssets": [
         "npm-pngjs-7.0.0-MIT.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "property-graph",
+      "installPath": "node_modules/property-graph",
+      "lockedVersion": "4.1.0",
+      "lockIntegrity": "sha512-AvPcP7XECNWy4LGmFQ77k7un4lSKM4eS29PTvW4ck95uYeLxXPWJM7hLuBqK91FaHqCcgJvIUCuNJjjxKE7VKQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-property-graph-4.1.0-MIT.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "proxy-addr",
+      "installPath": "node_modules/proxy-addr",
+      "lockedVersion": "2.0.7",
+      "lockIntegrity": "sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-proxy-addr-2.0.7-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "qs",
+      "installPath": "node_modules/qs",
+      "lockedVersion": "6.16.0",
+      "lockIntegrity": "sha512-h6fhOIaRrID2CbEY2fqs+7t+UXZo+MLAnU5gRIq85uFtdiUPCdsApMlHhXogKVM4HM2DVbIjGNTTYH2OcmP1vA==",
+      "license": "BSD-3-Clause",
+      "licenseAssets": [
+        "npm-qs-6.16.0-LICENSE-md.txt"
+      ],
+      "licenseSources": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "range-parser",
+      "installPath": "node_modules/range-parser",
+      "lockedVersion": "1.3.0",
+      "lockIntegrity": "sha512-hek2mFQpPuI4E1BBKrSto+BU3e3x4xuarsbiwr3+lf7p44juvFMV0XFWQAP3xUyqXA4RrXLIoaSUGbSt056ZMw==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-range-parser-1.3.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "raw-body",
+      "installPath": "node_modules/raw-body",
+      "lockedVersion": "3.0.2",
+      "lockIntegrity": "sha512-K5zQjDllxWkf7Z5xJdV0/B0WTNqx6vxG70zJE4N0kBs4LovmEYWJzQGxC9bS9RAKu3bgM40lrd5zoLJ12MQ5BA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-raw-body-3.0.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "require-from-string",
+      "installPath": "node_modules/require-from-string",
+      "lockedVersion": "2.0.2",
+      "lockIntegrity": "sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-require-from-string-2.0.2-license.txt"
+      ],
+      "licenseSources": [
+        "license"
+      ]
+    },
+    {
+      "name": "router",
+      "installPath": "node_modules/router",
+      "lockedVersion": "2.2.0",
+      "lockIntegrity": "sha512-nLTrUKm2UyiL7rlhapu/Zl45FwNgkZGaCpZbIHajDYgwlJCOzLSk+cIPAnsEqV955GjILJnKbdQC1nVPz+gAYQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-router-2.2.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "safer-buffer",
+      "installPath": "node_modules/safer-buffer",
+      "lockedVersion": "2.1.2",
+      "lockIntegrity": "sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-safer-buffer-2.1.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "send",
+      "installPath": "node_modules/send",
+      "lockedVersion": "1.2.1",
+      "lockIntegrity": "sha512-1gnZf7DFcoIcajTjTwjwuDjzuz4PPcY2StKPlsGAQ1+YH20IRVrBaXSWmdjowTJ6u8Rc01PoYOGHXfP1mYcZNQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-send-1.2.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "serve-static",
+      "installPath": "node_modules/serve-static",
+      "lockedVersion": "2.2.1",
+      "lockIntegrity": "sha512-xRXBn0pPqQTVQiC8wyQrKs2MOlX24zQ0POGaj0kultvoOCstBQM5yvOhAVSUwOMjQtTvsPWoNCHfPGwaaQJhTw==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-serve-static-2.2.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "setprototypeof",
+      "installPath": "node_modules/setprototypeof",
+      "lockedVersion": "1.2.0",
+      "lockIntegrity": "sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==",
+      "license": "ISC",
+      "licenseAssets": [
+        "npm-setprototypeof-1.2.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "shebang-command",
+      "installPath": "node_modules/shebang-command",
+      "lockedVersion": "2.0.0",
+      "lockIntegrity": "sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-shebang-command-2.0.0-license.txt"
+      ],
+      "licenseSources": [
+        "license"
+      ]
+    },
+    {
+      "name": "shebang-regex",
+      "installPath": "node_modules/shebang-regex",
+      "lockedVersion": "3.0.0",
+      "lockIntegrity": "sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-shebang-regex-3.0.0-license.txt"
+      ],
+      "licenseSources": [
+        "license"
+      ]
+    },
+    {
+      "name": "side-channel",
+      "installPath": "node_modules/side-channel",
+      "lockedVersion": "1.1.1",
+      "lockIntegrity": "sha512-6x6dK6zJdpTzF4sQeNYxwtvBzf6Eg4GtlesS94HOvTudUeyK2WXAaIfmDgsyslYrRBeFIlsi54AYsFGUuhmvrQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-side-channel-1.1.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "side-channel-list",
+      "installPath": "node_modules/side-channel-list",
+      "lockedVersion": "1.0.1",
+      "lockIntegrity": "sha512-mjn/0bi/oUURjc5Xl7IaWi/OJJJumuoJFQJfDDyO46+hBWsfaVM65TBHq2eoZBhzl9EchxOijpkbRC8SVBQU0w==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-side-channel-list-1.0.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "side-channel-map",
+      "installPath": "node_modules/side-channel-map",
+      "lockedVersion": "1.0.1",
+      "lockIntegrity": "sha512-VCjCNfgMsby3tTdo02nbjtM/ewra6jPHmpThenkTYh8pG9ucZ/1P8So4u4FGBek/BjpOVsDCMoLA/iuBKIFXRA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-side-channel-map-1.0.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "side-channel-weakmap",
+      "installPath": "node_modules/side-channel-weakmap",
+      "lockedVersion": "1.0.2",
+      "lockIntegrity": "sha512-WPS/HvHQTYnHisLo9McqBHOJk2FkHO/tlpvldyrnem4aeQp4hai3gythswg6p01oSoTl58rcpiFAjF2br2Ak2A==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-side-channel-weakmap-1.0.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "statuses",
+      "installPath": "node_modules/statuses",
+      "lockedVersion": "2.0.2",
+      "lockIntegrity": "sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-statuses-2.0.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "toidentifier",
+      "installPath": "node_modules/toidentifier",
+      "lockedVersion": "1.0.1",
+      "lockIntegrity": "sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-toidentifier-1.0.1-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "type-is",
+      "installPath": "node_modules/type-is",
+      "lockedVersion": "2.1.0",
+      "lockIntegrity": "sha512-faYHw0anBbc/kWF3zFTEnxSFOAGUX9GFbOBthvDdLsIlEoWOFOtS0zgCiQYwIskL9iGXZL3kAXD8OoZ4GmMATA==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-type-is-2.1.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "content-type",
+      "installPath": "node_modules/type-is/node_modules/content-type",
+      "lockedVersion": "2.1.0",
+      "lockIntegrity": "sha512-mj7UPXE0jaqaOsukNZRUEfEi2AcL7C/vwmwcHV0O97eO1E1pxBZuyjlZrx5seTaNBg1U6+o35wpa35Qfcc+7ag==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-content-type-2.1.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "unpipe",
+      "installPath": "node_modules/unpipe",
+      "lockedVersion": "1.0.0",
+      "lockIntegrity": "sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-unpipe-1.0.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "vary",
+      "installPath": "node_modules/vary",
+      "lockedVersion": "1.1.2",
+      "lockIntegrity": "sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-vary-1.1.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "which",
+      "installPath": "node_modules/which",
+      "lockedVersion": "2.0.2",
+      "lockIntegrity": "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==",
+      "license": "ISC",
+      "licenseAssets": [
+        "npm-which-2.0.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "wrappy",
+      "installPath": "node_modules/wrappy",
+      "lockedVersion": "1.0.2",
+      "lockIntegrity": "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==",
+      "license": "ISC",
+      "licenseAssets": [
+        "npm-wrappy-1.0.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
       ]
     },
     {
       "name": "zod",
-      "declaredRange": "^3.23.8",
+      "installPath": "node_modules/zod",
       "lockedVersion": "3.25.76",
       "lockIntegrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==",
       "license": "MIT",
       "licenseAssets": [
         "npm-zod-3.25.76-MIT.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "zod-to-json-schema",
+      "installPath": "node_modules/zod-to-json-schema",
+      "lockedVersion": "3.25.2",
+      "lockIntegrity": "sha512-O/PgfnpT1xKSDeQYSCfRI5Gy3hPf91mKVDuYLUHZJMiDFptvP41MSnWofm8dnCm0256ZNfZIM7DSzuSMAFnjHA==",
+      "license": "ISC",
+      "licenseAssets": [
+        "npm-zod-to-json-schema-3.25.2-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
       ]
     }
   ],
@@ -361,6 +1585,258 @@
       "scope": "Bundled Node executable and libnode dependency"
     },
     {
+      "path": "npm-accepts-2.0.0-LICENSE.txt",
+      "sha256": "71f83c4c0621102a56d9853812777b85751bce7e9726f686f5b056c1f8a4b0e6",
+      "bytes": 1167,
+      "source": "Locked npm package accepts@2.0.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-ajv-8.20.0-LICENSE.txt",
+      "sha256": "a05350a88e318e4f5f2c2a1ff1e2e88daa4dd38e6e78b71cccae422bdc762cc3",
+      "bytes": 1090,
+      "source": "Locked npm package ajv@8.20.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-ajv-formats-3.0.1-LICENSE.txt",
+      "sha256": "9df3bb69929a3b650ed73b3bfa1756725aaff0ac296461605753547004eafeaf",
+      "bytes": 1074,
+      "source": "Locked npm package ajv-formats@3.0.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-body-parser-2.3.0-LICENSE.txt",
+      "sha256": "23d466b1b134b415b66fa50c6526b4cf3e7b9258554da88d3abb371721e7ce68",
+      "bytes": 1172,
+      "source": "Locked npm package body-parser@2.3.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-bytes-3.1.2-LICENSE.txt",
+      "sha256": "e3b44af066615de2ea48d18d852d0762f18c0b2efcea714fa48a6f729d405b85",
+      "bytes": 1153,
+      "source": "Locked npm package bytes@3.1.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-call-bind-apply-helpers-1.0.2-LICENSE.txt",
+      "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292",
+      "bytes": 1071,
+      "source": "Locked npm package call-bind-apply-helpers@1.0.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-call-bound-1.0.4-LICENSE.txt",
+      "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292",
+      "bytes": 1071,
+      "source": "Locked npm package call-bound@1.0.4/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-content-disposition-1.1.0-LICENSE.txt",
+      "sha256": "bd47ce7b88c7759630d1e2b9fcfa170a0f1fde522be09e13fb1581a79d090400",
+      "bytes": 1094,
+      "source": "Locked npm package content-disposition@1.1.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-content-type-1.0.5-LICENSE.txt",
+      "sha256": "257aed98914108e91a337912727b6a802eef218248507f74b76faffaff517a38",
+      "bytes": 1089,
+      "source": "Locked npm package content-type@1.0.5/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-content-type-2.1.0-LICENSE.txt",
+      "sha256": "257aed98914108e91a337912727b6a802eef218248507f74b76faffaff517a38",
+      "bytes": 1089,
+      "source": "Locked npm package content-type@2.1.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-cookie-0.7.2-LICENSE.txt",
+      "sha256": "c02110eedc16c7114f1a9bdc026c65626ce1d9c7e27fd51a8e0feee8a48a6858",
+      "bytes": 1175,
+      "source": "Locked npm package cookie@0.7.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-cookie-signature-1.2.2-LICENSE.txt",
+      "sha256": "0dd4e47333485760cf8c265db5a5e24ae8d7401064c6f2e19793ee81a5bef42f",
+      "bytes": 1124,
+      "source": "Locked npm package cookie-signature@1.2.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-cors-2.8.6-LICENSE.txt",
+      "sha256": "1aa9a12863eefb583779b2ca0e5d73c610b6e6d07529ae0472721769a6ea0a32",
+      "bytes": 1095,
+      "source": "Locked npm package cors@2.8.6/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-cross-spawn-7.0.6-LICENSE.txt",
+      "sha256": "aaa78451b6fecd1b9c4594c796c133c0e90cad100372ff8bc6de615e9ef9adf1",
+      "bytes": 1105,
+      "source": "Locked npm package cross-spawn@7.0.6/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-debug-4.4.3-LICENSE.txt",
+      "sha256": "3a61c6c96caf5c1d9b623fb9b04c822b783dfcb78aa7e49c76a3f643e6ed7f95",
+      "bytes": 1139,
+      "source": "Locked npm package debug@4.4.3/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-depd-2.0.0-LICENSE.txt",
+      "sha256": "bd134b41da59e452fb5a1d366b660886f741c87c2bf9428e93764c419fbc40f5",
+      "bytes": 1094,
+      "source": "Locked npm package depd@2.0.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-dunder-proto-1.0.1-LICENSE.txt",
+      "sha256": "2b770a704c15de238c3f622b01b0044ddd60b49ee30608ea6991ebf19db7a7a1",
+      "bytes": 1073,
+      "source": "Locked npm package dunder-proto@1.0.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-ee-first-1.1.1-LICENSE.txt",
+      "sha256": "965ef284f7f4c176842ec2e87fa13e79feed777d56d7a21a5a3b38f1bb6dc288",
+      "bytes": 1099,
+      "source": "Locked npm package ee-first@1.1.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-encodeurl-2.0.0-LICENSE.txt",
+      "sha256": "7585ea7bba616ccbbe43cb54ecb67956688c3c5641bb84f3099a652a73193afe",
+      "bytes": 1089,
+      "source": "Locked npm package encodeurl@2.0.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-es-define-property-1.0.1-LICENSE.txt",
+      "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292",
+      "bytes": 1071,
+      "source": "Locked npm package es-define-property@1.0.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-es-errors-1.3.0-LICENSE.txt",
+      "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292",
+      "bytes": 1071,
+      "source": "Locked npm package es-errors@1.3.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-es-object-atoms-1.1.2-LICENSE.txt",
+      "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292",
+      "bytes": 1071,
+      "source": "Locked npm package es-object-atoms@1.1.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-escape-html-1.0.3-LICENSE.txt",
+      "sha256": "255aa557a1f55224ce522f311629c0bf20854740a67955cefd798fbd1d3d1ded",
+      "bytes": 1157,
+      "source": "Locked npm package escape-html@1.0.3/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-etag-1.8.1-LICENSE.txt",
+      "sha256": "a7996721249a136fbcfc1c201bcb5f414f38a701d4a24f28abe65e16cfcce813",
+      "bytes": 1094,
+      "source": "Locked npm package etag@1.8.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-eventsource-3.0.7-LICENSE.txt",
+      "sha256": "f683a72ffe6a9675b5507af22fe0f448d8c8de3da1e14f139d370a7e6a54a23e",
+      "bytes": 1087,
+      "source": "Locked npm package eventsource@3.0.7/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-eventsource-parser-3.1.1-LICENSE.txt",
+      "sha256": "835eb611a23301b27115ca1be9f754c876e643ceb7fe63049c6b50609a1cafeb",
+      "bytes": 1098,
+      "source": "Locked npm package eventsource-parser@3.1.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-express-5.2.1-LICENSE.txt",
+      "sha256": "95a5762890e5c1c9808921cef095661fc482c5e1f0bba31446ac85595df6237c",
+      "bytes": 1249,
+      "source": "Locked npm package express@5.2.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-express-rate-limit-8.7.0-license.txt",
+      "sha256": "a752c164b45840ef677e68c738aefabfd665ee9f112ada4538761301a97118b0",
+      "bytes": 1077,
+      "source": "Locked npm package express-rate-limit@8.7.0/license",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-fast-deep-equal-3.1.3-LICENSE.txt",
+      "sha256": "7bf9b2de73a6b356761c948d0e9eeb4be6c1270bd04c79cd489c1e400ffdfc1a",
+      "bytes": 1074,
+      "source": "Locked npm package fast-deep-equal@3.1.3/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-fast-uri-3.1.7-LICENSE.txt",
+      "sha256": "b010b0dfdfdb23d7396e03b82cd4621fc9bb8f95d6b0aea70b9c24e12074c786",
+      "bytes": 1813,
+      "source": "Locked npm package fast-uri@3.1.7/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-finalhandler-2.1.1-LICENSE.txt",
+      "sha256": "47dcccf62bf40469d23849b0b1dc8df9fc91bce219b880c638d4dc4596e6b5cf",
+      "bytes": 1119,
+      "source": "Locked npm package finalhandler@2.1.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-forwarded-0.2.0-LICENSE.txt",
+      "sha256": "bd47ce7b88c7759630d1e2b9fcfa170a0f1fde522be09e13fb1581a79d090400",
+      "bytes": 1094,
+      "source": "Locked npm package forwarded@0.2.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-fresh-2.0.0-LICENSE.txt",
+      "sha256": "a0ec0dab16b3666f24950f86d257930ac2ad475557b4bfe245620e0817d8a45d",
+      "bytes": 1174,
+      "source": "Locked npm package fresh@2.0.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-function-bind-1.1.2-LICENSE.txt",
+      "sha256": "773e131a7684726005a7e4688a80b4620033bc08499bc1404dd1a1eb3bca725e",
+      "bytes": 1052,
+      "source": "Locked npm package function-bind@1.1.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-get-intrinsic-1.3.0-LICENSE.txt",
+      "sha256": "39c5ec504cf6bd5cd782a7c695828e09189df79f5d94840e4f08feb97b9fd416",
+      "bytes": 1071,
+      "source": "Locked npm package get-intrinsic@1.3.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-get-proto-1.0.1-LICENSE.txt",
+      "sha256": "be46ce1e3b0479af9ce82d22b465a6d7d2ff084fca0aaf3d54172da2b5eb5781",
+      "bytes": 1071,
+      "source": "Locked npm package get-proto@1.0.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
       "path": "npm-gltf-transform-core-4.4.2-MIT.txt",
       "sha256": "2c4f111d00dbf22b10d31a14813c5f5de6a828640f7311f26b9dda89b3fce165",
       "bytes": 1078,
@@ -368,10 +1844,227 @@
       "scope": "Bundled CLI production package"
     },
     {
+      "path": "npm-gopd-1.2.0-LICENSE.txt",
+      "sha256": "d90bf0a089da4cf43d644ed240a0b3825dcdb705e64e38371d56995a4cc9e4c5",
+      "bytes": 1071,
+      "source": "Locked npm package gopd@1.2.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-has-symbols-1.1.0-LICENSE.txt",
+      "sha256": "206c1adcf206dc0031b11232f5b054ec5f1662407ab1ca415247921cab2068ab",
+      "bytes": 1071,
+      "source": "Locked npm package has-symbols@1.1.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-hasown-2.0.4-LICENSE.txt",
+      "sha256": "bf9b0d665be2a689851eea667ca9f42066ea1d903b38349c51e6a44b2577680a",
+      "bytes": 1083,
+      "source": "Locked npm package hasown@2.0.4/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-hono-4.13.5-LICENSE.txt",
+      "sha256": "a6ab98e5c77b9070c443eaff2ff81034a6f8cc05a7524d5098eb0f24defa0115",
+      "bytes": 1101,
+      "source": "Locked npm package hono@4.13.5/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-hono-node-server-2.1.1-LICENSE.txt",
+      "sha256": "6895190430d809c4c57a7582ecc2f99acbc2ea39a5dfad20262a41d5b3e91733",
+      "bytes": 1101,
+      "source": "Locked npm package @hono/node-server@2.1.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-http-errors-2.0.1-LICENSE.txt",
+      "sha256": "dcb94ff9b1e037a847bc20589dc81a1066d041fd4c16deb18b0fa968c66cf395",
+      "bytes": 1168,
+      "source": "Locked npm package http-errors@2.0.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-iconv-lite-0.7.3-LICENSE.txt",
+      "sha256": "ac779f7314c74f232ef847ea86e714abe25cf6eeb5cc97b69451b74e2af6492d",
+      "bytes": 1064,
+      "source": "Locked npm package iconv-lite@0.7.3/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-inherits-2.0.4-LICENSE.txt",
+      "sha256": "5ffe28e7ade7d8f10d85d5337a73fd793dac5c462fb9a28fbf8c5046c7fbca3b",
+      "bytes": 749,
+      "source": "Locked npm package inherits@2.0.4/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-ip-address-10.7.0-LICENSE.txt",
+      "sha256": "f8d791359a50cbcac82c29cb7b0b1b889b28be76fdd35b8ee33f0f7c8704702a",
+      "bytes": 1061,
+      "source": "Locked npm package ip-address@10.7.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-ipaddr.js-1.9.1-LICENSE.txt",
+      "sha256": "62568a2d1337b77171ecca9db10579163446de1ba6151678e81f06cdc199971b",
+      "bytes": 1087,
+      "source": "Locked npm package ipaddr.js@1.9.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-is-promise-4.0.0-LICENSE.txt",
+      "sha256": "44191656d296391e0ec97e32f5385f0d02b6f2992694082d22ea04ba0f66f9e4",
+      "bytes": 1058,
+      "source": "Locked npm package is-promise@4.0.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-isexe-2.0.0-LICENSE.txt",
+      "sha256": "4ec3d4c66cd87f5c8d8ad911b10f99bf27cb00cdfcff82621956e379186b016b",
+      "bytes": 765,
+      "source": "Locked npm package isexe@2.0.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-jose-6.2.10-LICENSE-md.txt",
+      "sha256": "8078b0829d6c3e9ecde2f003e1966e4cad3efc6e7a640efbab0313cc166b1af1",
+      "bytes": 1079,
+      "source": "Locked npm package jose@6.2.10/LICENSE.md",
+      "scope": "Bundled CLI production package"
+    },
+    {
       "path": "npm-jpeg-js-0.4.4-BSD-3-Clause.txt",
       "sha256": "c0a8512eabe960492fefd4f287523eb3b5ca1518ca37ef0ec83344cd7f089cb8",
       "bytes": 1448,
       "source": "Locked npm package jpeg-js@0.4.4/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-json-schema-traverse-1.0.0-LICENSE.txt",
+      "sha256": "7bf9b2de73a6b356761c948d0e9eeb4be6c1270bd04c79cd489c1e400ffdfc1a",
+      "bytes": 1074,
+      "source": "Locked npm package json-schema-traverse@1.0.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-json-schema-typed-8.0.2-LICENSE-md.txt",
+      "sha256": "bbe87b573c12bda5baf18742117330efa177e0886b3b0a278dacf8f236e1e129",
+      "bytes": 2859,
+      "source": "Locked npm package json-schema-typed@8.0.2/LICENSE.md",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-math-intrinsics-1.1.0-LICENSE.txt",
+      "sha256": "2b770a704c15de238c3f622b01b0044ddd60b49ee30608ea6991ebf19db7a7a1",
+      "bytes": 1073,
+      "source": "Locked npm package math-intrinsics@1.1.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-media-typer-1.1.1-LICENSE.txt",
+      "sha256": "bd47ce7b88c7759630d1e2b9fcfa170a0f1fde522be09e13fb1581a79d090400",
+      "bytes": 1094,
+      "source": "Locked npm package media-typer@1.1.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-merge-descriptors-2.0.0-license.txt",
+      "sha256": "70b126abc64d7ea06e1243349073935caa16fa47a41a571773ccf0b350b1d574",
+      "bytes": 1231,
+      "source": "Locked npm package merge-descriptors@2.0.0/license",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-mime-db-1.54.0-LICENSE.txt",
+      "sha256": "cc1dfd4dafa27271e8212cd3b274eeb3f262e40a6fdab36ddc3f9696f706f58b",
+      "bytes": 1172,
+      "source": "Locked npm package mime-db@1.54.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-mime-types-3.0.2-LICENSE.txt",
+      "sha256": "71f83c4c0621102a56d9853812777b85751bce7e9726f686f5b056c1f8a4b0e6",
+      "bytes": 1167,
+      "source": "Locked npm package mime-types@3.0.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-modelcontextprotocol-sdk-1.30.0-LICENSE.txt",
+      "sha256": "5e13dbbc1d120fc2a03cecde7c91424ae2d7de11b63d58ded2f4431e261ee50d",
+      "bytes": 1071,
+      "source": "Locked npm package @modelcontextprotocol/sdk@1.30.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-ms-2.1.3-license-md.txt",
+      "sha256": "1662fae9b5314d11cf51284e2dcd1f006a354f7343f08712a730fcff9a359801",
+      "bytes": 1079,
+      "source": "Locked npm package ms@2.1.3/license.md",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-negotiator-1.1.0-LICENSE.txt",
+      "sha256": "553d4d20029a24e315b428a1a54a9e109eaa340f2e958a4f50a92362c2c4070b",
+      "bytes": 1177,
+      "source": "Locked npm package negotiator@1.1.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-object-assign-4.1.1-license.txt",
+      "sha256": "6fb9754611c20f6649f68805e8c990e83261f29316e29de9e6cedae607b8634c",
+      "bytes": 1119,
+      "source": "Locked npm package object-assign@4.1.1/license",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-object-inspect-1.13.4-LICENSE.txt",
+      "sha256": "bd40cc437e28a3ad7bef2ad34e6b72e757b182e67bda1acadbab4ef0476f8232",
+      "bytes": 1071,
+      "source": "Locked npm package object-inspect@1.13.4/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-on-finished-2.4.1-LICENSE.txt",
+      "sha256": "8089bcc08845ec143e5761f4a101a65b8c792a0dedbfeeb90a15560c0b77f768",
+      "bytes": 1167,
+      "source": "Locked npm package on-finished@2.4.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-once-1.4.0-LICENSE.txt",
+      "sha256": "4ec3d4c66cd87f5c8d8ad911b10f99bf27cb00cdfcff82621956e379186b016b",
+      "bytes": 765,
+      "source": "Locked npm package once@1.4.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-parseurl-1.3.3-LICENSE.txt",
+      "sha256": "11d017c3b9f1ee3f44caf7203035f0461d5b57e0db8ce1bc03a9af34fa7d3f6b",
+      "bytes": 1173,
+      "source": "Locked npm package parseurl@1.3.3/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-path-key-3.1.1-license.txt",
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "bytes": 1109,
+      "source": "Locked npm package path-key@3.1.1/license",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-path-to-regexp-8.4.2-LICENSE.txt",
+      "sha256": "4eeb3271453a891df609e5a9f4ee79a68307f730c13417a3bfeffa604ac8cf25",
+      "bytes": 1103,
+      "source": "Locked npm package path-to-regexp@8.4.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-pkce-challenge-5.0.1-LICENSE.txt",
+      "sha256": "feb87a2e0c305de3464cc44077da5393c52d8ca6362d37427157d04ec6f4510d",
+      "bytes": 1057,
+      "source": "Locked npm package pkce-challenge@5.0.1/LICENSE",
       "scope": "Bundled CLI production package"
     },
     {
@@ -389,10 +2082,178 @@
       "scope": "Bundled CLI production package"
     },
     {
+      "path": "npm-proxy-addr-2.0.7-LICENSE.txt",
+      "sha256": "a7996721249a136fbcfc1c201bcb5f414f38a701d4a24f28abe65e16cfcce813",
+      "bytes": 1094,
+      "source": "Locked npm package proxy-addr@2.0.7/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-qs-6.16.0-LICENSE-md.txt",
+      "sha256": "e7dc37bf662d7f786efcb46c545615e70c1daf458a38385521c63cf6607cdfe1",
+      "bytes": 1600,
+      "source": "Locked npm package qs@6.16.0/LICENSE.md",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-range-parser-1.3.0-LICENSE.txt",
+      "sha256": "f655e6291356ec0de7a8f0e69f294961a2cea86678ec94588be1e6a492e278ab",
+      "bytes": 1178,
+      "source": "Locked npm package range-parser@1.3.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-raw-body-3.0.2-LICENSE.txt",
+      "sha256": "37876d7de8bdf5e5b9b58a697ebc34044624e493e6f49eff5c938e5226dcac6b",
+      "bytes": 1181,
+      "source": "Locked npm package raw-body@3.0.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-require-from-string-2.0.2-license.txt",
+      "sha256": "6ee0feb1f6ef996ff5a68600f8cf98909cf412d39ef3cdceaefd87d636fa1b7f",
+      "bytes": 1128,
+      "source": "Locked npm package require-from-string@2.0.2/license",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-router-2.2.0-LICENSE.txt",
+      "sha256": "d0bca4e517157b7a6120c085f5fe43a35b90c095e3bbeb9e67f220c608506a16",
+      "bytes": 1128,
+      "source": "Locked npm package router@2.2.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-safer-buffer-2.1.2-LICENSE.txt",
+      "sha256": "4bc935e71be198c67ddf3c2b5fddb195f6edc182bfc155a96a6db61b44b494b9",
+      "bytes": 1094,
+      "source": "Locked npm package safer-buffer@2.1.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-send-1.2.1-LICENSE.txt",
+      "sha256": "25a328069fe771f8ed5b6f983ed4b0e6c84b3312ac0f69b28c3d52dc277962c9",
+      "bytes": 1128,
+      "source": "Locked npm package send@1.2.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-serve-static-2.2.1-LICENSE.txt",
+      "sha256": "63b9a188d7d43e64b0558b7115255045b9fe20a5fc3ff483421cb899e7f52bcb",
+      "bytes": 1189,
+      "source": "Locked npm package serve-static@2.2.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-setprototypeof-1.2.0-LICENSE.txt",
+      "sha256": "76d6d1ea0c268da37dd3c961b4fcfb23dee8417fff9e8786d4d44c585b781b69",
+      "bytes": 727,
+      "source": "Locked npm package setprototypeof@1.2.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-shebang-command-2.0.0-license.txt",
+      "sha256": "69dee148a2cc470554dfa7142e830662062394d0fe67cddd379aba90dc60d6b3",
+      "bytes": 1116,
+      "source": "Locked npm package shebang-command@2.0.0/license",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-shebang-regex-3.0.0-license.txt",
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "bytes": 1109,
+      "source": "Locked npm package shebang-regex@3.0.0/license",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-side-channel-1.1.1-LICENSE.txt",
+      "sha256": "cfc3f455254c0af0655cc3ff46a41ed644b67599f6043346169d285bf2b3cf3b",
+      "bytes": 1071,
+      "source": "Locked npm package side-channel@1.1.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-side-channel-list-1.0.1-LICENSE.txt",
+      "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292",
+      "bytes": 1071,
+      "source": "Locked npm package side-channel-list@1.0.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-side-channel-map-1.0.1-LICENSE.txt",
+      "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292",
+      "bytes": 1071,
+      "source": "Locked npm package side-channel-map@1.0.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-side-channel-weakmap-1.0.2-LICENSE.txt",
+      "sha256": "cfc3f455254c0af0655cc3ff46a41ed644b67599f6043346169d285bf2b3cf3b",
+      "bytes": 1071,
+      "source": "Locked npm package side-channel-weakmap@1.0.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-statuses-2.0.2-LICENSE.txt",
+      "sha256": "512cfa4d5e7a7569c7ae4dd95241cb6ae2aaf648ef9ebd080c01bd24868d26e9",
+      "bytes": 1172,
+      "source": "Locked npm package statuses@2.0.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-toidentifier-1.0.1-LICENSE.txt",
+      "sha256": "a832d679750e49ab433626ab196350b89964b60eb0d3edd3341887c7d5f4c128",
+      "bytes": 1108,
+      "source": "Locked npm package toidentifier@1.0.1/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-type-is-2.1.0-LICENSE.txt",
+      "sha256": "23d466b1b134b415b66fa50c6526b4cf3e7b9258554da88d3abb371721e7ce68",
+      "bytes": 1172,
+      "source": "Locked npm package type-is@2.1.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-unpipe-1.0.0-LICENSE.txt",
+      "sha256": "1a526fbe8d8577f5a4b1c2821842b55b7c0e18862531c62ae4ce69c9b19b74b6",
+      "bytes": 1114,
+      "source": "Locked npm package unpipe@1.0.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-vary-1.1.2-LICENSE.txt",
+      "sha256": "bd47ce7b88c7759630d1e2b9fcfa170a0f1fde522be09e13fb1581a79d090400",
+      "bytes": 1094,
+      "source": "Locked npm package vary@1.1.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-which-2.0.2-LICENSE.txt",
+      "sha256": "4ec3d4c66cd87f5c8d8ad911b10f99bf27cb00cdfcff82621956e379186b016b",
+      "bytes": 765,
+      "source": "Locked npm package which@2.0.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-wrappy-1.0.2-LICENSE.txt",
+      "sha256": "4ec3d4c66cd87f5c8d8ad911b10f99bf27cb00cdfcff82621956e379186b016b",
+      "bytes": 765,
+      "source": "Locked npm package wrappy@1.0.2/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
       "path": "npm-zod-3.25.76-MIT.txt",
       "sha256": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8",
       "bytes": 1072,
       "source": "Locked npm package zod@3.25.76/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-zod-to-json-schema-3.25.2-LICENSE.txt",
+      "sha256": "80d3168ad2f70f6f5bb2ab22b23414707abf6f0a392034891481ae36a1a429d4",
+      "bytes": 745,
+      "source": "Locked npm package zod-to-json-schema@3.25.2/LICENSE",
       "scope": "Bundled CLI production package"
     },
     {
