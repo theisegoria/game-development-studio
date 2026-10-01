@@ -471,6 +471,8 @@ def main():
         raise RuntimeError(f"glTF export reported success but {target} is empty")
 
     receipt = {
+        "schema": "org.gamedebug.blender_receipt.v1",
+        "operation": "normalize_mesh",
         "input": source,
         "output": target,
         "meshObjects": len(objects),

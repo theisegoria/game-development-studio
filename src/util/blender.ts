@@ -7,8 +7,9 @@
  * reporting success.
  */
 
+import { parseBlenderReceipt, type CompatibleBlenderReceipt } from '../domain/blender-receipt.js';
 import { spawn } from 'node:child_process';
-import { accessSync, constants, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { accessSync, constants, existsSync, mkdirSync, mkdtempSync, rmSync, readdirSync, openSync, fstatSync, readSync, closeSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -95,13 +96,14 @@ export function packagedScript(name: string): string {
 }
 
 export interface BlenderRunResult {
-  receipt: Record<string, unknown>;
+  receipt: CompatibleBlenderReceipt;
   stderrTail: string;
   exitCode: number;
   /** True when Blender's stdout exceeded the capture cap and was truncated. */
   stdoutTruncated: boolean;
 }
 
+let activeBlenderProcesses = 0;
 const RECEIPT_PREFIX = 'NORMALIZE_RECEIPT=';
 const MAX_CAPTURE_BYTES = 4 << 20;
 const MAX_RECEIPT_LINE_BYTES = 256 << 10;
@@ -143,11 +145,20 @@ function safeBlenderEnvironment(isolatedHome: string): NodeJS.ProcessEnv {
 export async function runBlenderScript(
   scriptPath: string,
   options: Record<string, unknown>,
-  settings: { timeoutMs: number; blenderPath?: string },
+  settings: { timeoutMs: number; blenderPath?: string; threads?: number },
 ): Promise<BlenderRunResult> {
+  const threads = settings.threads ?? 2;
+  if (!Number.isInteger(threads) || threads < 1 || threads > 16 ||
+      !Number.isFinite(settings.timeoutMs) || settings.timeoutMs <= 0 || settings.timeoutMs > 900_000) {
+    throw new AssetPipelineError('INVALID_INPUT', 'Blender requires 1–16 threads and a timeout of 1–900000ms');
+  }
+  if (activeBlenderProcesses >= 1) throw new AssetPipelineError('INVALID_STATE',
+    'A Blender process is already running in this service; retry after it completes', { retryable: true });
   const executable = settings.blenderPath ?? requireBlender();
   const isolatedHome = mkdtempSync(path.join(os.tmpdir(), 'game-dev-blender-'));
 
+  activeBlenderProcesses++;
+  process.stderr.write(`[game-dev] Starting local Blender: ${path.basename(scriptPath)}; CPU threads=${threads}; timeout=${settings.timeoutMs}ms; concurrency=1\n`);
   return new Promise<BlenderRunResult>((resolve, reject) => {
     // detached puts the child in its OWN process group, so the timeout can kill
     // the whole tree. BLENDER_PATH is a supported override and is routinely a
@@ -159,6 +170,7 @@ export async function runBlenderScript(
       [
         '--background',
         '--factory-startup',
+        '--threads', String(threads),
         '--python',
         scriptPath,
         '--',
@@ -288,6 +300,23 @@ export async function runBlenderScript(
       // the group before removing this process from the ownership registry.
       if (externallyStopping) killTree('SIGKILL');
       unregisterOwnedProcess();
+      const crashLogs: string[] = [];
+      for (const directory of [isolatedHome, path.join(isolatedHome, 'tmp')]) {
+        for (const entry of readdirSync(directory)) {
+          if (!/crash.*\.(txt|log)$/.test(entry)) continue;
+          if (crashLogs.length >= 4) break;
+          try {
+            const fd = openSync(path.join(directory, entry), 'r');
+            try {
+              const size = fstatSync(fd).size;
+              const tail = Buffer.alloc(Math.min(size, 16_384));
+              readSync(fd, tail, 0, tail.length, Math.max(0, size - tail.length));
+              crashLogs.push(tail.toString('utf8'));
+            } finally { closeSync(fd); }
+          } catch { /* diagnostic only */ }
+        }
+      }
+      if (crashLogs.length) stderr += '\nBlender crash report:\n' + crashLogs.join('\n');
       const stderrTail = stderr.split('\n').slice(-40).join('\n');
 
       if (killedForTimeout) {
@@ -358,7 +387,7 @@ export async function runBlenderScript(
           throw new Error('receipt is not a JSON object');
         }
         resolve({
-          receipt: parsed as Record<string, unknown>,
+          receipt: parseBlenderReceipt(parsed),
           stdoutTruncated,
           stderrTail,
           exitCode: code ?? 0,
@@ -373,6 +402,7 @@ export async function runBlenderScript(
       }
     };
   }).finally(() => {
+    activeBlenderProcesses--;
     rmSync(isolatedHome, { recursive: true, force: true });
   });
 }

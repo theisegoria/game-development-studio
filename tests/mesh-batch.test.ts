@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { copyFileSync } from 'node:fs';
 
 const FIXTURE_MESH = fileURLToPath(new URL('./fixtures/real/uvless_alien_needler.glb', import.meta.url));
+import { MeshCheckpoints } from '../src/storage/mesh-checkpoints.js';
 import type { AssetInspection } from '../src/inspection/gltf.js';
 import { runMeshBatch, type MeshBatchDeps, type MeshBatchOptions } from '../src/domain/mesh-batch.js';
 import { createMeshBatchDeps } from '../src/tools/batch.js';
@@ -792,4 +793,22 @@ describe('the batch carries the dissolve flag too', () => {
 
     expect(result.items[0]?.dissolveSkipped).toBeUndefined();
   });
+});
+
+it('resumes a sealed GLB checkpoint without writing another mesh', async () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'batch-resume-'));
+  try {
+    const source = path.join(root, 'source.glb'); const output = path.join(root, 'output.glb');
+    writeFileSync(source, 'original'); writeFileSync(output, 'prepared');
+    const h = harness({});
+    h.deps.checkpoints = new MeshCheckpoints(path.join(root, 'checkpoints'), 'tool-v1');
+    const key = (await h.deps.checkpoints.key(source, OPTIONS))!;
+    await h.deps.checkpoints.write(key, { input: source, status: 'prepared', normalizedPath: output });
+    const result = await runMeshBatch([source], OPTIONS, h.deps);
+    expect(result.prepared).toBe(1);
+    expect(result.outputsWritten).toBe(0);
+    expect(result.items[0]?.reused).toBe(true);
+    expect(h.normalizeCalls).toHaveLength(0);
+    expect(h.inspectCalls).toContain(output);
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
