@@ -43,8 +43,8 @@ describe('explicit upstream Node CI profile', () => {
     expect(() => validateMacOSRuntimeProvenanceBinding({ provenance, runtimePackage, runtimeRoster, nodeVersion: 'v25.2.1' })).toThrow('dylib filenames');
     const lock = JSON.parse(await readFile(path.join(root, 'package-lock.json'), 'utf8'));
     for (const pkg of provenance.npmProductionPackages) {
-      expect(pkg.lockedVersion).toBe(lock.packages[`node_modules/${pkg.name}`].version);
-      expect(pkg.lockIntegrity).toBe(lock.packages[`node_modules/${pkg.name}`].integrity);
+      expect(pkg.lockedVersion).toBe(lock.packages[pkg.installPath].version);
+      expect(pkg.lockIntegrity).toBe(lock.packages[pkg.installPath].integrity);
     }
     const license = provenance.legalAssets.find((asset: { path: string }) => asset.path === `game-development-studio-${runtimePackage.version}-MIT.txt`);
     expect(license?.sha256).toBe(sha256(await readFile(path.join(root, 'LICENSE'))));

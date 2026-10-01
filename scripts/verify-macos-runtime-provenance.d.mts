@@ -25,3 +25,5 @@ export function verifyLegalAssets(
   provenancePath: string,
   provenance: unknown,
 ): Promise<number>;
+
+export function verifyNpmRuntimeBinding(runtimeRoot: string, runtimeRoster: unknown, provenance: unknown): Promise<number>;

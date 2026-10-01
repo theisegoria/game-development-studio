@@ -195,7 +195,30 @@ export async function verifyLegalAssets(provenancePath, provenance) {
     }
   }
 
+  for (const pkg of provenance.npmProductionPackages ?? []) {
+    invariant(Array.isArray(pkg.licenseAssets) && pkg.licenseAssets.length > 0, `missing npm license assets: ${pkg.name}`);
+    for (const asset of pkg.licenseAssets) invariant(known.has(asset), `npm package ${pkg.name} names an unrostered license asset: ${asset}`);
+  }
   return entries.length;
+}
+
+/** Require the legal roster to cover exactly the package roots actually staged. */
+export async function verifyNpmRuntimeBinding(runtimeRoot, runtimeRoster, provenance) {
+  const packagePattern = /^app\/(node_modules\/(?:@[^/]+\/)?[^/]+(?:\/node_modules\/(?:@[^/]+\/)?[^/]+)*)\/package\.json$/;
+  const actual = runtimeRoster.entries.filter((entry) => entry.type === 'file' && packagePattern.test(entry.path))
+    .map((entry) => packagePattern.exec(entry.path)[1]).sort(compareUtf8);
+  invariant(Array.isArray(provenance.npmProductionPackages), 'missing npm production package provenance');
+  const declared = provenance.npmProductionPackages.map((pkg) => pkg.installPath);
+  invariant(declared.every((name) => typeof name === 'string' && packagePattern.test(`app/${name}/package.json`)
+    && !name.split('/').some((part) => part === '.' || part === '..' || part.includes('\\'))), 'invalid npm install path');
+  invariant(new Set(declared).size === declared.length, 'duplicate npm install path');
+  invariant(sameSortedNames(actual, [...declared].sort(compareUtf8)), 'staged npm package paths do not exactly match third-party provenance');
+  for (const pkg of provenance.npmProductionPackages) {
+    const metadata = JSON.parse(await readFile(path.join(runtimeRoot, 'payload/app', pkg.installPath, 'package.json'), 'utf8'));
+    invariant(metadata.name === pkg.name && metadata.version === pkg.lockedVersion && metadata.license === pkg.license,
+      `staged npm identity does not match third-party provenance: ${pkg.installPath}`);
+  }
+  return declared.length;
 }
 
 async function main() {
@@ -210,6 +233,7 @@ async function main() {
     readFile(path.join(runtimeRoot, 'payload', 'app', 'package.json'), 'utf8').then(JSON.parse),
     readFile(path.resolve(options.provenance), 'utf8').then(JSON.parse),
   ]);
+  const npmPackagesVerified = await verifyNpmRuntimeBinding(runtimeRoot, runtimeRoster, provenance);
   const legalAssetsVerified = await verifyLegalAssets(options.provenance, provenance);
   console.log(JSON.stringify({
     ...validateMacOSRuntimeProvenanceBinding({
@@ -219,6 +243,7 @@ async function main() {
       nodeVersion: options.nodeVersion,
     }),
     legalAssetsVerified,
+    npmPackagesVerified,
   }));
 }
 
