@@ -10,11 +10,12 @@ installer SHA-256, or publisher code signature to verify. A future publication
 date is not established. The [skills releases](https://github.com/theisegoria/game-development-studio-skills/releases)
 contain a skills/plugin ZIP, not the CLI. Source archives are not executables.
 
-The source route below is available now. Windows is an intended CLI platform;
-this does not imply every workflow has been validated on Windows. In particular,
-[PR #2](https://github.com/theisegoria/game-development-studio/pull/2) addresses
-an independent Windows directory-fsync failure in `package build`; it was open
-at the status check above. Installing the CLI does not fix that later failure.
+The source route below is available now. Windows installation smoke checks pass
+on Node 22 and 24; this does not imply every workflow has been validated on
+Windows. The independent Windows directory-fsync failure in `package build`
+was fixed on `main` by [PR #5](https://github.com/theisegoria/game-development-studio/pull/5)
+(merged commit `5c24675730f24389824fd900b402154729355a58`). A new checkout below
+includes that fix; older source checkouts or locally built tarballs may not.
 
 ## 1. Build the public source
 
