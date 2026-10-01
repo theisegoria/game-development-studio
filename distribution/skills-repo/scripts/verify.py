@@ -3,6 +3,7 @@
 import hashlib
 import json
 import pathlib
+import re
 import stat
 import struct
 import sys
@@ -185,7 +186,7 @@ def verify_tree() -> dict:
 
     manifest = load_json(PLUGIN / ".codex-plugin" / "plugin.json")
     require(manifest["name"] == "game-development-studio", "unexpected plugin name")
-    require(manifest["version"] == "1.0.2", "unexpected plugin version")
+    require(isinstance(manifest.get("version"), str) and re.fullmatch(r"\d+\.\d+\.\d+", manifest["version"]), "invalid plugin version")
     require(manifest["skills"] == "./skills/", "unexpected skills path")
     require("mcpServers" not in manifest and "apps" not in manifest, "plugin must be skills-only")
     require(not (PLUGIN / ".mcp.json").exists(), "plugin ships .mcp.json")
@@ -330,7 +331,7 @@ def main() -> None:
         "ok": True,
         "schema": "game_dev.public_plugin_verification.v1",
         "plugin": "game-development-studio",
-        "version": "1.0.2",
+        "version": skill_manifest["version"],
         "skills": len(skill_manifest["skills"]),
         "screenshots": 0,
         "marketingScreenshots": len(MARKETING_SCREENSHOTS),

@@ -126,16 +126,16 @@ Keychain boundaries, commands, local-bundle status, and exact evidence limits.
 
 ## Install
 
-The CLI source is public in this repository. As checked on 2026-10-01,
-`@theisegoria/game-development-studio` is not available on the public npm
-registry, and this repository's GitHub releases have no attached CLI installers
-or binaries. The separate skills plugin ZIP does not install `game-dev`.
-Use the source build below; a package name in `package.json` does not establish
-that a package has been published.
+The CLI source is public. Release **1.1.0** provides a compiled Node.js package
+(`theisegoria-game-development-studio-1.1.0.tgz`) and SHA-256 manifest through
+[GitHub Releases](https://github.com/theisegoria/game-development-studio/releases/tag/v1.1.0).
+It requires a separately installed Node.js 22.5+ runtime; it is not a standalone
+Windows EXE/MSI. The skills plugin ZIP does not install `game-dev`.
 
-For Windows 11 PowerShell, see [Windows CLI installation](docs/windows-install.md)
-for the source build, a local tarball installation, PATH setup, and verification
-limits. No native macOS app is required.
+The public npm registry package is not published. Use the GitHub release tarball
+or source build. See [Windows CLI installation](docs/windows-install.md) for
+checksum verification, PowerShell installation, PATH setup, and source fallback.
+No native macOS app is required.
 
 From source:
 

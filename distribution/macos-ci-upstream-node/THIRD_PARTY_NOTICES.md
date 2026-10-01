@@ -3,7 +3,7 @@
 This profile is for local CI validation bundles, not a published app release.
 It does not replace the default Homebrew release profile.
 
-The bundle includes `game-dev` CLI 1.0.2 (MIT), upstream Node.js 25.2.1 for
+The bundle includes `game-dev` CLI 1.1.0 (MIT), upstream Node.js 25.2.1 for
 macOS ARM64, and the 98 lockfile-pinned production npm package paths below.
 The upstream executable links only macOS system libraries: this profile declares
 zero non-system dylibs. Node's statically included third-party components are

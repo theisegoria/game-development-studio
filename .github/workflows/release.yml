@@ -1,80 +1,106 @@
-name: Release
+name: Release artifacts
 
-# Publishes the npm package when a version tag is pushed. Everything the
-# tag claims is checked before anything leaves the machine: the tag must
-# match package.json, every version site must agree, and the full
-# prepublishOnly gate must pass -- including verify-install, which packs the
-# real tarball, installs it into an empty consumer, and drives the installed
-# MCP server over stdio.
-#
-# Publishing uses OIDC trusted publishing with provenance. This repository's
-# whole identity is closed rosters and hashed artefacts; a package without a
-# verifiable link back to the commit that built it would contradict that.
-
+# Builds verified artifacts only. Publication is a separate, authorized action.
+# npm registry publication is unavailable until an existing authenticated
+# publisher is configured; this workflow never creates or requests credentials.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  verify:
+  platform-checks:
+    uses: ./.github/workflows/ci.yml
+  windows-install:
+    uses: ./.github/workflows/windows-install.yml
+  windows-packages:
+    uses: ./.github/workflows/windows-package-fsync.yml
+
+  build-artifacts:
+    needs: [platform-checks, windows-install, windows-packages]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
           cache: npm
-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - run: npm ci
-
-      - name: The tag must name the version the package states
+      - name: Validate release identity
         run: |
-          set -euo pipefail
-          tag="${GITHUB_REF_NAME#v}"
           version="$(node -p "require('./package.json').version")"
-          if [ "$tag" != "$version" ]; then
-            echo "tag v$tag does not match package.json version $version" >&2
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo 'Version tag does not match package.json' >&2
             exit 1
           fi
-          if ! grep -q "^## $version" CHANGELOG.md; then
-            echo "CHANGELOG.md has no '## $version' section" >&2
-            exit 1
-          fi
+          grep -Fx "## $version" CHANGELOG.md
+          npx vitest run tests/version-parity.test.ts --no-file-parallelism
+      - name: Verify installed package and build release artifacts
+        run: |
+          npm run verify
+          assets="$RUNNER_TEMP/game-dev-release-assets"
+          export_tree="$RUNNER_TEMP/game-dev-release-skills"
+          mkdir -p "$assets"
+          version="$(node -p "require('./package.json').version")"
+          npm pack --ignore-scripts --pack-destination "$assets"
+          node scripts/build-skills-repository.mjs "$export_tree"
+          python3 "$export_tree/scripts/verify.py"
+          python3 "$export_tree/scripts/build_release.py" "$assets/game-development-studio-plugin-$version.zip"
+          cd "$assets"
+          sha256sum *.tgz *.zip > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: game-development-studio-${{ github.sha }}
+          path: ${{ runner.temp }}/game-dev-release-assets/*
+          if-no-files-found: error
+          retention-days: 14
 
-      - name: Every version site must agree
-        run: npx vitest run tests/version-parity.test.ts --no-file-parallelism
-
-      - name: Full publish gate
-        run: npm run prepublishOnly
-
-      - name: Audit the roster that would ship
-        run: npm pack --dry-run --json
-
-  publish-npm:
-    needs: verify
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
+  verify-windows-artifact:
+    needs: build-artifacts
+    runs-on: windows-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
-          cache: npm
-
-      - run: npm ci
-
-      - run: npm run build
-
-      - name: Publish with provenance
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          node-version: ${{ matrix.node }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: game-development-studio-${{ github.sha }}
+          path: release-artifacts
+      - name: Verify checksums and install the actual release tarball
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          foreach ($line in Get-Content release-artifacts/SHA256SUMS.txt) {
+            if ($line -notmatch '^([a-f0-9]{64})  ([A-Za-z0-9._-]+)$') { throw 'Invalid checksum record' }
+            $digest = $Matches[1]
+            $file = Join-Path release-artifacts $Matches[2]
+            if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ne $digest) { throw "Checksum mismatch: $file" }
+          }
+          $tarball = (Resolve-Path "release-artifacts/theisegoria-game-development-studio-$version.tgz").Path
+          $prefix = Join-Path $env:RUNNER_TEMP 'Release CLI with spaces'
+          npm.cmd install --global --prefix "$prefix" --ignore-scripts "$tarball"
+          if ($LASTEXITCODE -ne 0) { throw 'Release tarball install failed' }
+          $env:Path = "$prefix;$env:Path"
+          Set-Location $env:RUNNER_TEMP
+          $actualVersion = game-dev.cmd --version
+          if ($LASTEXITCODE -ne 0 -or $actualVersion.Trim() -ne $version) { throw 'Installed version mismatch' }
+          $workspace = Join-Path $env:RUNNER_TEMP 'Release smoke workspace'
+          foreach ($command in @('capabilities', 'doctor')) {
+            $output = game-dev.cmd $command --output-dir "$workspace" --json
+            if ($LASTEXITCODE -ne 0) { throw "$command failed" }
+            $result = $output | ConvertFrom-Json
+            if ($result.schema -ne 'game_dev.result.v1' -or $result.operation -ne $command -or $result.ok -ne $true -or $result.data.version -ne $version) { throw "Unexpected $command response" }
+          }

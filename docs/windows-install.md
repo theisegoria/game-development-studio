@@ -2,13 +2,48 @@
 
 ## Distribution status
 
-Checked on 2026-10-01: the CLI source is **public**, its source package version
-is 1.0.2, and it requires Node.js 22.5 or newer. The public npm registry returns
-404 for `@theisegoria/game-development-studio`; GitHub CLI releases have no
-attached installer/binary assets. There is no published Windows installer URL,
-installer SHA-256, or publisher code signature to verify. A future publication
-date is not established. The [skills releases](https://github.com/theisegoria/game-development-studio-skills/releases)
-contain a skills/plugin ZIP, not the CLI. Source archives are not executables.
+The CLI source is public. Release 1.1.0 distributes a compiled JavaScript npm
+package through [GitHub Releases](https://github.com/theisegoria/game-development-studio/releases/tag/v1.1.0),
+with a SHA-256 manifest. It requires Node.js 22.5 or newer; it does not include
+Node or a standalone Windows EXE/MSI. The public npm registry package
+`@theisegoria/game-development-studio` remains unpublished. There is no Windows
+Authenticode signature or installer to verify. The skills/plugin ZIP contains
+instructions only, not the CLI.
+
+## Install the release tarball
+
+Install Node.js 22.5+ from [nodejs.org](https://nodejs.org/en/download) and open
+a fresh PowerShell window. In a new writable download directory, run:
+
+```powershell
+node --version
+npm.cmd --version
+$release = 'https://github.com/theisegoria/game-development-studio/releases/download/v1.1.0'
+$package = 'theisegoria-game-development-studio-1.1.0.tgz'
+Invoke-WebRequest "$release/$package" -OutFile $package
+Invoke-WebRequest "$release/SHA256SUMS.txt" -OutFile SHA256SUMS.txt
+$record = @(Get-Content SHA256SUMS.txt | Where-Object { $_ -match ('^[a-f0-9]{64}  ' + [regex]::Escape($package) + '$') })
+if ($record.Count -ne 1) { throw 'Missing or ambiguous package checksum' }
+$expected = $record[0].Substring(0, 64)
+if ((Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash -ne $expected) { throw 'Package checksum mismatch' }
+$cliPrefix = Join-Path $env:LOCALAPPDATA 'GameDevelopmentStudio\cli'
+$tarball = (Resolve-Path -LiteralPath $package).Path
+npm.cmd install --global --prefix "$cliPrefix" --ignore-scripts "$tarball"
+if ($LASTEXITCODE -ne 0) { throw 'CLI install failed' }
+$env:Path = "$cliPrefix;$env:Path"
+game-dev.cmd --version
+game-dev.cmd capabilities --json
+game-dev.cmd doctor --json
+```
+
+The SHA-256 manifest identifies the package attached to this GitHub release;
+it is not an Authenticode signature. Runtime dependencies are fetched from npm
+under the package's declared ranges. Use the PATH section below for future
+sessions and local agents. `npm.cmd`/`game-dev.cmd` avoid PowerShell selecting
+`.ps1` launchers under restrictive execution policies; no policy change or
+administrator shell is needed.
+
+## Source-build alternative
 
 The source route below is available now. Windows installation smoke checks pass
 on Node 22 and 24; this does not imply every workflow has been validated on
