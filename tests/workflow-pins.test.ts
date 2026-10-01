@@ -45,8 +45,7 @@ describe('workflow supply-chain pins', () => {
 `, (directory) => expect(() => check(directory)).not.toThrow());
   });
 
-  it.each(['actions/checkout@v4', 'dtolnay/rust-toolchain@stable', 'owner/repo@abc123', 'owner/repo'])
-  ('rejects a mutable or incomplete ref: %s', (reference) => {
+  it.each(['actions/checkout@v4', 'dtolnay/rust-toolchain@stable', 'owner/repo@abc123', 'owner/repo'])('rejects a mutable or incomplete ref: %s', (reference) => {
     fixture(`jobs:\n  check:\n    uses: ${reference}\n`, (directory) => {
       expect(() => check(directory)).toThrow();
     });
