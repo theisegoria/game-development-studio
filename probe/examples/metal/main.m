@@ -147,7 +147,8 @@ int main(int argc, char **argv) {
 
     /* Stage-boundary GPU timestamps, when the device offers them. */
     id<MTLCounterSampleBuffer> samples = nil;
-    if ([device supportsCounterSampling:MTLCounterSamplingPointAtStageBoundary]) {
+    if (!(argc > 2 && strcmp(argv[2], "0") == 0)
+        && [device supportsCounterSampling:MTLCounterSamplingPointAtStageBoundary]) {
       for (id<MTLCounterSet> set in device.counterSets) {
         if ([set.name isEqualToString:MTLCommonCounterSetTimestamp]) {
           MTLCounterSampleBufferDescriptor *descriptor = [MTLCounterSampleBufferDescriptor new];
@@ -234,7 +235,9 @@ int main(int argc, char **argv) {
       : gdprobe_attest_gpu(run, GDPROBE_GPU_COMMANDBUFFER_COMPLETED,
                            "MTLCommandBuffer.status == Completed after waitUntilCompleted; no counter sampling");
     if (attested != GDPROBE_OK) return fail(run, "attestation refused");
-    gdprobe_attest_performance(run, 1, "timings below name what measured them");
+    BOOL driverTimingAvailable = commands.GPUStartTime > 0 && commands.GPUEndTime >= commands.GPUStartTime;
+    gdprobe_attest_performance(run, passDurationNs >= 0 || driverTimingAvailable,
+                               "only available GPU timings are emitted; wall-clock time is not hardware timing");
 
     gdprobe_frame *frame = gdprobe_frame_begin(run, 0, "Main View");
     if (!frame) return fail(run, "frame");
@@ -249,9 +252,11 @@ int main(int argc, char **argv) {
       gdprobe_emit_measured(run, "render", "pass.main.gpu_duration_ns", passDurationNs, "ns", 0,
                             GDPROBE_MEASURED_GPU_TIMESTAMP_QUERY);
     }
-    gdprobe_emit_measured(run, "render", "commandbuffer.gpu_duration_ns",
-                          (commands.GPUEndTime - commands.GPUStartTime) * 1e9, "ns", 0,
-                          GDPROBE_MEASURED_DRIVER_REPORT);
+    if (driverTimingAvailable) {
+      gdprobe_emit_measured(run, "render", "commandbuffer.gpu_duration_ns",
+                            (commands.GPUEndTime - commands.GPUStartTime) * 1e9, "ns", 0,
+                            GDPROBE_MEASURED_DRIVER_REPORT);
+    }
     gdprobe_emit_measured(run, "performance", "frame_time", (cpuEnd - cpuStart) / 1e6, "ms", 0,
                           GDPROBE_MEASURED_WALL_CLOCK);
     gdprobe_measure_measured(run, "render.draw_calls", 1.0, "count", "sample", 0, GDPROBE_MEASURED_ENGINE_COUNTER);

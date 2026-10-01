@@ -22,7 +22,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
+import { ReadResourceRequestSchema, type ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import { AssetCatalog } from '../packages/catalog.js';
 import { readAssetPackage } from '../packages/format.js';
 import { resolveRunPath, verifyRunBundle } from '../harness/run-bundle.js';
@@ -81,7 +81,7 @@ function requireExact(uri: URL, expected: string): void {
 export function registerEvidenceResources(server: McpServer, ctx: ToolContext): void {
   const runsDir = ctx.config.runsDir;
 
-  server.registerResource(
+  const runsResource = server.registerResource(
     'runs',
     'game-dev://runs',
     {
@@ -98,7 +98,7 @@ export function registerEvidenceResources(server: McpServer, ctx: ToolContext): 
     },
   );
 
-  server.registerResource(
+  const runResource = server.registerResource(
     'run',
     new ResourceTemplate('game-dev://runs/{runId}', {
       list: async () => ({
@@ -128,7 +128,7 @@ export function registerEvidenceResources(server: McpServer, ctx: ToolContext): 
     },
   );
 
-  server.registerResource(
+  const artifactResource = server.registerResource(
     'run-artifact',
     new ResourceTemplate('game-dev://runs/{runId}/artifacts/{+path}', { list: undefined }),
     {
@@ -164,7 +164,7 @@ export function registerEvidenceResources(server: McpServer, ctx: ToolContext): 
     },
   );
 
-  server.registerResource(
+  const catalogResource = server.registerResource(
     'catalog',
     'game-dev://catalog',
     {
@@ -188,7 +188,7 @@ export function registerEvidenceResources(server: McpServer, ctx: ToolContext): 
     },
   );
 
-  server.registerResource(
+  const packageResource = server.registerResource(
     'package',
     new ResourceTemplate('game-dev://packages/{packageId}', {
       list: async () => {
@@ -224,4 +224,20 @@ export function registerEvidenceResources(server: McpServer, ctx: ToolContext): 
       return json(uri.href, { packagePath, manifest: await readAssetPackage(packagePath) });
     },
   );
+  // Match the original request before URL normalization. Node 22 folds a dot
+  // segment to the fixed index URI before the SDK invokes a resource callback.
+  // Callback-only validation has already lost the input it needs to reject.
+  server.server.setRequestHandler(ReadResourceRequestSchema, async (request, extra) => {
+    const raw = request.params.uri;
+    const uri = new URL(raw);
+    if (uri.href !== raw) throw invalidInput('resource URI must be canonical', { uri: raw });
+    if (raw === 'game-dev://runs') return runsResource.readCallback(uri, extra);
+    if (raw === 'game-dev://catalog') return catalogResource.readCallback(uri, extra);
+    for (const resource of [runResource, artifactResource, packageResource]) {
+      const variables = resource.resourceTemplate.uriTemplate.match(raw);
+      if (variables) return resource.readCallback(uri, variables, extra);
+    }
+    throw notFound('resource', raw);
+  });
+
 }

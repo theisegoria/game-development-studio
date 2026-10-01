@@ -59,10 +59,10 @@ beforeAll(async () => {
     scenarios: [{
       id: 'capture',
       title: 'Capture one frame on the GPU',
-      command: { executable: 'engine', arguments: ['{param.brightness}'], workingDirectory: '.' },
+      command: { executable: 'engine', arguments: ['{param.brightness}', '{param.counters}'], workingDirectory: '.' },
       timeoutSeconds: 60,
       capabilities: ['metal', 'gpu', 'performance', 'project-write'],
-      parameters: { brightness: { type: 'integer', required: false, default: 0, minimum: 0, maximum: 50 } },
+      parameters: { counters: { type: 'integer', required: false, default: 1, minimum: 0, maximum: 1 }, brightness: { type: 'integer', required: false, default: 0, minimum: 0, maximum: 50 } },
       outputs: { format: 'game-dev-capture-v1', path: 'capture.json' },
     }],
   }));
@@ -76,9 +76,9 @@ afterAll(async () => {
   if (root) await fs.rm(root, { recursive: true, force: true });
 });
 
-async function run(brightness: number) {
+async function run(brightness: number, counters = 1) {
   const adapter = await loadAdapter(projectRoot);
-  const plan = await planScenarioRun({ adapter, scenarioId: 'capture', runsRoot: path.join(root, 'runs'), parameters: { brightness } });
+  const plan = await planScenarioRun({ adapter, scenarioId: 'capture', runsRoot: path.join(root, 'runs'), parameters: { brightness, counters } });
   return executeScenarioRun({ adapter, plan, confirm: true, allowGpu: true, allowPerformance: true });
 }
 
@@ -89,15 +89,18 @@ describe.skipIf(!onMacOS)('the Metal example on a real GPU', () => {
     expect(output).toContain('not attached');
   });
 
-  it('attests completion by a resolved timestamp pair, and the harness admits it', async () => {
+  it('admits only the completion evidence and timing this Metal device supplied', async () => {
     const result = await run(0);
     const evidence = result.manifest.evidence;
 
     expect(evidence.rendererClass).toBe('hardware');
     expect(evidence.softwareRasterizedLane).toBe(false);
     expect(evidence.adapterReportedGpuExecution).toBe(true);
-    expect(evidence.adapterReportedGpuCompletionIdentity).toBe(true);
-    expect(evidence.hardwarePerformanceEvidenceAdmitted).toBe(true);
+    const summary = await summarizeRunPerformance(result.runPath);
+    const hasTimestamp = summary.measurementProvenance.gpu_timestamp_query > 0;
+    const hasDriverTiming = summary.measurementProvenance.driver_report > 0;
+    expect(evidence.adapterReportedGpuCompletionIdentity).toBe(hasTimestamp);
+    expect(evidence.hardwarePerformanceEvidenceAdmitted).toBe(hasTimestamp || hasDriverTiming);
     // Still a claim the adapter made, never one the harness proved alone.
     expect(evidence.hardwareGpuExecutionProvenByHarnessAlone).toBe(false);
   }, 60_000);
@@ -106,19 +109,37 @@ describe.skipIf(!onMacOS)('the Metal example on a real GPU', () => {
     const summary = await summarizeRunPerformance((await run(0)).runPath);
     const byMetric = new Map(summary.metrics.map((metric) => [metric.metric, metric]));
 
-    expect(byMetric.get('render.pass.main.gpu_duration_ns')).toMatchObject({
-      measuredBy: 'gpu_timestamp_query', hardwareMeasurementAdmitted: true,
-    });
-    expect(byMetric.get('render.commandbuffer.gpu_duration_ns')).toMatchObject({
-      measuredBy: 'driver_report', hardwareMeasurementAdmitted: true,
-    });
+    // Hosted Metal devices may expose no counter sampling or driver timings.
+    // Their absence is evidence, not a fabricated zero-duration GPU measurement.
+    for (const [name, measuredBy] of [
+      ['render.pass.main.gpu_duration_ns', 'gpu_timestamp_query'],
+      ['render.commandbuffer.gpu_duration_ns', 'driver_report'],
+    ] as const) {
+      const metric = byMetric.get(name);
+      if (metric) {
+        expect(metric).toMatchObject({ measuredBy, hardwareMeasurementAdmitted: true });
+        expect(metric.min).toBeGreaterThanOrEqual(0);
+        expect(summary.measurementProvenance[measuredBy]).toBe(1);
+      } else {
+        expect(summary.measurementProvenance[measuredBy]).toBe(0);
+      }
+    }
     expect(byMetric.get('performance.frame_time')).toMatchObject({
       measuredBy: 'wall_clock', hardwareMeasurementAdmitted: false,
     });
     expect(byMetric.get('render.draw_calls')).toMatchObject({
       measuredBy: 'engine_counter', hardwareMeasurementAdmitted: false,
     });
-    expect(summary.measurementProvenance.gpu_timestamp_query).toBe(1);
+
+  }, 60_000);
+
+  it('reports weaker completion evidence when counter sampling is explicitly disabled', async () => {
+    const result = await run(0, 0);
+    expect(result.manifest.evidence.adapterReportedGpuExecution).toBe(true);
+    expect(result.manifest.evidence.adapterReportedGpuCompletionIdentity).toBe(false);
+    const summary = await summarizeRunPerformance(result.runPath);
+    expect(summary.measurementProvenance.gpu_timestamp_query).toBe(0);
+    expect(summary.metrics.some((metric) => metric.metric === 'performance.frame_time')).toBe(true);
   }, 60_000);
 
   it('renders the two objects the semantic diff can tell apart', async () => {
