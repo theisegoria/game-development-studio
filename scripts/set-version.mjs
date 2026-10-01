@@ -50,6 +50,7 @@ async function editText(relative, from, to) {
 }
 
 await editJson('package.json', (d) => { d.version = next; });
+await editJson('package-lock.json', (d) => { d.version = next; d.packages[''].version = next; });
 await editText('src/version.ts', `GAME_DEV_VERSION = '${current}'`, `GAME_DEV_VERSION = '${next}'`);
 await editJson('skills/manifest.json', (d) => { d.version = next; });
 await editJson('.codex-plugin/plugin.json', (d) => { d.version = next; });
@@ -58,27 +59,25 @@ await editJson('.codex-plugin/plugin.json', (d) => { d.version = next; });
 // asset's roster entry. The file itself is renamed so the record stays true.
 const oldAsset = `game-development-studio-${current}-MIT.txt`;
 const newAsset = `game-development-studio-${next}-MIT.txt`;
-await editJson('distribution/macos-app-repo/THIRD_PARTY_PROVENANCE.json', (d) => {
-  d.bundledRuntime.gameDevCli.version = next;
-  d.bundledRuntime.gameDevCli.licenseAssets = d.bundledRuntime.gameDevCli.licenseAssets
-    .map((name) => (name === oldAsset ? newAsset : name));
-  for (const asset of d.legalAssets ?? []) {
-    if (asset.path === oldAsset) {
-      asset.path = newAsset;
-      asset.source = asset.source.replace(current, next);
+for (const profile of ['distribution/macos-app-repo', 'distribution/macos-ci-upstream-node']) {
+  await editJson(`${profile}/THIRD_PARTY_PROVENANCE.json`, (d) => {
+    d.bundledRuntime.gameDevCli.version = next;
+    d.bundledRuntime.gameDevCli.licenseAssets = d.bundledRuntime.gameDevCli.licenseAssets
+      .map((name) => (name === oldAsset ? newAsset : name));
+    for (const asset of d.legalAssets ?? []) {
+      if (asset.path === oldAsset) {
+        asset.path = newAsset;
+        asset.source = asset.source.replace(current, next);
+      }
     }
-  }
-});
-const legal = path.join(root, 'distribution', 'macos-app-repo', 'legal', 'third-party-licenses');
-await access(path.join(legal, oldAsset));
-await rename(path.join(legal, oldAsset), path.join(legal, newAsset));
-console.log(`renamed ${oldAsset} -> ${newAsset}`);
-await editText('script/package_macos_release.sh', `"${oldAsset}"`, `"${newAsset}"`);
-// The packager pins the CLI version it expects to find bundled, and its
-// self-test dies on a mismatch -- which is how a stale literal here turned
-// CI red once. It is a version site like the others.
-await editText('script/package_macos_release.sh', `BUNDLED_GAME_DEV_CLI="${current}"`, `BUNDLED_GAME_DEV_CLI="${next}"`);
+  });
+  const legal = path.join(root, profile, 'legal', 'third-party-licenses');
+  await access(path.join(legal, oldAsset));
+  await rename(path.join(legal, oldAsset), path.join(legal, newAsset));
+  console.log(`renamed ${oldAsset} -> ${newAsset}`);
+}
 await editText('distribution/macos-app-repo/THIRD_PARTY_NOTICES.md', `CLI ${current},`, `CLI ${next},`);
+await editText('distribution/macos-ci-upstream-node/THIRD_PARTY_NOTICES.md', `CLI ${current} (MIT)`, `CLI ${next} (MIT)`);
 await editText('distribution/macos-app-repo/README.md', `CLI ${current} and`, `CLI ${next} and`);
 
 // The release workflow refuses a tag with no matching CHANGELOG section. If an

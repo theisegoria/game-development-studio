@@ -18,7 +18,12 @@ RUNTIME_NAME="GameDevelopmentStudioRuntime"
 RUNTIME_BUILDER="$ROOT_DIR/scripts/build-cli-runtime.mjs"
 RUNTIME_VERIFIER="$ROOT_DIR/scripts/verify-cli-runtime.mjs"
 RUNTIME_PROVENANCE_VERIFIER="$ROOT_DIR/scripts/verify-macos-runtime-provenance.mjs"
-THIRD_PARTY_TEMPLATE_DIR="$ROOT_DIR/distribution/macos-app-repo"
+RUNTIME_PROFILE="${GAME_DEV_RUNTIME_PROFILE:-homebrew}"
+case "$RUNTIME_PROFILE" in
+  homebrew) THIRD_PARTY_TEMPLATE_DIR="$ROOT_DIR/distribution/macos-app-repo" ;;
+  upstream-node-ci) THIRD_PARTY_TEMPLATE_DIR="$ROOT_DIR/distribution/macos-ci-upstream-node" ;;
+  *) echo "unknown runtime provenance profile: $RUNTIME_PROFILE" >&2; exit 1 ;;
+esac
 THIRD_PARTY_NOTICE="$THIRD_PARTY_TEMPLATE_DIR/THIRD_PARTY_NOTICES.md"
 THIRD_PARTY_PROVENANCE="$THIRD_PARTY_TEMPLATE_DIR/THIRD_PARTY_PROVENANCE.json"
 THIRD_PARTY_LICENSE_SOURCE="$THIRD_PARTY_TEMPLATE_DIR/legal/third-party-licenses"
@@ -90,6 +95,11 @@ APP_RESOURCES="$APP_CONTENTS/Resources"
 APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
 NODE_EXECUTABLE="$(node -p 'process.execPath')"
+if [[ "$RUNTIME_PROFILE" == "upstream-node-ci" ]]; then
+  NODE_EXECUTABLE="${GAME_DEV_NODE_EXECUTABLE:?upstream-node-ci requires GAME_DEV_NODE_EXECUTABLE}"
+  node "$ROOT_DIR/scripts/verify-upstream-node-profile.mjs" \
+    --node "$NODE_EXECUTABLE" --profile "$THIRD_PARTY_TEMPLATE_DIR"
+fi
 
 mkdir -p "$APP_MACOS" "$APP_RESOURCES"
 cp "$BUILD_BINARY" "$APP_BINARY"

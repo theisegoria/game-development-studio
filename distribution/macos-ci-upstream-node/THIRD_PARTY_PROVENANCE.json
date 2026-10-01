@@ -1,0 +1,156 @@
+{
+  "schema": "game_dev.macos_bundled_third_party_provenance.v1",
+  "release": {
+    "appVersion": "1.0.0",
+    "bundleIdentifier": "com.theisegoria.GameDevelopmentStudio",
+    "publicRoot": "THIRD_PARTY_NOTICES.md",
+    "appResourceRoot": "Contents/Resources/THIRD_PARTY_NOTICES.md",
+    "provenancePath": "THIRD_PARTY_PROVENANCE.json",
+    "licenseDirectory": "ThirdPartyLicenses",
+    "identityRule": "The packager and verifier require every public legal asset and its signed-app resource counterpart to be byte-identical."
+  },
+  "auditInputs": {
+    "runtimeRoster": "GameDevelopmentStudioRuntime/runtime-roster.json",
+    "runtimeVerifier": "scripts/verify-cli-runtime.mjs",
+    "method": "Pinned upstream darwin-arm64 archive verified against Node.js SHASUMS256.txt; otool -L shows only /usr/lib and /System/Library dependencies. LICENSE byte-matches the archive. npm licenses are bound to the source lockfile."
+  },
+  "bundledRuntime": {
+    "gameDevCli": {
+      "version": "1.0.2",
+      "license": "MIT",
+      "evidence": "The staged CLI package manifest and root package-lock entry.",
+      "licenseAssets": [
+        "game-development-studio-1.0.2-MIT.txt"
+      ]
+    },
+    "node": {
+      "version": "25.2.1",
+      "license": "Node.js distributed LICENSE, including embedded notices",
+      "licenseAssets": [
+        "node-25.2.1-LICENSE.txt"
+      ],
+      "sourceArtifact": {
+        "url": "https://nodejs.org/dist/v25.2.1/node-v25.2.1-darwin-arm64.tar.gz",
+        "sha256": "be87e21bd235a451fad02c89e5bf7cb17e206e4cd89dd5664f20d19e7dfde6f9",
+        "checksumSource": "https://nodejs.org/dist/v25.2.1/SHASUMS256.txt",
+        "executableSha256": "fe5f8e722c24b33f748ca94065b67fb6fea7ae25e054da347d95fa24d0d4b8da",
+        "platform": "darwin",
+        "architecture": "arm64"
+      }
+    },
+    "nonSystemDylibCount": 0,
+    "nonSystemDylibs": []
+  },
+  "npmProductionPackages": [
+    {
+      "name": "@gltf-transform/core",
+      "declaredRange": "^4.1.1",
+      "lockedVersion": "4.4.2",
+      "lockIntegrity": "sha512-qsWKwNSwK+2s834Mt4xbYcyHqCrgNFP7hIv5s487JxebngRfDgelpghNF+kSswGb2/NuapasfK3UViFoSJJoMg==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-gltf-transform-core-4.4.2-MIT.txt"
+      ]
+    },
+    {
+      "name": "property-graph",
+      "declaredRange": "^4.1.0",
+      "lockedVersion": "4.1.0",
+      "lockIntegrity": "sha512-AvPcP7XECNWy4LGmFQ77k7un4lSKM4eS29PTvW4ck95uYeLxXPWJM7hLuBqK91FaHqCcgJvIUCuNJjjxKE7VKQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-property-graph-4.1.0-MIT.txt"
+      ]
+    },
+    {
+      "name": "jpeg-js",
+      "declaredRange": "^0.4.4",
+      "lockedVersion": "0.4.4",
+      "lockIntegrity": "sha512-WZzeDOEtTOBK4Mdsar0IqEU5sMr3vSV2RqkAIzUEV2BHnUfKGyswWFPFwK5EeDo93K3FohSHbLAjj0s1Wzd+dg==",
+      "license": "BSD-3-Clause",
+      "licenseAssets": [
+        "npm-jpeg-js-0.4.4-BSD-3-Clause.txt"
+      ]
+    },
+    {
+      "name": "pngjs",
+      "declaredRange": "^7.0.0",
+      "lockedVersion": "7.0.0",
+      "lockIntegrity": "sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-pngjs-7.0.0-MIT.txt"
+      ]
+    },
+    {
+      "name": "zod",
+      "declaredRange": "^3.23.8",
+      "lockedVersion": "3.25.76",
+      "lockIntegrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-zod-3.25.76-MIT.txt"
+      ]
+    }
+  ],
+  "notBundled": [
+    "Blender",
+    "game engines",
+    "Tripo provider SDK or service",
+    "Leonardo provider SDK or service",
+    "provider credentials",
+    "Apple system frameworks and system libraries"
+  ],
+  "legalAssets": [
+    {
+      "path": "game-development-studio-1.0.2-MIT.txt",
+      "sha256": "915b4af615fcf20f331b7aa09822ea6dff49cc8e39c1ab5860ed5b91fe4aa79d",
+      "bytes": 1066,
+      "source": "CLI package root LICENSE at version 1.0.2",
+      "scope": "Bundled game-dev CLI"
+    },
+    {
+      "path": "node-25.2.1-LICENSE.txt",
+      "sha256": "537308465103a306d0e3eecf42632b4ff1b48aaaec044e9fc10a78c81fd00b34",
+      "bytes": 143310,
+      "source": "https://nodejs.org/dist/v25.2.1/node-v25.2.1-darwin-arm64.tar.gz: LICENSE",
+      "scope": "Bundled Node executable and libnode dependency"
+    },
+    {
+      "path": "npm-gltf-transform-core-4.4.2-MIT.txt",
+      "sha256": "2c4f111d00dbf22b10d31a14813c5f5de6a828640f7311f26b9dda89b3fce165",
+      "bytes": 1078,
+      "source": "Locked npm package @gltf-transform/core@4.4.2/LICENSE.md",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-jpeg-js-0.4.4-BSD-3-Clause.txt",
+      "sha256": "c0a8512eabe960492fefd4f287523eb3b5ca1518ca37ef0ec83344cd7f089cb8",
+      "bytes": 1448,
+      "source": "Locked npm package jpeg-js@0.4.4/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-pngjs-7.0.0-MIT.txt",
+      "sha256": "be75ef59c5cf59715588a17a82dff7dd3e83c4dba3c458676bb9311e05fbedc5",
+      "bytes": 1150,
+      "source": "Locked npm package pngjs@7.0.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-property-graph-4.1.0-MIT.txt",
+      "sha256": "ec5114155d92f326802c964dcf9eb5261e09192c62f14d195d2a8be49eb1d489",
+      "bytes": 1078,
+      "source": "Locked npm package property-graph@4.1.0/LICENSE",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-zod-3.25.76-MIT.txt",
+      "sha256": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8",
+      "bytes": 1072,
+      "source": "Locked npm package zod@3.25.76/LICENSE",
+      "scope": "Bundled CLI production package"
+    }
+  ],
+  "evidenceCeiling": "This record identifies the audited release composition and checked-in notice assets. It does not by itself prove runtime execution, signature trust, notarization, provider availability, target-game import, GPU execution, visual approval, or performance."
+}

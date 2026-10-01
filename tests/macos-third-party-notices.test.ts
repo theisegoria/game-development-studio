@@ -74,10 +74,12 @@ async function readJson<T>(file: string): Promise<T> {
   return JSON.parse(await readFile(file, 'utf8')) as T;
 }
 
+const cliPackage = await readJson<{ version: string }>(path.join(sourceRoot, 'package.json'));
+
 const expectedLicenseAssets = [
   'brotli-1.2.0-MIT.txt',
   'c-ares-1.34.6-MIT.txt',
-  'game-development-studio-1.0.2-MIT.txt',
+  `game-development-studio-${cliPackage.version}-MIT.txt`,
   'icu4c-78.3-ICU.txt',
   'libuv-1.51.0-BSD-2-Clause-tree.h.txt',
   'libuv-1.51.0-ISC-inet.c.txt',
@@ -152,6 +154,27 @@ function provenanceFor(dylibs: readonly string[]) {
 }
 
 describe('macOS bundled-runtime third-party notices', () => {
+  it('binds the checked-in provenance to the current CLI package and lockfile', async () => {
+    const provenance = await readJson<Provenance>(
+      path.join(distributionRoot, 'THIRD_PARTY_PROVENANCE.json'),
+    );
+    const lockfile = await readJson<PackageLock>(path.join(sourceRoot, 'package-lock.json'));
+    expect(lockfile.packages['']?.version).toBe(cliPackage.version);
+    expect(() => validateMacOSRuntimeProvenanceBinding({
+      provenance,
+      runtimePackage: cliPackage,
+      runtimeRoster: runtimeRosterFor(expectedDylibs),
+      nodeVersion: `v${provenance.bundledRuntime.node.version}`,
+    })).not.toThrow();
+    const cliLicense = provenance.legalAssets.find(
+      (asset) => asset.path === `game-development-studio-${cliPackage.version}-MIT.txt`,
+    );
+    expect(cliLicense).toBeDefined();
+    const rootLicense = await readFile(path.join(sourceRoot, 'LICENSE'));
+    expect(cliLicense?.sha256).toBe(createHash('sha256').update(rootLicense).digest('hex'));
+    expect(cliLicense?.bytes).toBe(rootLicense.byteLength);
+  });
+
   it('rejects a staged runtime dylib filename that the legal provenance does not declare', () => {
     const provenance = provenanceFor(expectedDylibs);
     const runtimePackage = { version: '1.0.1' };
@@ -188,9 +211,7 @@ describe('macOS bundled-runtime third-party notices', () => {
       path.join(distributionRoot, 'THIRD_PARTY_PROVENANCE.json'),
     );
 
-    // Derived, not pinned. A literal here is the same staleness one level up:
-    // it went on asserting 1.0.1 after the package shipped 1.0.2.
-    expect(notice).toContain(`\`game-dev\` CLI ${provenance.bundledRuntime.gameDevCli.version}`);
+    expect(notice).toContain(`\`game-dev\` CLI ${cliPackage.version}`);
     expect(notice).toContain(`Node.js ${provenance.bundledRuntime.node.version}`);
     expect(notice).toContain('18 non-system dynamic libraries');
     expect(notice).not.toContain('No provider SDK, game engine, Blender build, Node.js runtime, or `game-dev` CLI is bundled');
@@ -200,11 +221,7 @@ describe('macOS bundled-runtime third-party notices', () => {
       bundleIdentifier: 'com.theisegoria.GameDevelopmentStudio',
       licenseDirectory: 'ThirdPartyLicenses',
     });
-    // The bundled CLI version is asserted against package.json in its own test
-    // rather than pinned here. A literal in this position is what let the
-    // record sit at 1.0.1 through the 1.0.2 release: the test agreed with the
-    // stale value, so it confirmed the bug instead of catching it.
-    expect(provenance.bundledRuntime.gameDevCli.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(provenance.bundledRuntime.gameDevCli.version).toBe(cliPackage.version);
     expect(provenance.bundledRuntime.node.version).toBe('25.2.1');
     expect(provenance.bundledRuntime.nonSystemDylibCount).toBe(18);
     expect(provenance.bundledRuntime.nonSystemDylibs.flatMap((item) => item.runtimeFiles).sort())

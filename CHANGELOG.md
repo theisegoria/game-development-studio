@@ -118,6 +118,12 @@ capture contract, and the release machinery to publish it. See pull request #1.
 - `scripts/set-version.mjs`, a version-parity test, and a tag-driven release
   workflow that publishes with npm provenance.
 
+- `package build` tolerates Windows directory-fsync failures reported as `EPERM`
+  or `EISDIR`. These errors still propagate on other platforms, as do unexpected
+  errors such as `EIO`, `EACCES`, and `ENOSPC` on Windows. Directory flushing is
+  best effort on unsupported platforms; package writes do not currently perform
+  per-file fsyncs or promise crash-durable file contents.
+
 ## 1.0.2
 
 Public plugin and CLI corrective release:
