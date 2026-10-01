@@ -33,6 +33,24 @@ def require(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
+def verify_workflow_pins(workflows: pathlib.Path) -> None:
+    """Remote Actions and reusable workflows must use immutable commit refs."""
+    for workflow in sorted(workflows.rglob("*")):
+        if workflow.suffix not in {".yml", ".yaml"}:
+            continue
+        for number, line in enumerate(workflow.read_text(encoding="utf-8").splitlines(), 1):
+            match = re.match(r"^\s*(?:-\s*)?uses:\s*(.+?)\s*$", line)
+            if not match:
+                continue
+            reference = match.group(1).split(" #", 1)[0].strip().strip("\"'")
+            if reference.startswith("./"):
+                continue
+            require(
+                re.fullmatch(r"[^\s@]+@[0-9a-fA-F]{40}", reference) is not None,
+                f"{workflow}:{number}: remote uses must be pinned to a full commit SHA",
+            )
+
+
 def load_json(path: pathlib.Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -167,6 +185,7 @@ def validate_tree(
 
 
 def verify_tree() -> dict:
+    verify_workflow_pins(ROOT / ".github" / "workflows")
     roster = load_roster()
     repository_files = _roster_paths(roster, "repositoryFiles")
     plugin_files = _roster_paths(roster, "pluginFiles")
