@@ -26,7 +26,8 @@ interface RuntimeLibrary {
 
 interface NpmProductionPackage {
   name: string;
-  declaredRange: string;
+  installPath: string;
+  licenseSources: string[];
   lockedVersion: string;
   lockIntegrity: string;
   license: string;
@@ -61,6 +62,7 @@ interface Provenance {
 
 interface LockedPackage {
   version: string;
+  dev?: boolean;
   integrity?: string;
   license?: string;
   dependencies?: Record<string, string>;
@@ -76,7 +78,7 @@ async function readJson<T>(file: string): Promise<T> {
 
 const cliPackage = await readJson<{ version: string }>(path.join(sourceRoot, 'package.json'));
 
-const expectedLicenseAssets = [
+const expectedNonNpmLicenseAssets = [
   'brotli-1.2.0-MIT.txt',
   'c-ares-1.34.6-MIT.txt',
   `game-development-studio-${cliPackage.version}-MIT.txt`,
@@ -89,11 +91,6 @@ const expectedLicenseAssets = [
   'nghttp3-1.13.1-MIT.txt',
   'ngtcp2-1.18.0-MIT.txt',
   'node-25.2.1-LICENSE.txt',
-  'npm-gltf-transform-core-4.4.2-MIT.txt',
-  'npm-jpeg-js-0.4.4-BSD-3-Clause.txt',
-  'npm-pngjs-7.0.0-MIT.txt',
-  'npm-property-graph-4.1.0-MIT.txt',
-  'npm-zod-3.25.76-MIT.txt',
   'openssl-3.6.3-Apache-2.0.txt',
   'simdjson-4.2.3-Apache-2.0.txt',
   'simdjson-4.2.3-MIT.txt',
@@ -212,7 +209,7 @@ describe('macOS bundled-runtime third-party notices', () => {
     );
 
     expect(notice).toContain(`\`game-dev\` CLI ${cliPackage.version}`);
-    expect(notice).toContain('Node.js 25.2.1');
+    expect(notice).toContain(`Node.js ${provenance.bundledRuntime.node.version}`);
     expect(notice).toContain('18 non-system dynamic libraries');
     expect(notice).not.toContain('No provider SDK, game engine, Blender build, Node.js runtime, or `game-dev` CLI is bundled');
     expect(provenance.schema).toBe('game_dev.macos_bundled_third_party_provenance.v1');
@@ -240,14 +237,43 @@ describe('macOS bundled-runtime third-party notices', () => {
     );
     const onDiskPaths = (await readdir(licenseRoot)).sort();
 
-    expect(onDiskPaths).toEqual([...expectedLicenseAssets]);
-    expect(provenance.legalAssets.map((asset) => asset.path)).toEqual([...expectedLicenseAssets]);
+    expect(onDiskPaths).toEqual(provenance.legalAssets.map((asset) => asset.path).sort());
+    expect(onDiskPaths.filter((name) => !name.startsWith('npm-'))).toEqual([...expectedNonNpmLicenseAssets]);
     for (const asset of provenance.legalAssets) {
       const contents = await readFile(path.join(licenseRoot, asset.path));
       expect(contents.byteLength).toBe(asset.bytes);
       expect(createHash('sha256').update(contents).digest('hex')).toBe(asset.sha256);
       expect(asset.source).not.toHaveLength(0);
       expect(asset.scope).not.toHaveLength(0);
+    }
+  });
+
+  it('bundles the CLI version the package actually ships', async () => {
+    // The 1.0.2 release bumped package.json and left this record pinned at
+    // 1.0.1. verify-macos-runtime-provenance asserts the two match, so staging
+    // the app died on an unrelated-looking line and the CI macos-app job went
+    // red -- for a stale legal record, not a build problem.
+    const [provenance, packageJson] = await Promise.all([
+      readJson<Provenance>(path.join(distributionRoot, 'THIRD_PARTY_PROVENANCE.json')),
+      readJson<{ version: string }>(path.join(sourceRoot, 'package.json')),
+    ]);
+
+    expect(provenance.bundledRuntime.gameDevCli.version).toBe(packageJson.version);
+  });
+
+  it('names only legal assets that the corpus actually contains', async () => {
+    // Nothing cross-checked these two lists, so licenseAssets could name a file
+    // that had been renamed out from under it and stay silently wrong.
+    const provenance = await readJson<Provenance>(
+      path.join(distributionRoot, 'THIRD_PARTY_PROVENANCE.json'),
+    );
+    const corpus = new Set(provenance.legalAssets.map((asset) => asset.path));
+
+    for (const [component, record] of Object.entries(provenance.bundledRuntime)) {
+      const named = (record as { licenseAssets?: string[] }).licenseAssets ?? [];
+      for (const asset of named) {
+        expect(corpus, `bundledRuntime.${component} names ${asset}`).toContain(asset);
+      }
     }
   });
 
@@ -313,33 +339,25 @@ describe('macOS bundled-runtime third-party notices', () => {
       .toContain('does not establish that either ancillary component is present in the staged libzstd dylib');
   });
 
-  it('matches package-lock production packages instead of the looser package.json ranges', async () => {
-    const [provenance, packageLock] = await Promise.all([
-      readJson<Provenance>(path.join(distributionRoot, 'THIRD_PARTY_PROVENANCE.json')),
-      readJson<PackageLock>(path.join(sourceRoot, 'package-lock.json')),
-    ]);
-    const rootPackage = packageLock.packages[''];
-    const gltfTransform = packageLock.packages['node_modules/@gltf-transform/core'];
-
-    expect(rootPackage).toBeDefined();
-    expect(gltfTransform).toBeDefined();
-    for (const listed of provenance.npmProductionPackages) {
-      const lockEntry = packageLock.packages[`node_modules/${listed.name}`];
-      expect(lockEntry).toBeDefined();
-      expect(lockEntry?.version).toBe(listed.lockedVersion);
-      expect(lockEntry?.integrity).toBe(listed.lockIntegrity);
-      expect(lockEntry?.license).toBe(listed.license);
-      const declaredRange = rootPackage?.dependencies?.[listed.name]
-        ?? gltfTransform?.dependencies?.[listed.name];
-      expect(declaredRange).toBe(listed.declaredRange);
+  it.each(['macos-app-repo', 'macos-ci-upstream-node'])('covers every shipped production package and preserves upstream bytes in %s', async (profile) => {
+    const base = path.join(sourceRoot, 'distribution', profile);
+    const provenance = await readJson<Provenance>(path.join(base, 'THIRD_PARTY_PROVENANCE.json'));
+    const lock = await readJson<PackageLock>(path.join(sourceRoot, 'package-lock.json'));
+    const expected = Object.entries(lock.packages).filter(([key, value]) => key.startsWith('node_modules/') && value.dev !== true).map(([key]) => key).sort();
+    expect(provenance.npmProductionPackages.map((p) => p.installPath).sort()).toEqual(expected);
+    for (const pkg of provenance.npmProductionPackages) {
+      const entry = lock.packages[pkg.installPath];
+      if (!entry) throw new Error(`Missing lock entry: ${pkg.installPath}`);
+      expect(pkg.lockedVersion).toBe(entry.version);
+      expect(pkg.lockIntegrity).toBe(entry.integrity);
+      expect(pkg.license).toBe(entry.license);
+      expect(pkg.licenseAssets.length).toBeGreaterThan(0);
+      expect(pkg.licenseSources).toHaveLength(pkg.licenseAssets.length);
+      for (const [index, asset] of pkg.licenseAssets.entries()) {
+        expect(provenance.legalAssets.some((a) => a.path === asset)).toBe(true);
+        expect(await readFile(path.join(base, 'legal/third-party-licenses', asset))).toEqual(await readFile(path.join(sourceRoot, pkg.installPath, pkg.licenseSources[index]!)));
+      }
     }
-    expect(provenance.npmProductionPackages.map((item) => item.name)).toEqual([
-      '@gltf-transform/core',
-      'property-graph',
-      'jpeg-js',
-      'pngjs',
-      'zod',
-    ]);
   });
 
   it('stages the canonical legal corpus in ordinary native builds before signing', async () => {

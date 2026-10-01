@@ -51,6 +51,11 @@ function bundleRoot(): string {
   return path.resolve(moduleDirectory, '..', '..', 'skills');
 }
 
+/** Where the packaged skills live, for readers that serve them elsewhere. */
+export function packagedSkillsRoot(): string {
+  return bundleRoot();
+}
+
 function portableRelative(root: string, target: string): string {
   const relative = path.relative(root, target);
   if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) {

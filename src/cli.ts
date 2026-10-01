@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
 import path from 'node:path';
+import { parseArguments, assertKnownFlags, booleanFlag, readRequest, stringFlag, type ParsedArguments } from './cli/arguments.js';
+import { isDirectInvocation } from './util/entrypoint.js';
+import { buildMcpConfig, isMcpClient, MCP_CLIENTS } from './mcp/config-templates.js';
 import { planOptimization, startOptimization, readOptimization, evaluateOptimization, recoverOptimization, stopOptimization, exportOptimization } from './optimization/session.js';
-import { fileURLToPath } from 'node:url';
-import { realpathSync } from 'node:fs';
-import { parseArguments, booleanFlag, readRequest, stringFlag, type ParsedArguments } from './cli/arguments.js';
 import { runDoctor } from './cli/doctor.js';
 import { EventStream } from './cli/events.js';
 import { createGameDevRuntime, type GameDevRuntime } from './runtime.js';
 import { refreshAssetJob } from './tools/jobs.js';
-import type { ToolResult } from './tools/context.js';
+import { resultText, type ToolResult } from './tools/context.js';
 import { describeError, invalidInput } from './util/errors.js';
 import { isTerminal } from './domain/status.js';
 import {
@@ -20,7 +20,7 @@ import {
 } from './version.js';
 import type { DurableArtifact, DurableJob } from './jobs/durable.js';
 import { isSpendingTool } from './domain/spend.js';
-import { buildAssetPackage, readAssetPackage, type AssetProvenanceInput } from './packages/format.js';
+import { buildAssetPackage, planAssetPackage, readAssetPackage, type AssetProvenanceInput } from './packages/format.js';
 import { AssetCatalog } from './packages/catalog.js';
 import { admitVendorPackage } from './packages/vendor.js';
 import { executeLaunchPlan, planPackageLaunch, type LaunchApplication } from './packages/launcher.js';
@@ -32,6 +32,8 @@ import { listRuns } from './harness/discovery.js';
 import { loadAdapter, planScenarioRun } from './harness/adapter.js';
 import { executeScenarioRun, resolveRunPath, verifyRunBundle } from './harness/run-bundle.js';
 import { createSampleProject, installAdapterTemplate, listAdapterTemplates } from './harness/templates.js';
+import { installProbeSdk } from './harness/probe-install.js';
+import { measureRunStability } from './harness/stability.js';
 import { analyzeRunCapture, compareRunVisuals } from './harness/visual.js';
 import { compareRunPerformance, summarizeRunPerformance } from './harness/performance.js';
 import { createOptimizationGoal, evaluateOptimizationGoal } from './harness/goals.js';
@@ -59,17 +61,19 @@ Usage:
   game-dev asset validate <model.glb> [--request POLICY.json] [--json]
   game-dev asset normalize <model.glb> [--output PATH] [--request OPTIONS.json] [--jsonl]
   game-dev asset preview-usdz <model.glb> --output PATH [--jsonl]
-  game-dev package build <model.glb> --name NAME [--version 1.0.0] [--license SPDX] [--request METADATA.json]
+  game-dev package build <model.glb> --name NAME [--version 1.0.0] [--license SPDX] [--request METADATA.json] [--dry-run]
   game-dev package show <package-id|path> [--json]
   game-dev package verify <package-id|path> [--json]
   game-dev catalog list [--query TEXT] [--category CATEGORY] [--valid|--invalid] [--json]
   game-dev catalog show <package-id> [--json]
+  game-dev catalog admit <package-path> [--dry-run] [--jsonl]
   game-dev catalog rebuild --confirm [--jsonl]
   game-dev vendor admit <package-id|path> --project PATH [--destination RELATIVE] [--confirm]
   game-dev launch <package-id|path> --with finder|quicklook|blender [--confirm]
   game-dev migrate legacy --from OUTPUT_ROOT [--license SPDX] [--confirm]
   game-dev adapter sample --project NEW_DIRECTORY [--confirm]
   game-dev adapter templates [--json]
+  game-dev probe install --project PATH [--destination RELATIVE] [--confirm]
   game-dev adapter install <template-id> --project PATH [--confirm]
   game-dev adapter inspect --project PATH [--manifest RELATIVE] [--json]
   game-dev scenario list --project PATH [--json]
@@ -79,9 +83,10 @@ Usage:
   game-dev capture list [--limit N] [--json]
   game-dev capture verify <run-id|path> [--json]
   game-dev visual analyze <run-id|path> [--json]
-  game-dev visual compare <baseline-run> <candidate-run> [--threshold 0..255]
+  game-dev visual compare <baseline-run> <candidate-run> [--threshold 0..255] [--aa-tolerance 0..4] [--noise-floor STABILITY.json]
+  game-dev visual stability <run> <run> [<run>...] --output NEW_DIRECTORY [--json]
                   [--output NEW_DIRECTORY] [--jsonl]
-  game-dev performance summarize <run-id|path> [--json]
+  game-dev performance summarize <run-id|path> [--warmup-frames N] [--json]
   game-dev performance compare <baseline-run> <candidate-run> [--stat median] [--json]
   game-dev performance goal-create <baseline-run> --project PATH --request GOAL.json [--confirm]
   game-dev performance goal-evaluate <goal.json> <candidate-run> [--confirm]
@@ -104,6 +109,18 @@ Global options:
   --jsonl             Emit game_dev.event.v1 JSON Lines.
   --version           Print the helper version.
   --help              Show this help.
+
+  game-dev mcp config --client claude-code|claude-desktop|codex|gemini|generic
+                      [--spend-limit-cents N] [--allow-execution] [--allow-project-write]
+                      [--allow-gpu] [--allow-performance] [--json]
+                      Print ready-to-paste MCP client configuration with the
+                      absolute output directory already resolved. Paid tools
+                      stay disabled unless a spend ceiling is supplied.
+
+  game-dev mcp serve  Serve the same local operations over MCP on stdio, for
+                      clients that cannot run a shell. Also installed as the
+                      game-dev-mcp binary. stdout becomes the JSON-RPC channel,
+                      so this command prints no result envelope.
 
 Provider credentials are read lazily from the app-provided environment or the
 documented development variables TRIPO_API_KEY and LEONARDO_API_KEY. Secrets
@@ -193,7 +210,7 @@ function approvalRequired(tool: string, parsed: ParsedArguments): DispatchResult
 }
 
 function payloadFromResult(result: ToolResult): Record<string, unknown> {
-  const text = result.content[0]?.text ?? '{}';
+  const text = resultText(result);
   try {
     const parsed: unknown = JSON.parse(text);
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -265,9 +282,11 @@ function capabilities(runtime: GameDevRuntime): Record<string, unknown> {
     },
     commandFamilies: [
       'capabilities',
+      'mcp',
       'doctor',
       'credentials',
       'adapter',
+      'probe',
       'provider',
       'job',
       'catalog',
@@ -375,6 +394,35 @@ async function dispatch(
   if (family === 'capabilities') {
     return { operation: 'capabilities', data: capabilities(runtime) };
   }
+
+  if (family === 'mcp' && action === 'config') {
+    const client = stringFlag(parsed, 'client') ?? 'generic';
+    if (!isMcpClient(client)) {
+      throw invalidInput(`--client must be one of: ${MCP_CLIENTS.join(', ')}`);
+    }
+    // Generated rather than shipped as a static file, because the value that
+    // has to be right is the ABSOLUTE output directory, and only this process
+    // knows what it resolved to.
+    const template = buildMcpConfig({
+      client,
+      outputDir: runtime.config.outputDir,
+      spendLimitCents: optionalPositiveIntegerFlag(parsed, 'spend-limit-cents'),
+      // Authorities are flags a HUMAN types here, which then land in a file the
+      // model cannot reach. That is the only path by which they can be granted.
+      allowExecution: booleanFlag(parsed, 'allow-execution'),
+      allowGpu: booleanFlag(parsed, 'allow-gpu'),
+      allowPerformance: booleanFlag(parsed, 'allow-performance'),
+      allowProjectWrite: booleanFlag(parsed, 'allow-project-write'),
+    });
+    return {
+      operation: 'mcp.config',
+      data: {
+        schema: 'game_dev.mcp_config.v1',
+        ...template,
+        outputDir: runtime.config.outputDir,
+      },
+    };
+  }
   if (family === 'doctor') {
     return { operation: 'doctor', data: await runDoctor(runtime) };
   }
@@ -428,6 +476,14 @@ async function dispatch(
         templates: await listAdapterTemplates(),
       },
     };
+  }
+  if (family === 'probe' && action === 'install') {
+    const result = await installProbeSdk({
+      projectRoot: path.resolve(requireFlag(parsed, 'project')),
+      destination: stringFlag(parsed, 'destination'),
+      confirm: booleanFlag(parsed, 'confirm'),
+    });
+    return { operation: 'probe.install', data: result as unknown as Record<string, unknown> };
   }
   if (family === 'adapter' && action === 'install') {
     const result = await installAdapterTemplate({
@@ -708,7 +764,7 @@ async function dispatch(
     const previewPath = stringFlag(parsed, 'preview') ?? request.previewPath;
     const provenance = request.provenance;
     const policy = request.policy;
-    const built = await buildAssetPackage({
+    const buildOptions = {
       packagesRoot: runtime.config.packagesDir,
       sourcePath,
       name: requestedName,
@@ -724,7 +780,48 @@ async function dispatch(
         ? { policy: policy as Partial<GameAssetPolicy> }
         : {}),
       maximumBytes: runtime.config.maxDownloadBytes,
-    });
+    };
+
+    // `package build` writes without --confirm, unlike every other write path.
+    // Gating it now would break the README, docs/asset-packages.md and a skill
+    // reference that all invoke it bare -- and it only ever writes inside the
+    // tool's own workspace, content-addressed and idempotent. So it gets a plan
+    // step instead of a gate: the rule is that confirmation is required for
+    // writes OUTSIDE the workspace, and this states it accurately rather than
+    // enforcing it by breaking callers.
+    if (booleanFlag(parsed, 'dry-run')) {
+      const plan = await planAssetPackage(buildOptions);
+      return {
+        operation: 'package.build',
+        data: {
+          schema: 'game_dev.package_build_plan.v1',
+          dryRun: true,
+          sourcePath: plan.sourcePath,
+          sourceSha256: plan.sourceIdentity.sha256,
+          sourceBytes: plan.sourceIdentity.bytes,
+          assetId: plan.assetId,
+          version: plan.version,
+          license: plan.license,
+          destination: plan.destination,
+          destinationExists: plan.destinationExists,
+          validation: plan.validation,
+          wouldWrite: !plan.destinationExists,
+          evidence: {
+            staticInspectionCompleted: true,
+            policyValidationCompleted: true,
+            packageIdComputed: false,
+            nothingWritten: true,
+          },
+          evidenceCeiling:
+            'A plan reports what the build would validate and where it would land. The packageId ' +
+            'hashes the staged file set, so it cannot be computed without performing the write ' +
+            'this plan exists to avoid. When the destination already holds a package, the build ' +
+            'reuses it if identical and refuses if not.',
+        },
+      };
+    }
+
+    const built = await buildAssetPackage(buildOptions);
     const catalogAsset = await withCatalog(runtime, (catalog) => catalog.admit(built.packagePath));
     events.emit('artifact', {
       kind: 'asset_package',
@@ -806,6 +903,20 @@ async function dispatch(
 
   if (family === 'catalog' && action === 'admit') {
     const packagePath = path.resolve(requirePositional(parsed, 2, 'package path'));
+    if (booleanFlag(parsed, 'dry-run')) {
+      const plan = await withCatalog(runtime, (catalog) => catalog.planAdmission(packagePath));
+      return {
+        operation: 'catalog.admit',
+        data: {
+          schema: 'game_dev.catalog_admission_plan.v1',
+          dryRun: true,
+          packagePath,
+          alreadyIndexed: plan.alreadyIndexed,
+          asset: plan.asset,
+          evidence: { manifestRead: true, nothingWritten: true },
+        },
+      };
+    }
     const asset = await withCatalog(runtime, (catalog) => catalog.admit(packagePath));
     return { operation: 'catalog.admit', data: asset as unknown as Record<string, unknown> };
   }
@@ -933,6 +1044,8 @@ async function dispatch(
       baselineRunPath: baseline,
       candidateRunPath: candidate,
       threshold: nonNegativeIntegerFlag(parsed, 'threshold', 0),
+      antialiasTolerancePixels: nonNegativeIntegerFlag(parsed, 'aa-tolerance', 0),
+      ...(stringFlag(parsed, 'noise-floor') ? { noiseFloorPath: path.resolve(stringFlag(parsed, 'noise-floor') as string) } : {}),
       ...(output ? { outputPath: path.resolve(output) } : {}),
     });
     if (comparison.outputPath) events.emit('artifact', { kind: 'visual_comparison', path: comparison.outputPath });
@@ -945,11 +1058,29 @@ async function dispatch(
     };
   }
 
+  if (family === 'visual' && action === 'stability') {
+    const references = parsed.positionals.slice(2);
+    if (references.length < 2) throw invalidInput('visual stability needs at least two run ids or paths');
+    const runPaths = [];
+    for (const reference of references) runPaths.push(await resolveRunPath(runtime.config.runsDir, reference));
+    const output = stringFlag(parsed, 'output');
+    if (!output) throw invalidInput('visual stability requires --output NEW_DIRECTORY');
+    const record = await measureRunStability({ runPaths, outputPath: path.resolve(output) });
+    events.emit('artifact', { kind: 'visual_stability', path: record.recordPath });
+    return {
+      operation: 'visual.stability',
+      data: record as unknown as Record<string, unknown>,
+      artifacts: [{ path: record.recordPath, kind: 'visual_stability' }],
+    };
+  }
+
   if (family === 'performance' && action === 'summarize') {
     const runPath = await resolveRunPath(runtime.config.runsDir, requirePositional(parsed, 2, 'run id or path'));
     return {
       operation: 'performance.summarize',
-      data: await summarizeRunPerformance(runPath) as unknown as Record<string, unknown>,
+      data: await summarizeRunPerformance(runPath, {
+        warmupFrames: nonNegativeIntegerFlag(parsed, 'warmup-frames', 0),
+      }) as unknown as Record<string, unknown>,
     };
   }
 
@@ -994,6 +1125,9 @@ async function dispatch(
       maximumIterations,
       allowedPaths: requestStringArray(request, 'allowedPaths'),
       ...(typeof request.id === 'string' ? { id: request.id } : {}),
+      ...(request.requireHardwareMeasurement !== undefined
+        ? { requireHardwareMeasurement: request.requireHardwareMeasurement === true }
+        : {}),
       confirm: booleanFlag(parsed, 'confirm'),
     });
     return {
@@ -1164,9 +1298,11 @@ function needsDurableJob(runtime: GameDevRuntime, parsed: ParsedArguments): bool
   if (family === 'asset' && ['normalize', 'preview-usdz'].includes(action ?? '')) return true;
   if (['vendor', 'package', 'migrate'].includes(family ?? '')) return true;
   if (family === 'adapter' && action === 'install' && booleanFlag(parsed, 'confirm')) return true;
+  if (family === 'probe' && action === 'install' && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'skill' && action === 'install' && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'scenario' && action === 'run') return true;
   if (family === 'visual' && action === 'compare' && stringFlag(parsed, 'output') !== undefined) return true;
+  if (family === 'visual' && action === 'stability') return true;
   if (family === 'performance' && ['goal-create', 'goal-evaluate'].includes(action ?? '') && booleanFlag(parsed, 'confirm')) {
     return true;
   }
@@ -1247,6 +1383,15 @@ export async function main(
     return 0;
   }
 
+  // stdout is the result protocol for every other command, but an MCP server
+  // must own it outright for JSON-RPC. Handled here, beside --help and
+  // --version, because those are the only other paths that bypass the envelope.
+  if (parsed.positionals[0] === 'mcp' && parsed.positionals[1] === 'serve') {
+    const { main: serveMcp } = await import('./mcp/server.js');
+    await serveMcp();
+    return 0;
+  }
+
   const jsonLines = booleanFlag(parsed, 'jsonl');
   if (jsonLines && booleanFlag(parsed, 'json')) {
     process.stderr.write('game-dev: --json and --jsonl are mutually exclusive\n');
@@ -1260,6 +1405,7 @@ export async function main(
 
   try {
     signal?.throwIfAborted();
+    assertKnownFlags(parsed);
     const spendLimitCents = optionalPositiveIntegerFlag(parsed, 'spend-limit-cents');
     runtime = await createGameDevRuntime({
       outputDir: stringFlag(parsed, 'output-dir'),
@@ -1312,16 +1458,7 @@ export async function main(
   }
 }
 
-function canonical(target: string): string {
-  try {
-    return realpathSync(path.resolve(target));
-  } catch {
-    return path.resolve(target);
-  }
-}
-
-const invokedPath = process.argv[1] ? canonical(process.argv[1]) : undefined;
-if (invokedPath && canonical(fileURLToPath(import.meta.url)) === invokedPath) {
+if (isDirectInvocation(import.meta.url)) {
   const controller = new AbortController();
   const signalHandlers = installProcessSignalHandlers(controller);
   main(process.argv.slice(2), controller.signal).then((code) => {

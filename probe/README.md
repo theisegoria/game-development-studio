@@ -1,0 +1,163 @@
+# Probe SDK
+
+A small C99 library your engine compiles in to produce a capture bundle the
+harness can seal, verify and analyse. There is nothing to link: two source
+files, compiled by your build.
+
+```sh
+game-dev probe install --project /path/to/engine            # plan
+game-dev probe install --project /path/to/engine --confirm  # write
+```
+
+That copies `gdprobe.h` and `gdprobe.c` into `third_party/gdprobe/` (or
+`--destination RELATIVE`), refuses to overwrite a copy you have changed, and
+reports every file with its hash. Or copy `c/gdprobe.h` and `c/gdprobe.c` by
+hand; there is nothing else.
+
+## Why it exists
+
+The harness contract is four environment variables and a JSON manifest. It is a
+small contract, and every engine that implements it by hand gets the same
+handful of things wrong: labels that are not lowercase identifiers, a telemetry
+sequence that is not strictly increasing, a manifest written before the files
+it names, a row stride assumed to equal `width * 4`. Each one fails validation
+*after* the run, when the frame is gone.
+
+So the library's job is not convenience. It is to make an invalid bundle
+unrepresentable:
+
+- **You never name a file.** Attachment paths are derived from the frame index
+  and kind, so a manifest cannot point outside its run directory.
+- **You never choose a sequence number.** The telemetry counter is owned by the
+  library, which is what makes "strictly increasing" structural.
+- **Labels are slugified.** `"GBuffer Pass"` is accepted and stored as
+  `gbuffer-pass` rather than rejected after the run.
+- **The manifest is written last.** A process that dies mid-capture leaves no
+  manifest at all, so the harness reports a failed run rather than validating a
+  manifest that names truncated files.
+
+## What it does not do
+
+It never touches a graphics API. You synchronise, you read back, you hand over a
+pointer and say **how** you know the GPU finished. That boundary is what lets one
+implementation serve Metal, Vulkan, WebGPU and OpenGL.
+
+## Attestation is an enum, not a boolean
+
+```c
+gdprobe_attest_gpu(run, GDPROBE_GPU_FENCE_SIGNALLED, "vkWaitForFences");
+```
+
+"I waited on a fence" and "I assume it worked" are different claims, and a
+reader of the sealed run deserves to see which one was made. The choice reaches
+`adapterEvidence.notes` verbatim.
+
+## Declare a software renderer honestly
+
+```c
+gdprobe_declare_backend(run, GDPROBE_BACKEND_VULKAN, "llvmpipe", "24.0",
+                        GDPROBE_RENDERER_SOFTWARE);
+```
+
+lavapipe, llvmpipe and SwiftShader are not GPUs. If you declare
+`GDPROBE_RENDERER_SOFTWARE`, the library **refuses** `gdprobe_attest_gpu` and
+`gdprobe_attest_performance` at source, and the harness independently
+downgrades any claim that slips through. Declaring it costs nothing you were
+entitled to, and keeps the run's evidence true. What a software lane is
+genuinely good for is bit-deterministic CI regression at threshold 0.
+
+## Minimal use
+
+```c
+gdprobe_status status;
+gdprobe_run *run = gdprobe_run_begin(&status);
+if (!run) {
+  /* GDPROBE_NOT_ATTACHED means you are not under the harness. Keep rendering. */
+  return status == GDPROBE_NOT_ATTACHED ? 0 : 1;
+}
+
+gdprobe_declare_backend(run, GDPROBE_BACKEND_METAL, "Apple M3", "", GDPROBE_RENDERER_HARDWARE);
+
+gdprobe_frame *frame = gdprobe_frame_begin(run, 0, "main");
+gdprobe_attach_rgba8(frame, GDPROBE_KIND_COLOR, NULL, pixels, width, height, row_stride);
+gdprobe_attach_ids(frame, GDPROBE_KIND_OBJECT_ID, NULL, object_ids, width, height, id_stride);
+gdprobe_frame_end(frame);
+
+gdprobe_emit(run, "performance", "frame_time", 16.7, "ms", 0);
+gdprobe_attest_gpu(run, GDPROBE_GPU_COMMANDBUFFER_COMPLETED, "waitUntilCompleted");
+
+if (gdprobe_run_end(run) != GDPROBE_OK) {
+  fprintf(stderr, "%s\n", gdprobe_last_error(run));
+  gdprobe_run_discard(run);
+}
+```
+
+`row_stride` is bytes per row and is **not** assumed to be `width * 4`. wgpu
+aligns copy rows to 256 bytes; reading `width * 4` walks into padding and
+records it as image data.
+
+Pass `frame_index` to `gdprobe_emit` whenever a sample belongs to a frame. Only
+samples that name a frame can be excluded as warmup later, and shader
+compilation in the first frames is the most common source of a false
+regression.
+
+## Say how you know, not just what you know
+
+`gdprobe_emit` and `gdprobe_measure` record a number of unknown provenance.
+Prefer the `_measured` variants and say what measured it:
+
+```c
+gdprobe_emit_measured(run, "render", "pass.gbuffer.gpu_duration_ns", ns, "ns", frame,
+                      GDPROBE_MEASURED_GPU_TIMESTAMP_QUERY);
+gdprobe_emit_measured(run, "render", "pipeline_statistics.fragment_invocations", n, "count", frame,
+                      GDPROBE_MEASURED_PIPELINE_STATISTICS_QUERY);
+gdprobe_emit_measured(run, "resource", "vram.used_bytes", bytes, "bytes", -1,
+                      GDPROBE_MEASURED_DRIVER_REPORT);
+```
+
+A GPU timestamp and a counter your code incremented are identical as doubles;
+this is what tells them apart downstream. The harness carries it into the
+performance summary, and an optimisation goal that requires a hardware
+measurement will refuse a metric of unknown provenance rather than chase a
+number nothing measured.
+
+## How it is validated
+
+There are no golden files. A conformance vector generated by the implementation
+it validates always passes, which is the failure mode that hides here. Instead,
+`tests/probe-sdk.test.ts` compiles `examples/minimal/main.c` with
+`-std=c99 -Wall -Wextra -Werror`, runs it through the real harness, and has the
+TypeScript side — written independently to the same contract — seal, verify,
+decode and analyse what the C code wrote. If the two disagree about the
+contract, that test is where it shows.
+
+CI also proves the software lane's one real promise through the shipped CLI
+rather than the in-process API (`npm run verify:software-lane`): the minimal
+example is compiled under the strictest flags, captured twice, and the two
+runs must be byte-identical under `visual compare --threshold 0` and
+`visual stability`, while `capture verify` must show the forced downgrade
+fired: `rendererClass` software, no GPU or timing claim admitted. The gate
+does not skip when no compiler is present; it fails.
+
+## Examples
+
+- `examples/minimal/` — a CPU-filled frame with two objects. No graphics API at
+  all, which is the point: it shows exactly what the SDK needs from an engine
+  and runs anywhere a C compiler does.
+- `examples/metal/` — the same two objects rendered windowless on the GPU.
+  Attests completion by a resolved stage-boundary timestamp pair, emits
+  per-pass GPU time as `gpu_timestamp_query`, the command buffer's own
+  timing as `driver_report`, and the CPU clock as `wall_clock`. macOS only.
+- `examples/vulkan/` — the same scene through the best-instrumented lane:
+  timestamp queries, pipeline statistics where the device has them (the
+  honest overdraw figure), `VK_EXT_memory_budget` for VRAM, and the
+  validation layer's messages counted into diagnostic telemetry. A CPU device
+  is declared software and attests nothing. Builds with `./build.sh`.
+- `examples/opengl/` — a CGL context on macOS, a surfaceless EGL context on
+  Linux, a framebuffer object and `glReadPixels`. `GL_SAMPLES_PASSED` gives a
+  hardware-measured overdraw; `GL_KHR_debug` output is counted where the
+  context offers it. Builds with `./build.sh`.
+- `examples/wgpu/` — the same scene in Rust through wgpu, binding the C SDK
+  over FFI and compiled by cargo. Timestamp writes on the pass; pipeline
+  statistics only on backends that have them; the padded readback row stride
+  handed to the SDK as the row stride it is.

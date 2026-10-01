@@ -25,34 +25,18 @@ THIRD_PARTY_NOTICE_NAME="THIRD_PARTY_NOTICES.md"
 THIRD_PARTY_PROVENANCE_NAME="THIRD_PARTY_PROVENANCE.json"
 THIRD_PARTY_LICENSE_DIRECTORY_NAME="ThirdPartyLicenses"
 THIRD_PARTY_LICENSE_SOURCE_DIR="$TEMPLATE_DIR/legal/third-party-licenses"
-THIRD_PARTY_LICENSE_PATHS=(
-  "brotli-1.2.0-MIT.txt"
-  "c-ares-1.34.6-MIT.txt"
-  "game-development-studio-${BUNDLED_GAME_DEV_CLI}-MIT.txt"
-  "icu4c-78.3-ICU.txt"
-  "libuv-1.51.0-BSD-2-Clause-tree.h.txt"
-  "libuv-1.51.0-ISC-inet.c.txt"
-  "libuv-1.51.0-MIT.txt"
-  "libuv-1.51.0-extra-MIT-BSD-2-ISC-index.txt"
-  "nghttp2-1.68.0-MIT.txt"
-  "nghttp3-1.13.1-MIT.txt"
-  "ngtcp2-1.18.0-MIT.txt"
-  "node-25.2.1-LICENSE.txt"
-  "npm-gltf-transform-core-4.4.2-MIT.txt"
-  "npm-jpeg-js-0.4.4-BSD-3-Clause.txt"
-  "npm-pngjs-7.0.0-MIT.txt"
-  "npm-property-graph-4.1.0-MIT.txt"
-  "npm-zod-3.25.76-MIT.txt"
-  "openssl-3.6.3-Apache-2.0.txt"
-  "simdjson-4.2.3-Apache-2.0.txt"
-  "simdjson-4.2.3-MIT.txt"
-  "sqlite-3.53.4-public-domain.txt"
-  "uvwasi-0.0.23-Apache-2.0.txt"
-  "zstd-1.5.7-BSD-3-Clause.txt"
-  "zstd-1.5.7-GPL-2.0-alternative.txt"
-  "zstd-1.5.7-source-archive-ancillary-BSD-2-Clause.txt"
-  "zstd-1.5.7-source-archive-ancillary-MIT.txt"
-)
+# The provenance is the single asset roster; validate names before shell use.
+THIRD_PARTY_LICENSE_LIST="$(node -e '
+const p = require(process.argv[1]);
+const names = p.legalAssets.map(a => a.path);
+if (!names.length || new Set(names).size !== names.length || names.some(n => !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(n))) process.exit(1);
+process.stdout.write(names.join("\n"));
+' "$TEMPLATE_DIR/$THIRD_PARTY_PROVENANCE_NAME")"
+THIRD_PARTY_LICENSE_PATHS=()
+while IFS= read -r license_path; do
+  THIRD_PARTY_LICENSE_PATHS+=("$license_path")
+done <<< "$THIRD_PARTY_LICENSE_LIST"
+
 VALIDATED_RUNTIME_TREE_SHA256=""
 VALIDATED_RUNTIME_ENTRY_COUNT=""
 VALIDATED_RUNTIME_NODE_VERSION=""
@@ -336,13 +320,18 @@ validate_third_party_provenance() {
     || die "third-party provenance bundled Node version mismatch"
   [[ "$(json_value "$provenance" "bundledRuntime.nonSystemDylibCount")" == "18" ]] \
     || die "third-party provenance non-system dylib count mismatch"
-  [[ "$(json_value "$provenance" "npmProductionPackages.0.name")" == "@gltf-transform/core" ]] \
-    || die "third-party provenance npm production package roster mismatch"
-  [[ "$(json_value "$provenance" "npmProductionPackages.0.lockedVersion")" == "4.4.2" ]] \
-    || die "third-party provenance @gltf-transform/core version mismatch"
-  [[ "$(json_value "$provenance" "npmProductionPackages.4.name")" == "zod" ]] \
-    || die "third-party provenance npm production package roster is incomplete"
-  assert_json_key_absent "$provenance" "npmProductionPackages.5.name"
+  node -e '
+const p = require(process.argv[1]);
+const lock = require(process.argv[2]);
+const expected = Object.entries(lock.packages).filter(([name, entry]) => name.startsWith("node_modules/") && entry.dev !== true);
+const records = new Map(p.npmProductionPackages.map(entry => [entry.installPath, entry]));
+if (records.size !== p.npmProductionPackages.length || records.size !== expected.length) throw new Error("npm production package roster mismatch");
+for (const [name, entry] of expected) {
+  const actual = records.get(name);
+  if (!actual || actual.lockedVersion !== entry.version || actual.lockIntegrity !== entry.integrity || actual.license !== entry.license) throw new Error(`npm provenance mismatch: ${name}`);
+  if (!actual.licenseAssets?.length || actual.licenseAssets.some(asset => !p.legalAssets.some(a => a.path === asset))) throw new Error(`npm license asset missing: ${name}`);
+}
+' "$provenance" "$ROOT_DIR/package-lock.json" || die "third-party provenance npm production closure mismatch"
   [[ "$(json_value "$provenance" "zstdScopeQualification.sourceArchiveSbomFilesAnalyzed")" == "false" ]] \
     || die "third-party provenance must qualify zstd source-archive scope"
   [[ "$(json_value "$provenance" "zstdScopeQualification.sourceArchiveSbomLicenseConcluded")" == "(BSD-3-Clause OR GPL-2.0-only) AND BSD-2-Clause AND MIT" ]] \

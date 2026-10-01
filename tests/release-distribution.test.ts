@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
+import { GAME_DEV_VERSION } from '../src/version.js';
 
 const sourceRoot = fileURLToPath(new URL('..', import.meta.url));
 const builder = path.join(sourceRoot, 'scripts', 'build-skills-repository.mjs');
@@ -113,6 +114,14 @@ describe('public release distribution', () => {
       '.mcp.json',
       '.app.json',
     ]));
+
+    // The probe SDK ships as source text only. A compiled example or SPIR-V
+    // blob in the roster means a local build leaked into the package that
+    // promises no native code; the extension set is the whole allowlist.
+    const probeTextExtensions = new Set(['.c', '.h', '.m', '.md', '.sh', '.vert', '.frag', '.rs', '.swift', '.toml', '.lock', '.txt']);
+    const probeFiles = files.filter((relative) => relative.startsWith('probe/'));
+    expect(probeFiles).toEqual(expect.arrayContaining(['probe/c/gdprobe.c', 'probe/c/gdprobe.h', 'probe/examples/vulkan/main.c']));
+    expect(probeFiles.filter((relative) => !probeTextExtensions.has(path.extname(relative)))).toEqual([]);
   }, 30_000);
 
   it('exports repository-root marketing images and a screenshot-free plugin archive', async () => {
@@ -160,7 +169,7 @@ describe('public release distribution', () => {
     const verification = await run(pythonExecutable, ['scripts/verify.py'], destination);
     expect(JSON.parse(verification.stdout)).toMatchObject({
       schema: 'game_dev.public_plugin_verification.v1',
-      version: '1.0.2',
+      version: GAME_DEV_VERSION,
       screenshots: 0,
       marketingScreenshots: 3,
     });
@@ -175,7 +184,7 @@ describe('public release distribution', () => {
       path.join(plugin, '.codex-plugin', 'plugin.json'),
       'utf8',
     )) as { version?: string; interface?: Record<string, unknown> };
-    expect(manifest.version).toBe('1.0.2');
+    expect(manifest.version).toBe(GAME_DEV_VERSION);
     expect(manifest).not.toHaveProperty('mcpServers');
     expect(manifest).not.toHaveProperty('apps');
     expect(manifest.interface?.screenshots).toBeUndefined();
