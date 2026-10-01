@@ -10,6 +10,21 @@ provider credential, shared provider account, hook, or automatic installation
 step. They never ask a user to paste or configure a provider key in a plugin
 conversation.
 
+## Install the CLI separately
+
+The CLI source is public at
+[game-development-studio](https://github.com/theisegoria/game-development-studio).
+As checked on 2026-10-01, its GitHub releases have no attached CLI installers or
+binaries, and `@theisegoria/game-development-studio` is not available on the
+public npm registry. This plugin's ZIP installs skills only.
+
+Windows 11 PowerShell users can follow the
+[CLI source-build and PATH instructions](https://github.com/theisegoria/game-development-studio/blob/main/docs/windows-install.md).
+They explain local installation and the limits of checksum/signature verification.
+There is currently no published Windows installer checksum to supply.
+If `game-dev` is not recognized, complete that installation before running the
+skills' local commands; installing the plugin alone cannot add it to PATH.
+
 ## Local execution boundary
 
 The plugin can route work and analyze user-supplied manifests, telemetry,

@@ -67,6 +67,21 @@ python3 scripts/verify.py
 No command in this repository automatically installs into a Codex profile or a
 game project.
 
+## Install the CLI separately
+
+The CLI source is public at
+[game-development-studio](https://github.com/theisegoria/game-development-studio).
+As checked on 2026-10-01, its GitHub releases have no attached CLI installers or
+binaries, and `@theisegoria/game-development-studio` is not available on the
+public npm registry. This plugin's ZIP installs skills only.
+
+Windows 11 PowerShell users can follow the
+[CLI source-build and PATH instructions](https://github.com/theisegoria/game-development-studio/blob/main/docs/windows-install.md).
+They explain local installation and the limits of checksum/signature verification.
+There is currently no published Windows installer checksum to supply.
+If `game-dev` is not recognized, complete that installation before running the
+skills' local commands; installing the plugin alone cannot add it to PATH.
+
 ## ChatGPT and local execution
 
 This is a skills-only plugin. In ChatGPT without a local execution environment,
