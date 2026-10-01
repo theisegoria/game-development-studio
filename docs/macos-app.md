@@ -253,3 +253,25 @@ scenario execution, GPU capture, hardware-performance measurement, long-running
 stability, pixel comparison of the app itself, assistive-technology review,
 Developer ID signing, notarization, and external human review are separate
 gates unless their own receipts or review records are produced.
+
+## CI runtime provenance profile
+
+Normal `./script/build_and_run.sh --build-only` builds continue to use the
+checked-in Homebrew Node runtime provenance. Hosted CI explicitly selects
+`GAME_DEV_RUNTIME_PROFILE=upstream-node-ci` and supplies an absolute
+`GAME_DEV_NODE_EXECUTABLE` extracted from the checksum-pinned official Node
+25.2.1 macOS ARM64 archive. The profile lives in
+`distribution/macos-ci-upstream-node/` and is for CI validation bundles only.
+
+CI verifies the archive SHA-256 before extraction and compares the upstream
+LICENSE. Before staging, `scripts/verify-upstream-node-profile.mjs` verifies
+the original executable's SHA-256 and every license's bytes and digest.
+The staged runtime then passes the normal exact-roster and provenance checks,
+including zero non-system dylibs for this specific upstream binary. Unknown
+profile names fail; there is no automatic fallback to a less strict profile.
+
+This profile does not change the production release packager's Homebrew
+contract. An upstream-profile CI bundle is not a published release and must
+not be represented as Developer ID signed or notarized. The pinned URLs,
+hashes, license corpus, and profile tests must be reviewed together when
+updating the upstream Node version.

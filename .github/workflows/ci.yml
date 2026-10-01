@@ -118,7 +118,22 @@ jobs:
       - name: Test the app model, process boundary, and credential boundary
         run: swift test --package-path apps/macos/GameDevelopmentStudio
 
+      - name: Fetch the checksum-pinned upstream Node runtime
+        run: |
+          profile=distribution/macos-ci-upstream-node/THIRD_PARTY_PROVENANCE.json
+          runtime_url="$(node -p "require('./$profile').bundledRuntime.node.sourceArtifact.url")"
+          runtime_sha="$(node -p "require('./$profile').bundledRuntime.node.sourceArtifact.sha256")"
+          runtime_dir="$RUNNER_TEMP/gds-upstream-node"
+          mkdir -p "$runtime_dir"
+          curl --fail --location --retry 3 "$runtime_url" -o "$runtime_dir/node.tar.gz"
+          printf '%s  %s\n' "$runtime_sha" "$runtime_dir/node.tar.gz" | shasum -a 256 --check
+          tar -xzf "$runtime_dir/node.tar.gz" -C "$runtime_dir" node-v25.2.1-darwin-arm64/bin/node node-v25.2.1-darwin-arm64/LICENSE
+          cmp "$runtime_dir/node-v25.2.1-darwin-arm64/LICENSE" distribution/macos-ci-upstream-node/legal/third-party-licenses/node-25.2.1-LICENSE.txt
+          echo "GAME_DEV_NODE_EXECUTABLE=$runtime_dir/node-v25.2.1-darwin-arm64/bin/node" >> "$GITHUB_ENV"
+
       - name: Stage and ad-hoc sign the local app bundle
+        env:
+          GAME_DEV_RUNTIME_PROFILE: upstream-node-ci
         run: ./script/build_and_run.sh --build-only
 
       - name: Validate the staged bundle
