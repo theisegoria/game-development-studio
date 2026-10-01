@@ -80,6 +80,12 @@ await editText('distribution/macos-app-repo/THIRD_PARTY_NOTICES.md', `CLI ${curr
 await editText('distribution/macos-ci-upstream-node/THIRD_PARTY_NOTICES.md', `CLI ${current} (MIT)`, `CLI ${next} (MIT)`);
 await editText('distribution/macos-app-repo/README.md', `CLI ${current} and`, `CLI ${next} and`);
 
+// Current distribution labels change; the historical provider floor does not.
+await editText('distribution/skills-repo/README.md', `skills bundle **${current}**`, `skills bundle **${next}**`);
+await editText('distribution/skills-repo/README.md', `--ref v${current}`, `--ref v${next}`);
+await editText('distribution/skills-repo/README.md', `game-development-studio-plugin-${current}.zip`, `game-development-studio-plugin-${next}.zip`);
+await editText('distribution/macos-app-repo/RELEASE_NOTES.md', `CLI ${current},`, `CLI ${next},`);
+
 // The release workflow refuses a tag with no matching CHANGELOG section. If an
 // Unreleased section exists, promote it; otherwise say so rather than guess.
 {

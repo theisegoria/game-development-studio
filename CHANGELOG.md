@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 1.1.0
+
+- Adds Windows source and GitHub tarball installation guidance, checksum manifests,
+  and exact-artifact Windows Node 22/24 release-install verification.
+- Aligns macOS CLI provenance and license notices; CI uses a checksum-pinned
+  upstream Node profile while local Homebrew builds retain their default profile.
+- Fixes Windows directory-fsync handling, preserving genuine I/O failures and
+  the original contribution from Shane-CodeMason in PR #2, hardened and verified in PR #5.
+- Produces GitHub CLI and skills archives only after all platform gates pass.
+  npm registry publishing remains unavailable; no native Windows installer is shipped.
 
 - **OpenGL and wgpu probe examples.** `probe/examples/opengl/` renders
   windowless through CGL on macOS or surfaceless EGL on Linux, with

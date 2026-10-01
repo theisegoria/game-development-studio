@@ -6,7 +6,7 @@ for installation questions, reproducible defects, feature requests, and
 documentation problems.
 
 If `game-dev` is not recognized, see the
-[Windows source-build and PATH guide](https://github.com/theisegoria/game-development-studio/blob/2a4edcb0a834d682683fb0c28d71b7659b74bd89/docs/windows-install.md).
+[Windows source-build and PATH guide](https://github.com/theisegoria/game-development-studio/blob/v1.1.0/docs/windows-install.md).
 The skills plugin does not contain the CLI. For installation failures, report
 which setup step failed and the Node/npm versions instead of requiring a doctor
 report from a command that is not installed.

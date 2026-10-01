@@ -1,6 +1,6 @@
 {
   "name": "game-development-studio",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Local-first game asset production, vendoring, render diagnosis, and bounded performance workflows.",
   "author": {
     "name": "Benjamin Michael Haire",

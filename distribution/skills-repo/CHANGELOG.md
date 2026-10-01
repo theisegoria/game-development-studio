@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0
+
+- Adds verified Windows CLI release-tarball, checksum, installation and PATH guidance.
+- Updates five skill references for the reviewed CLI/MCP and probe workflows while
+  retaining the skills-only archive and explicit per-invocation approval boundaries.
+- Clarifies unpublished npm registry status and separates plugin ZIP from CLI package.
+
 ## 1.0.2
 
 Skills-only submission correction:
