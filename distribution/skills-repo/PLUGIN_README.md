@@ -19,7 +19,7 @@ binaries, and `@theisegoria/game-development-studio` is not available on the
 public npm registry. This plugin's ZIP installs skills only.
 
 Windows 11 PowerShell users can follow the
-[CLI source-build and PATH instructions](https://github.com/theisegoria/game-development-studio/blob/d92bb63da83fa068f869756fc0721eea6471a4d6/docs/windows-install.md).
+[CLI source-build and PATH instructions](https://github.com/theisegoria/game-development-studio/blob/2a4edcb0a834d682683fb0c28d71b7659b74bd89/docs/windows-install.md).
 They explain local installation and the limits of checksum/signature verification.
 There is currently no published Windows installer checksum to supply.
 If `game-dev` is not recognized, complete that installation before running the
