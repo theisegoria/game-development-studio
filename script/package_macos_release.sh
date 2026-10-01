@@ -5,12 +5,13 @@ APP_PRODUCT="GameDevelopmentStudio"
 APP_DISPLAY_NAME="Game Development Studio"
 BUNDLE_IDENTIFIER="com.theisegoria.GameDevelopmentStudio"
 MINIMUM_SYSTEM_VERSION="26.0"
-BUNDLED_GAME_DEV_CLI="1.0.1"
 CLI_RUNTIME_ROSTER_SCHEMA="game_dev.cli_runtime_roster.v1"
 EXPECTED_ARCHITECTURES="arm64"
 RELEASE_REPOSITORY="theisegoria/game-development-studio-macos"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# Bind release validation to the CLI being packaged, not a stale release literal.
+BUNDLED_GAME_DEV_CLI="$(node -p 'require(process.argv[1]).version' "$ROOT_DIR/package.json")"
 PACKAGE_DIR="$ROOT_DIR/apps/macos/GameDevelopmentStudio"
 DEFAULT_APP="$PACKAGE_DIR/dist/$APP_PRODUCT.app"
 TEMPLATE_DIR="$ROOT_DIR/distribution/macos-app-repo"
@@ -27,7 +28,7 @@ THIRD_PARTY_LICENSE_SOURCE_DIR="$TEMPLATE_DIR/legal/third-party-licenses"
 THIRD_PARTY_LICENSE_PATHS=(
   "brotli-1.2.0-MIT.txt"
   "c-ares-1.34.6-MIT.txt"
-  "game-development-studio-1.0.1-MIT.txt"
+  "game-development-studio-${BUNDLED_GAME_DEV_CLI}-MIT.txt"
   "icu4c-78.3-ICU.txt"
   "libuv-1.51.0-BSD-2-Clause-tree.h.txt"
   "libuv-1.51.0-ISC-inet.c.txt"
@@ -976,7 +977,7 @@ validate_public_repository() {
     || die "README does not disclose the notarization state"
   /usr/bin/grep -Fq 'no Swift or TypeScript project source' "$repository/README.md" \
     || die "README does not disclose the binary-only repository boundary"
-  /usr/bin/grep -Fq 'bundled, roster-verified `game-dev` CLI 1.0.1' "$repository/README.md" \
+  /usr/bin/grep -Fq 'bundled, roster-verified `game-dev` CLI '"$BUNDLED_GAME_DEV_CLI" "$repository/README.md" \
     || die "README does not disclose the bundled game-dev CLI version"
 
   for file in "$repository"/screenshots/*.png; do
