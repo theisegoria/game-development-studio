@@ -510,6 +510,68 @@ extension CommandCatalog {
             createsDurableJob: true
         ),
 
+        CommandSpec(
+            id: "visual.stability", path: ["visual", "stability"],
+            title: "Measure capture stability", summary: "Measure the noise floor across repeated captures.",
+            arguments: [.positional("runs", "Runs"), .flag("output", "Output directory", kind: .directory, required: true)],
+            lane: .workspaceWrite, route: .visual
+        ),
+        CommandSpec(
+            id: "adapter.sample", path: ["adapter", "sample"],
+            title: "Create a sample project", summary: "Create the packaged capture sample in a new directory.",
+            arguments: [.flag("project", "New project directory", kind: .directory, required: true)],
+            authorities: [.confirm], lane: .workspaceWrite, route: .setup
+        ),
+        CommandSpec(
+            id: "optimization.plan", path: ["optimization", "plan"],
+            title: "Plan optimization session", summary: "Plan a bounded external-agent optimization session.",
+            arguments: [.positional("baseline", "Baseline"), .flag("project", "Project", kind: .directory, required: true), .flag("request", "Session specification", kind: .jsonRequest, required: true)],
+            lane: .workspaceWrite, route: .performance
+        ),
+        CommandSpec(
+            id: "optimization.start", path: ["optimization", "start"],
+            title: "Start optimization session", summary: "Start a bounded external-agent optimization session.",
+            arguments: [.positional("baseline", "Baseline"), .flag("project", "Project", kind: .directory, required: true), .flag("request", "Session specification", kind: .jsonRequest, required: true), .flag("session-root", "Session root", kind: .directory, required: true), .flag("plan-hash", "Reviewed plan hash", required: true)],
+            authorities: [.confirm], lane: .workspaceWrite, route: .performance
+        ),
+        CommandSpec(
+            id: "optimization.status", path: ["optimization", "status"],
+            title: "Status optimization session", summary: "Status a bounded external-agent optimization session.",
+            arguments: [.positional("session", "Session directory", kind: .directory)],
+            lane: .workspaceWrite, route: .performance
+        ),
+        CommandSpec(
+            id: "optimization.evaluate", path: ["optimization", "evaluate"],
+            title: "Evaluate optimization session", summary: "Evaluate a bounded external-agent optimization session.",
+            arguments: [.positional("session", "Session directory", kind: .directory)],
+            transport: .events, authorities: [.confirm, .allowGPU, .allowPerformance], lane: .workspaceWrite, route: .performance
+        ),
+        CommandSpec(
+            id: "optimization.recover", path: ["optimization", "recover"],
+            title: "Recover optimization session", summary: "Recover a bounded external-agent optimization session.",
+            arguments: [.positional("session", "Session directory", kind: .directory)],
+            authorities: [.confirm], lane: .workspaceWrite, route: .performance
+        ),
+        CommandSpec(
+            id: "optimization.stop", path: ["optimization", "stop"],
+            title: "Stop optimization session", summary: "Stop a bounded external-agent optimization session.",
+            arguments: [.positional("session", "Session directory", kind: .directory)],
+            authorities: [.confirm], lane: .workspaceWrite, route: .performance
+        ),
+        CommandSpec(
+            id: "optimization.export", path: ["optimization", "export"],
+            title: "Export optimization session", summary: "Export a bounded external-agent optimization session.",
+            arguments: [.positional("session", "Session directory", kind: .directory), .flag("output", "Output directory", kind: .directory, required: true)],
+            authorities: [.confirm], lane: .workspaceWrite, route: .performance
+        ),
+
+        CommandSpec(
+            id: "capture.list", path: ["capture", "list"],
+            title: "List captures", summary: "List the sealed runs in this workspace.",
+            arguments: [.flag("limit", "Limit", kind: .integer(minimum: 1, maximum: nil))],
+            route: .scenarios
+        ),
+
         // MARK: - Performance
 
         CommandSpec(

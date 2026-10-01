@@ -50,7 +50,7 @@ export interface VisualStability {
   adapterId: string;
   scenarioId: string;
   attachments: AttachmentStability[];
-  /** 1.0 means every pixel of every attachment was identical across all runs. */
+  /** 1.0 means every pixel of every compared PNG attachment was identical across all runs. */
   stabilityScore: number;
   verdict: 'bit-deterministic' | 'stable' | 'noisy';
   summary: string[];
@@ -126,6 +126,9 @@ export async function measureRunStability(options: {
   });
   const shared = [...(perRun[0]?.keys() ?? [])].filter((identity) => perRun.every((files) => files.has(identity)));
   if (shared.length === 0) throw invalidInput('the runs share no PNG attachment identity');
+  if (perRun.some((files) => files.size !== shared.length)) {
+    throw invalidInput('stability requires the same PNG attachment identities in every run');
+  }
 
   const attachments: AttachmentStability[] = [];
   let totalPixels = 0;
@@ -147,7 +150,7 @@ export async function measureRunStability(options: {
     for (let pixel = 0; pixel < pixels; pixel += 1) {
       const offset = pixel * 4;
       let range = 0;
-      for (let channel = 0; channel < 3; channel += 1) {
+      for (let channel = 0; channel < 4; channel += 1) {
         let low = 255;
         let high = 0;
         for (const image of images) {
@@ -192,7 +195,7 @@ export async function measureRunStability(options: {
   const summary: string[] = [];
   summary.push(
     verdict === 'bit-deterministic'
-      ? `Across ${captures.length} runs every pixel of every attachment was identical. A zero ` +
+      ? `Across ${captures.length} runs every pixel of every compared PNG attachment was identical. A zero ` +
         'threshold is a valid hard gate for this scenario.'
       : `Across ${captures.length} runs ${((1 - stabilityScore) * 100).toFixed(2)}% of pixels moved ` +
         'with no change to the code. That is the noise floor; comparisons that apply it will not ' +

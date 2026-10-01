@@ -12,6 +12,7 @@ struct ScenariosWorkspace: View {
     let plan: ScenarioPlan?
     let recentRuns: [Run]
     var error: String?
+    var parameters: Binding<String> = .constant("{}")
     var onChooseProject: () -> Void = {}
     var onPlan: (String) -> Void = { _ in }
     var onRun: (ScenarioPlan, ApprovalGrant) -> Void = { _, _ in }
@@ -84,6 +85,13 @@ struct ScenariosWorkspace: View {
                     }
                 }
                 projectPanel
+                Panel("Scenario parameters", symbolName: "slider.horizontal.3") {
+                    Text("Supply the parameter values declared by this scenario as a JSON object. The resolved plan shows the arguments before you approve a run.")
+                        .font(.callout).foregroundStyle(.secondary)
+                    TextEditor(text: parameters)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(minHeight: 80)
+                }
                 if scenarios.isEmpty {
                     Panel {
                         NothingHere(

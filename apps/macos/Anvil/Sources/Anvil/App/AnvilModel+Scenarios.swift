@@ -16,6 +16,11 @@ extension AnvilModel {
 
     func setProject(_ url: URL) {
         UserDefaults.standard.set(url.path, forKey: Self.projectKey)
+        scenarioRequestID = UUID()
+        scenarioParameters = "{}"
+        plannedProject = nil
+        plannedParameters = nil
+        plannedAdapterHash = nil
         scenarios = []
         scenarioList = nil
         plan = nil
@@ -48,6 +53,7 @@ extension AnvilModel {
                 ),
                 timeout: .seconds(30)
             )
+            guard project == projectPath else { return }
             guard result.envelope.ok else {
                 scenarioError = result.envelope.summary
                 scenarios = []
@@ -57,30 +63,44 @@ extension AnvilModel {
             scenarioList = list
             scenarios = list.scenarios
         } catch {
+            guard project == projectPath else { return }
             scenarioError = error.localizedDescription
             scenarios = []
         }
     }
 
     func planScenario(_ scenarioID: String) async {
+        let requestID = UUID()
+        scenarioRequestID = requestID
+        let parameters = scenarioParameters
+        plan = nil
+        plannedProject = nil
+        plannedParameters = nil
+        plannedAdapterHash = nil
         let project = projectPath
         guard !project.isEmpty else { return }
         scenarioError = nil
         do {
             let result = try await execute(
                 CLIInvocation(
-                    arguments: ["scenario", "plan", scenarioID, "--project", project, "--output-dir", outputDirectory.path, "--json"],
+                    arguments: ["scenario", "plan", scenarioID, "--project", project, "--input", parameters, "--output-dir", outputDirectory.path, "--json"],
                     expectedOperation: "scenario.plan"
                 ),
                 timeout: .seconds(30)
             )
+            guard project == projectPath, scenarioRequestID == requestID else { return }
             guard result.envelope.ok else {
                 scenarioError = result.envelope.summary
                 plan = nil
                 return
             }
+            guard project == projectPath, scenarioRequestID == requestID else { return }
             plan = try ScenarioPlan(planPayload: result.envelope.data)
+            plannedProject = project
+            plannedParameters = parameters
+            plannedAdapterHash = result.envelope.data["adapterManifestSha256"]?.stringValue
         } catch {
+            guard project == projectPath, scenarioRequestID == requestID else { return }
             // A plan Anvil cannot fully describe is not shown at all - approving it
             // would show a person less than they are agreeing to.
             scenarioError = error.localizedDescription
@@ -91,11 +111,15 @@ extension AnvilModel {
     /// Starts the run the person just approved. The grant is the only way the
     /// authority flags reach the command line.
     func runScenario(_ plan: ScenarioPlan, grant: ApprovalGrant) {
-        guard let spec = CommandCatalog["scenario.run"] else { return }
+        guard self.plan == plan,
+              let project = plannedProject, project == projectPath,
+              let parameters = plannedParameters,
+              let adapterHash = plannedAdapterHash,
+              let spec = CommandCatalog["scenario.run"] else { return }
         do {
             try runs.start(
                 spec,
-                arguments: [plan.scenarioID, "--project", projectPath],
+                arguments: [plan.scenarioID, "--project", project, "--input", parameters, "--expected-adapter-sha256", adapterHash],
                 outputDirectory: outputDirectory,
                 grant: grant,
                 timeout: .seconds(Double(plan.timeoutSeconds) + 60)

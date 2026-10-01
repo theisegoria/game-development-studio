@@ -1,0 +1,40 @@
+{
+  "schema": "game_dev.adapter.v1",
+  "id": "generic-sample",
+  "name": "Deterministic sample",
+  "version": "1.0.0",
+  "scenarios": [
+    {
+      "id": "capture",
+      "title": "Synthetic capture",
+      "command": {
+        "executable": "capture.mjs",
+        "arguments": [
+          "{param.mode}"
+        ],
+        "workingDirectory": "."
+      },
+      "parameters": {
+        "mode": {
+          "type": "enum",
+          "values": [
+            "normal",
+            "visual-regression",
+            "failure",
+            "timeout"
+          ],
+          "default": "normal",
+          "required": false
+        }
+      },
+      "capabilities": [
+        "cpu"
+      ],
+      "timeoutSeconds": 2,
+      "outputs": {
+        "format": "game-dev-capture-v1",
+        "path": "capture.json"
+      }
+    }
+  ]
+}

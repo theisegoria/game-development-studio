@@ -27,6 +27,11 @@ final class AnvilModel {
     var scenarioList: ScenarioList?
     var plan: ScenarioPlan?
     var scenarioError: String?
+    var scenarioParameters = "{}"
+    var plannedProject: String?
+    var plannedParameters: String?
+    var plannedAdapterHash: String?
+    var scenarioRequestID = UUID()
 
     @ObservationIgnored private let client: GameDevCLIClient
     @ObservationIgnored private let runtimeURL: URL?

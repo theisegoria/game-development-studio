@@ -26,8 +26,6 @@ struct ContentView: View {
         switch route {
         case .overview:
             HealthWorkspace()
-        case .visual:
-            VisualWorkspace(runs: model.runs.runs)
         case .runs:
             RunsWorkspace(
                 runs: model.runs.runs,
@@ -43,6 +41,7 @@ struct ContentView: View {
                 plan: model.plan,
                 recentRuns: model.runs.runs.filter { $0.commandID == "scenario.run" }.prefix(5).map { $0 },
                 error: model.scenarioError,
+                parameters: Binding(get: { model.scenarioParameters }, set: { model.scenarioParameters = $0 }),
                 onChooseProject: { model.chooseProject() },
                 onPlan: { id in Task { await model.planScenario(id) } },
                 onRun: { plan, grant in model.runScenario(plan, grant: grant) }

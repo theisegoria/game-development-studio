@@ -1,3 +1,4 @@
+import { writeComparisonReport } from './report.js';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { analyzeFloatRaster, type FloatRasterStatistics } from './raster-float.js';
@@ -533,14 +534,19 @@ export function safeFileComponent(identity: string): string {
  * The record names the files; the files are not discovered by globbing, so a
  * stray PNG beside the record cannot become somebody's noise floor.
  */
-async function loadNoiseFloors(recordPath: string): Promise<Map<string, RasterImage>> {
+async function loadNoiseFloors(recordPath: string, adapterId: string, scenarioId: string): Promise<Map<string, RasterImage>> {
   const resolved = path.resolve(recordPath);
   const record = JSON.parse(await fs.readFile(resolved, 'utf8')) as {
     schema?: string;
+    adapterId?: string;
+    scenarioId?: string;
     attachments?: Array<{ identity: string; noiseFloorPath: string }>;
   };
   if (record.schema !== 'game_dev.visual_stability.v1' || !Array.isArray(record.attachments)) {
     throw invalidInput('noise floor must be a game_dev.visual_stability.v1 record', { path: resolved });
+  }
+  if (record.adapterId !== adapterId || record.scenarioId !== scenarioId) {
+    throw invalidInput('noise floor must belong to the compared adapter scenario');
   }
   const floors = new Map<string, RasterImage>();
   for (const entry of record.attachments) {
@@ -560,7 +566,6 @@ export async function compareRunVisuals(options: {
   noiseFloorPath?: string;
 }): Promise<VisualComparison> {
   const threshold = options.threshold ?? 0;
-  const noiseFloors = options.noiseFloorPath ? await loadNoiseFloors(options.noiseFloorPath) : undefined;
   const antialiasTolerancePixels = options.antialiasTolerancePixels ?? 0;
   if (!Number.isInteger(antialiasTolerancePixels)
     || antialiasTolerancePixels < 0 || antialiasTolerancePixels > 4) {
@@ -576,6 +581,9 @@ export async function compareRunVisuals(options: {
   if (baseline.adapterId !== candidate.adapterId || baseline.scenarioId !== candidate.scenarioId) {
     throw invalidInput('visual comparison requires runs from the same adapter scenario');
   }
+  const noiseFloors = options.noiseFloorPath
+    ? await loadNoiseFloors(options.noiseFloorPath, baseline.adapterId, baseline.scenarioId)
+    : undefined;
 
   let outputPath: string | undefined;
   if (options.outputPath) {
@@ -699,6 +707,7 @@ export async function compareRunVisuals(options: {
 
   if (outputPath) {
     await fs.writeFile(path.join(outputPath, 'comparison.json'), canonicalJson(comparison), { flag: 'wx', mode: 0o600 });
+    await writeComparisonReport(comparison, outputPath);
   }
   if (pairs.length === 0) throw invalidState('runs have no matching PNG capture attachment identities');
   return comparison;

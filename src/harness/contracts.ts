@@ -31,8 +31,8 @@ export const HARDWARE_MEASUREMENT_PROVENANCE: ReadonlySet<MeasurementProvenance>
   'gpu_timestamp_query', 'pipeline_statistics_query', 'driver_report',
 ]);
 export const MEASURED_BY_ATTRIBUTE = 'measured_by' as const;
-export const GAME_DEV_PERFORMANCE_SUMMARY_SCHEMA = 'game_dev.performance_summary.v1' as const;
-export const GAME_DEV_PERFORMANCE_COMPARISON_SCHEMA = 'game_dev.performance_comparison.v1' as const;
+export const GAME_DEV_PERFORMANCE_SUMMARY_SCHEMA = 'game_dev.performance_summary.v2' as const;
+export const GAME_DEV_PERFORMANCE_COMPARISON_SCHEMA = 'game_dev.performance_comparison.v2' as const;
 export const GAME_DEV_VISUAL_COMPARISON_SCHEMA = 'game_dev.visual_comparison.v1' as const;
 export const GAME_DEV_OPTIMIZATION_GOAL_SCHEMA = 'game_dev.optimization_goal.v1' as const;
 
@@ -361,6 +361,8 @@ export const captureManifestSchema = z.object({
     measuredBy: measurementProvenanceSchema.default('unknown'),
   }).strict()).max(100_000).default([]),
   adapterEvidence: z.object({
+    hardware: z.record(z.union([z.string(), z.number().finite(), z.boolean()])).optional(),
+    build: z.record(z.union([z.string(), z.number().finite(), z.boolean()])).optional(),
     windowless: z.boolean().optional(),
     graphicsApi: z.string().min(1).max(64).optional(),
     /**

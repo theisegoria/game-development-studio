@@ -170,7 +170,10 @@ export function describeComparison(comparison: VisualComparison): ComparisonNarr
     (left, right) => (right.changedPixelRatio ?? 0) - (left.changedPixelRatio ?? 0),
   );
   const verdicts = ranked.map(verdictFor);
-  const verdict: ComparisonVerdict = verdicts.includes('changed')
+  const unmatched = comparison.unmatchedBaseline.length > 0 || comparison.unmatchedCandidate.length > 0;
+  const verdict: ComparisonVerdict = unmatched || verdicts.length === 0
+    ? 'incomparable'
+    : verdicts.includes('changed')
     ? 'changed'
     : verdicts.includes('incomparable')
       ? 'incomparable'
@@ -179,6 +182,9 @@ export function describeComparison(comparison: VisualComparison): ComparisonNarr
         : 'identical';
 
   const summary = ranked.flatMap(describePair);
+  if (unmatched) {
+    summary.unshift(`Attachment identities differ: ${comparison.unmatchedBaseline.length} missing from the candidate, ${comparison.unmatchedCandidate.length} missing from the baseline.`);
+  }
   if (summary.length === 0) {
     summary.push('No comparable attachments were found in both runs.');
   }

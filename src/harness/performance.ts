@@ -13,6 +13,7 @@ import {
   MEASURED_BY_ATTRIBUTE,
   type MeasurementProvenance,
 } from './contracts.js';
+import { canonicalJson } from '../packages/format.js';
 import { verifyRunBundle } from './run-bundle.js';
 import { describeComparison, describeSummary } from './describe-performance.js';
 
@@ -23,7 +24,7 @@ const MAX_PROFILE_MEASUREMENTS = 100_000;
 
 type Aggregation = 'sample' | 'mean' | 'median' | 'p95' | 'p99' | 'min' | 'max';
 
-interface Measurement {
+export interface Measurement {
   metric: string;
   unit: string;
   value: number;
@@ -41,6 +42,8 @@ interface Measurement {
    * why warmup frames could not be excluded.
    */
   frameIndex?: number;
+  timestampNs?: string;
+  artifact?: string;
 }
 
 export interface PerformanceSummary {
@@ -50,6 +53,11 @@ export interface PerformanceSummary {
   adapterId: string;
   scenarioId: string;
   metrics: MetricStatistics[];
+  measurements: Measurement[];
+  aggregates: Measurement[];
+  groups: Array<MetricStatistics & { source: Measurement['source'] }>;
+  controls: RunControls;
+  ambiguousMetrics: string[];
   sources: Record<Measurement['source'], number>;
   /**
    * Metrics that arrived both raw and pre-aggregated. Usually an adapter
@@ -113,6 +121,10 @@ export interface PerformanceComparison {
     separability: 'separable' | 'within-noise' | 'underpowered';
     standardErrorOfDifference: number | null;
   }>;
+  missingBaseline: string[];
+  missingCandidate: string[];
+  incompatibleGroups: string[];
+  comparability: ControlComparison;
   hardwarePerformanceComparisonAdmitted: boolean;
   /** The same deltas in sentences, largest movement first. */
   summary: string[];
@@ -204,6 +216,8 @@ async function telemetryMeasurements(filePath: string, expectedRunId: string): P
           // Validated by the schema: present means from the vocabulary.
           measuredBy: (event.attributes[MEASURED_BY_ATTRIBUTE] as MeasurementProvenance | undefined) ?? 'unknown',
           ...(event.frameIndex !== undefined ? { frameIndex: event.frameIndex } : {}),
+          timestampNs: String(event.timestampNs),
+          artifact: path.basename(filePath),
         });
       }
       continue;
@@ -403,6 +417,7 @@ export async function summarizeRunPerformance(
   const measurementProvenance: PerformanceSummary['measurementProvenance'] = {
     gpu_timestamp_query: 0, pipeline_statistics_query: 0, driver_report: 0, engine_counter: 0, wall_clock: 0, unknown: 0,
   };
+  const sourcesByMetric = new Map<string, Set<Measurement['source']>>();
   const sources: PerformanceSummary['sources'] = {
     capture: 0,
     telemetry: 0,
@@ -411,6 +426,12 @@ export async function summarizeRunPerformance(
   };
   for (const measurement of admitted) {
     sources[measurement.source] += 1;
+    if (measurement.aggregation === 'sample') {
+      const identity = `${measurement.metric} [${measurement.unit}]`;
+      const metricSources = sourcesByMetric.get(identity) ?? new Set<Measurement['source']>();
+      metricSources.add(measurement.source);
+      sourcesByMetric.set(identity, metricSources);
+    }
     measurementProvenance[measurement.measuredBy] += 1;
     const key = `${measurement.metric}\u0000${measurement.unit}\u0000${measurement.aggregation}\u0000${measurement.measuredBy}`;
     const group = grouped.get(key) ?? {
@@ -426,8 +447,9 @@ export async function summarizeRunPerformance(
     provenances.add(measurement.measuredBy);
     provenancesByMetric.set(measurement.metric, provenances);
   }
+  const ambiguousMetrics = [...sourcesByMetric].filter(([, values]) => values.size > 1).map(([key]) => key).sort();
   const admittedHardware = verified.manifest.evidence.hardwarePerformanceEvidenceAdmitted;
-  const metrics = [...grouped.values()]
+  const metrics = [...grouped.values()].filter((g) => g.aggregation === 'sample' && !ambiguousMetrics.includes(`${g.metric} [${g.unit}]`))
     .map((group) => statistics(group.metric, group.unit, group.values, group.aggregation, group.measuredBy, admittedHardware))
     .sort((left, right) =>
       left.metric.localeCompare(right.metric)
@@ -455,6 +477,15 @@ export async function summarizeRunPerformance(
     adapterId: verified.manifest.adapterId,
     scenarioId: verified.manifest.scenarioId,
     metrics,
+    measurements,
+    ambiguousMetrics,
+    aggregates: admitted.filter((m) => m.aggregation !== 'sample'),
+    groups: [...new Set(admitted.map((m) => `${m.metric}\0${m.unit}\0${m.source}\0${m.measuredBy}`))].flatMap((key) => {
+      const samples = admitted.filter((m) => `${m.metric}\0${m.unit}\0${m.source}\0${m.measuredBy}` === key && m.aggregation === 'sample');
+      const first = samples[0];
+      return first ? [{ ...statistics(first.metric, first.unit, samples.map((m) => m.value), 'sample', first.measuredBy, admittedHardware), source: first.source }] : [];
+    }),
+    controls: await readRunControls(verified.runPath),
     sources,
     mixedAggregationMetrics,
     mixedProvenanceMetrics,
@@ -562,8 +593,15 @@ export async function compareRunPerformance(
     candidateRunId: candidate.runId,
     statistic,
     metrics,
+    missingBaseline: candidate.metrics.filter((m) => !baseline.metrics.some((b) => b.metric === m.metric && b.unit === m.unit)).map((m) => `${m.metric} [${m.unit}]`),
+    missingCandidate: baseline.metrics.filter((m) => !candidate.metrics.some((b) => b.metric === m.metric && b.unit === m.unit)).map((m) => `${m.metric} [${m.unit}]`),
+    incompatibleGroups: metrics.filter((m) => {
+      const sources = (summary: PerformanceSummary) => summary.groups.filter((g) => g.metric === m.metric && g.unit === m.unit).map((g) => g.source).sort().join(',');
+      return sources(baseline) !== sources(candidate);
+    }).map((m) => `${m.metric} [${m.unit}]`),
+    comparability: compareControls(baseline.controls, candidate.controls),
     hardwarePerformanceComparisonAdmitted:
-      baseline.hardwarePerformanceEvidenceAdmitted && candidate.hardwarePerformanceEvidenceAdmitted,
+      baseline.hardwarePerformanceEvidenceAdmitted && candidate.hardwarePerformanceEvidenceAdmitted && compareControls(baseline.controls, candidate.controls).status === 'compatible',
     evidenceCeiling:
       'The comparison reports arithmetic deltas only. Sample counts and standard deviations are ' +
       'carried through, and `separability` screens each delta against two standard errors of the ' +
@@ -578,4 +616,43 @@ export async function compareRunPerformance(
   };
   result.summary = describeComparison(result);
   return result;
+}
+
+/** Controls are read only after the closed run roster has been verified. */
+export interface RunControls {
+  adapterHash: string;
+  parameters: Record<string, unknown>;
+  hardware: unknown;
+  build: unknown;
+}
+export interface ControlComparison {
+  status: 'compatible' | 'incompatible' | 'unknown';
+  differences: string[];
+  unknown: string[];
+}
+export async function readRunControls(runPath: string): Promise<RunControls> {
+  const verified = await verifyRunBundle(runPath);
+  let metadata: { hardware?: unknown; build?: unknown } = {};
+  if (verified.manifest.captureManifest) {
+    const capture = await validateCaptureManifest(verified.runPath, verified.manifest.captureManifest, { runId: verified.manifest.runId, adapterId: verified.manifest.adapterId, scenarioId: verified.manifest.scenarioId });
+    metadata = capture.manifest.adapterEvidence;
+  }
+  return {
+    adapterHash: verified.manifest.adapterManifestSha256,
+    parameters: JSON.parse(await fs.readFile(path.join(verified.runPath, 'request.json'), 'utf8')) as Record<string, unknown>,
+    hardware: metadata.hardware ?? null,
+    build: metadata.build ?? null,
+  };
+}
+export function compareControls(baseline: RunControls, candidate: RunControls): ControlComparison {
+  const differences: string[] = [];
+  const unknown: string[] = [];
+  for (const key of ['adapterHash', 'parameters', 'hardware', 'build'] as const) {
+    if (baseline[key] === null || candidate[key] === null) unknown.push(key);
+    else {
+      const comparable = (value: unknown) => key === 'build' && value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).filter(([name]) => name !== 'revision')) : value;
+      if (canonicalJson(comparable(baseline[key])) !== canonicalJson(comparable(candidate[key]))) differences.push(key);
+    }
+  }
+  return { status: differences.length ? 'incompatible' : unknown.length ? 'unknown' : 'compatible', differences, unknown };
 }

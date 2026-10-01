@@ -14,7 +14,7 @@ import type { PerformanceComparison, PerformanceSummary } from '../src/harness/p
 
 function summary(metrics: PerformanceSummary['metrics'], overrides: Partial<PerformanceSummary> = {}): PerformanceSummary {
   return {
-    schema: 'game_dev.performance_summary.v1',
+    schema: 'game_dev.performance_summary.v2',
     summary: [],
     runId: 'run_1',
     runPath: '/runs/run_1',
@@ -97,7 +97,7 @@ describe('what the performance narrator says', () => {
 
   it('refuses to imply significance or cause in a comparison', () => {
     const comparison = {
-      schema: 'game_dev.performance_comparison.v1',
+      schema: 'game_dev.performance_comparison.v2',
       summary: [],
       baselineRunId: 'a', candidateRunId: 'b', statistic: 'median',
       metrics: [{
@@ -121,7 +121,7 @@ describe('what the performance narrator says', () => {
 
   it('says plainly when nothing moved beyond the noise', () => {
     const comparison = {
-      schema: 'game_dev.performance_comparison.v1',
+      schema: 'game_dev.performance_comparison.v2',
       summary: [],
       baselineRunId: 'a', candidateRunId: 'b', statistic: 'median',
       metrics: [{

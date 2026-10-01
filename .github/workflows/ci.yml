@@ -100,7 +100,7 @@ jobs:
       - name: Drive the Metal example on the runner's GPU
         if: runner.os == 'macOS'
         run: |
-          npx vitest run tests/probe-metal.test.ts --no-file-parallelism --reporter=json --outputFile=/tmp/metal.json
+          npx vitest run tests/probe-metal.test.ts --no-file-parallelism --reporter=default --reporter=json --outputFile=/tmp/metal.json
           node -e "
             const r = require('/tmp/metal.json');
             const passed = r.numPassedTests, skipped = r.numPendingTests;
@@ -229,6 +229,9 @@ jobs:
 
       - name: Test the app model, process boundary, and credential boundary
         run: swift test --package-path apps/macos/GameDevelopmentStudio
+
+      - name: Build and test Anvil catalog and process contracts
+        run: swift test --package-path apps/macos/Anvil -j 2
 
       - name: Stage and ad-hoc sign the local app bundle
         run: ./script/build_and_run.sh --build-only

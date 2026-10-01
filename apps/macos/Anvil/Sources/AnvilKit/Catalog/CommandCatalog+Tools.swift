@@ -13,6 +13,8 @@ extension CommandCatalog {
     /// publishes the rate; `estimated` means it does not, and the ceiling is a refusal
     /// guard rather than an invoice.
     static let toolCommands: [CommandSpec] = [
+        tool("measure_run_stability", title: "Measure capture stability",
+             summary: "Measure the noise floor across repeated captures.", lane: .workspaceWrite, route: .visual),
         tool(
             "preview_asset_prompt",
             title: "Preview a prompt",

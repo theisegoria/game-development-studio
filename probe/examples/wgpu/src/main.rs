@@ -212,11 +212,14 @@ fn main() {
         ty: wgpu::QueryType::PipelineStatistics(wgpu::PipelineStatisticsTypes::FRAGMENT_SHADER_INVOCATIONS | wgpu::PipelineStatisticsTypes::CLIPPER_PRIMITIVES_OUT),
         count: 1,
     }));
+    // Each resolve destination, not just the buffer, must satisfy wgpu's alignment.
+    let statistics_offset = wgpu::QUERY_RESOLVE_BUFFER_ALIGNMENT;
+    let query_buffer_size = statistics_offset + 16;
     let query_resolve = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("query resolve"), size: 256, usage: wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC, mapped_at_creation: false,
+        label: Some("query resolve"), size: query_buffer_size, usage: wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC, mapped_at_creation: false,
     });
     let query_readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("query readback"), size: 256, usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ, mapped_at_creation: false,
+        label: Some("query readback"), size: query_buffer_size, usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ, mapped_at_creation: false,
     });
 
     // ------------------------------------------------------------------ encode
@@ -248,8 +251,8 @@ fn main() {
         if statistics_set.is_some() { pass.end_pipeline_statistics_query(); }
     }
     if let Some(set) = &timestamp_set { encoder.resolve_query_set(set, 0..2, &query_resolve, 0); }
-    if let Some(set) = &statistics_set { encoder.resolve_query_set(set, 0..1, &query_resolve, 64); }
-    encoder.copy_buffer_to_buffer(&query_resolve, 0, &query_readback, 0, 256);
+    if let Some(set) = &statistics_set { encoder.resolve_query_set(set, 0..1, &query_resolve, statistics_offset); }
+    encoder.copy_buffer_to_buffer(&query_resolve, 0, &query_readback, 0, query_buffer_size);
     for (texture, buffer) in [(&color, &color_readback), (&object_ids, &id_readback)] {
         encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo { texture, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
@@ -275,7 +278,7 @@ fn main() {
         let (start, end) = (read_u64(0), read_u64(8));
         if end >= start && end != 0 { Some((end - start) as f64 * queue.get_timestamp_period() as f64) } else { None }
     } else { None };
-    let statistics_values = statistics.then(|| (read_u64(64), read_u64(72)));
+    let statistics_values = statistics.then(|| (read_u64(statistics_offset as usize), read_u64(statistics_offset as usize + 8)));
     drop(queries);
     query_readback.unmap();
 
