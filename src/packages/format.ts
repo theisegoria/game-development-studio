@@ -178,7 +178,13 @@ async function fsyncDirectory(directory: string): Promise<void> {
       await handle.close();
     }
   } catch (error) {
-    if (!['EINVAL', 'ENOTSUP'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
+    // Directory fsync is unsupported on some platforms/filesystems. Windows may
+    // also reject directory handles with EPERM/EISDIR; preserve those errors elsewhere.
+    // This is best-effort directory flushing, not a guarantee of file-content durability.
+    const code = (error as NodeJS.ErrnoException).code;
+    const unsupported = code === 'EINVAL' || code === 'ENOTSUP'
+      || (process.platform === 'win32' && (code === 'EPERM' || code === 'EISDIR'));
+    if (!unsupported) throw error;
   }
 }
 
