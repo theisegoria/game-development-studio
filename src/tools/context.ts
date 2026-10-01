@@ -22,6 +22,8 @@ import { TripoProvider } from '../providers/model3d/tripo.js';
 import { describeError } from '../util/errors.js';
 
 export interface ToolContext {
+  /** Fresh transport authorization for one recipe step; never persisted in a recipe. */
+  dispatchOperation?: (name: string, args: Record<string, unknown>) => Promise<ToolResult>;
   config: Config;
   logger: Logger;
   store: JobStore;

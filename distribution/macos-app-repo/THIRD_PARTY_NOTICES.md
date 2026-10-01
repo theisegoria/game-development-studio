@@ -59,7 +59,7 @@ not by the broader semver ranges in `package.json`:
 | `node_modules/express` | 5.2.1 | MIT |
 | `node_modules/express-rate-limit` | 8.7.0 | MIT |
 | `node_modules/fast-deep-equal` | 3.1.3 | MIT |
-| `node_modules/fast-uri` | 3.1.7 | BSD-3-Clause |
+| `node_modules/fast-uri` | 3.1.8 | BSD-3-Clause |
 | `node_modules/finalhandler` | 2.1.1 | MIT |
 | `node_modules/forwarded` | 0.2.0 | MIT |
 | `node_modules/fresh` | 2.0.0 | MIT |
@@ -69,11 +69,11 @@ not by the broader semver ranges in `package.json`:
 | `node_modules/gopd` | 1.2.0 | MIT |
 | `node_modules/has-symbols` | 1.1.0 | MIT |
 | `node_modules/hasown` | 2.0.4 | MIT |
-| `node_modules/hono` | 4.13.5 | MIT |
+| `node_modules/hono` | 4.13.12 | MIT |
 | `node_modules/http-errors` | 2.0.1 | MIT |
 | `node_modules/iconv-lite` | 0.7.3 | MIT |
 | `node_modules/inherits` | 2.0.4 | ISC |
-| `node_modules/ip-address` | 10.7.0 | MIT |
+| `node_modules/ip-address` | 10.7.3 | MIT |
 | `node_modules/ipaddr.js` | 1.9.1 | MIT |
 | `node_modules/is-promise` | 4.0.0 | MIT |
 | `node_modules/isexe` | 2.0.0 | ISC |

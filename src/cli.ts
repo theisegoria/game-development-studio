@@ -39,6 +39,7 @@ import { compareRunPerformance, summarizeRunPerformance } from './harness/perfor
 import { createOptimizationGoal, evaluateOptimizationGoal } from './harness/goals.js';
 import { installSkillBundle, listSkillBundle } from './skills/bundle.js';
 import { installProcessSignalHandlers } from './util/process-lifecycle.js';
+import { authorizedDispatcher, operationRefusal } from './commands/authorized-dispatch.js';
 
 const HELP = `Game Development Studio local harness
 
@@ -390,6 +391,19 @@ async function dispatch(
   signal?: AbortSignal,
 ): Promise<DispatchResult> {
   const [family, action] = parsed.positionals;
+  let recipeOperationUsed = false;
+  runtime.context.dispatchOperation = authorizedDispatcher(runtime.registry, async (name, _args, readOnly) => {
+    if (recipeOperationUsed) return operationRefusal(name, 'A recipe invocation authorizes only one operation. Plan and invoke the next step separately.');
+    recipeOperationUsed = true;
+    if (!readOnly && !booleanFlag(parsed, 'confirm')) {
+      return operationRefusal(name, 'This recipe step requires --confirm for this invocation.');
+    }
+    if (isSpendingTool(name)) {
+      const refusal = approvalRequired(name, parsed);
+      if (refusal) return { isError: true, content: [{ type: 'text', text: JSON.stringify(refusal.data) }] };
+    }
+    return undefined;
+  });
 
   if (family === 'capabilities') {
     return { operation: 'capabilities', data: capabilities(runtime) };
