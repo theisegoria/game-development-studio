@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.1
+
+- Preserves explicitly configured optional CPU dependency paths and encoder hash
+  across the Anvil child-process boundary, while continuing to strip inherited
+  spend/mutation authority and unrelated environment variables.
+- Documents native dependency setup and adds process-boundary regression coverage.
+  The unpublished 1.3.0 candidate tag is retained unchanged.
+
 ## 1.3.0
 
 - Adds digest-bound permanent quarantine purge with fresh reference checks, explicit
