@@ -30,6 +30,7 @@ export async function fileDigest(file: string): Promise<string> {
     const entries = (await fs.readdir(file)).sort();
     return digest(await Promise.all(entries.map(async name => ({ name, digest: await fileDigest(path.join(file, name)) }))));
   }
+  if (!info.isFile()) throw invalidState(`Recipe evidence must be a regular file or directory: ${file}`);
   const hash = createHash('sha256');
   for await (const chunk of createReadStream(file)) hash.update(chunk);
   const ext = path.extname(file).toLowerCase();
