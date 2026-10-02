@@ -6,14 +6,21 @@ import { hashFile } from '../workspace/retention.js';
 const repository = 'theisegoria/game-development-studio';
 const versionSchema = z.string().regex(/^\d+\.\d+\.\d+$/);
 const githubReleaseSchema = z.object({ tag_name: z.string(), html_url: z.string().url(), draft: z.boolean(), prerelease: z.boolean(), assets: z.array(z.object({ name: z.string(), browser_download_url: z.string().url(), size: z.number().int().nonnegative(), digest: z.string().nullable().optional() })) });
-export interface ReleaseEvidence { version: string; releaseUrl: string; artifact: string; artifactUrl: string; sha256: string; bytes: number; checksumFile: string; verification: 'local-checksum' | 'github-release-digest'; }
+export type ReleaseDistribution = 'cli' | 'skills' | 'anvil-macos-arm64';
+export interface ReleaseEvidence { version: string; releaseUrl: string; artifact: string; artifactUrl: string; sha256: string; bytes: number; checksumFile: string; verification: 'local-checksum' | 'github-release-digest'; distribution?: ReleaseDistribution; }
+
+function distributionFor(name: string, version: string): ReleaseDistribution {
+  if (name === `theisegoria-game-development-studio-${version}.tgz`) return 'cli';
+  if (name === `game-development-studio-plugin-${version}.zip`) return 'skills';
+  if (name === `Anvil-${version}-macos-arm64.zip`) return 'anvil-macos-arm64';
+  throw new Error('Artifact name does not match the expected release version and supported GitHub artifact');
+}
 
 /** Verify the published digest against local bytes without unpacking or executing the artifact. */
 export async function verifyReleaseArtifact(options: { version: string; artifact: string; checksums: string; githubRelease?: unknown }): Promise<ReleaseEvidence> {
   const version = versionSchema.parse(options.version);
   const name = path.basename(options.artifact);
-  const expected = [`theisegoria-game-development-studio-${version}.tgz`, `game-development-studio-plugin-${version}.zip`];
-  if (!expected.includes(name)) throw new Error('Artifact name does not match the expected release version and supported GitHub artifact');
+  const distribution = distributionFor(name, version);
   if ((await fs.lstat(options.artifact)).isSymbolicLink()) throw new Error('Release artifact cannot be a symlink');
   if ((await fs.stat(options.checksums)).size > 1024 * 1024) throw new Error('Checksum file exceeds safety limit');
   const lines = (await fs.readFile(options.checksums, 'utf8')).trim().split(/\r?\n/);
@@ -36,7 +43,7 @@ export async function verifyReleaseArtifact(options: { version: string; artifact
     if (matches.length !== 1 || !asset || asset.browser_download_url !== artifactUrl || asset.size !== bytes || asset.digest !== `sha256:${sha256}`) throw new Error('GitHub release digest does not match artifact bytes');
     verification = 'github-release-digest';
   }
-  return { version, releaseUrl, artifact: path.resolve(options.artifact), artifactUrl, sha256, bytes, checksumFile: path.resolve(options.checksums), verification };
+  return { version, releaseUrl, artifact: path.resolve(options.artifact), artifactUrl, sha256, bytes, checksumFile: path.resolve(options.checksums), verification, distribution };
 }
 
 /** Fixed origin/repository and bounded response; never fetch arbitrary caller URLs. */
@@ -56,7 +63,7 @@ export async function planReleaseChange(options: { installedVersion: string; tar
   versionSchema.parse(options.installedVersion);
   const target = await verifyReleaseArtifact({ version: options.targetVersion, artifact: options.artifact, checksums: options.checksums, githubRelease: options.targetRelease });
   const rollback = await verifyReleaseArtifact({ version: options.installedVersion, artifact: options.rollbackArtifact, checksums: options.rollbackChecksums, githubRelease: options.rollbackRelease });
-  if (target.artifact.endsWith('.tgz') !== rollback.artifact.endsWith('.tgz')) throw new Error('Target and rollback must be the same distribution type');
+  if (target.distribution !== rollback.distribution) throw new Error('Target and rollback must be the same distribution type');
   const compare = (a: string, b: string) => { const left=a.split('.').map(Number), right=b.split('.').map(Number); for (let i=0;i<3;i++) { const delta=left[i]!-right[i]!; if (delta) return Math.sign(delta); } return 0; };
   const direction = compare(target.version, rollback.version);
   const verified = target.verification === 'github-release-digest' && rollback.verification === 'github-release-digest';
@@ -64,7 +71,12 @@ export async function planReleaseChange(options: { installedVersion: string; tar
     schema: 'game_dev.release_change_plan.v1', repository, direction: direction > 0 ? 'upgrade' : direction < 0 ? 'rollback' : 'reinstall', target, rollback,
     readyForManualInstall: verified,
     blockers: verified ? [] : ['Local checksum agreement is not GitHub provenance. Fetch and verify both stable release asset digests before installation.'],
-    steps: [
+    steps: target.distribution === 'anvil-macos-arm64' ? [
+      'Confirm this is an Apple Silicon Mac running macOS 26 or later. This archive is ad-hoc signed and is not notarized; a GitHub digest does not establish Developer ID trust.',
+      'Keep the current app and workspace backup. Extract the verified target archive into a new user-chosen folder; do not overwrite a running app.',
+      'Follow the archive README to verify the bundled CLI version, doctor and capabilities against a temporary workspace before switching apps. Stop if system security policy does not permit this non-notarized build.',
+      'Switch to the new app only after these checks pass; retain the same-distribution rollback archive and previous app. No installation or application launch has occurred while creating this plan.',
+    ] : [
       'Keep the current installation and workspace backup until the replacement passes doctor and capabilities checks.',
       'Stage the verified target artifact into a new user-chosen installation folder using the existing GitHub release installation instructions. Do not overwrite the running installation.',
       'Verify game-dev --version matches the target and run game-dev doctor --json and game-dev capabilities --json against a temporary workspace.',

@@ -41,4 +41,4 @@ export { familySchema, FamilyStore } from './production/families.js';
 export { platformSchema, planPlatform, validatePlatformAsset, prepareCollisionBox } from './production/platform.js';
 export { prepareTextureVariant } from './production/textures.js';
 export { retentionPlanSchema, type RetentionPlan } from './workspace/retention.js';
-export { verifyReleaseArtifact, planReleaseChange, type ReleaseEvidence } from './installation/releases.js';
+export { verifyReleaseArtifact, planReleaseChange, type ReleaseEvidence, type ReleaseDistribution } from './installation/releases.js';
