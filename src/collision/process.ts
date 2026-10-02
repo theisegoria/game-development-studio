@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
-import { invalidInput, invalidState } from '../util/errors.js';
+import { describeError, invalidInput, invalidState } from '../util/errors.js';
 import { registerOwnedProcessTerminator } from '../util/process-lifecycle.js';
 
 export const coacdEnvironmentSchema = z.object({ schema:z.literal('game_dev.coacd_environment.v1'), python:z.string().regex(/^3\.(9|10|11|12)\./), coacd:z.literal('1.0.14'), numpy:z.literal('2.0.2'), platform:z.enum(['Linux','Darwin','Windows']), architecture:z.enum(['x86_64','aarch64','arm64','AMD64']), isolatedVenv:z.literal(true), coacdCodeSHA256:z.string().regex(/^[a-f0-9]{64}$/), upstreamSourceCommit:z.literal('1401ce2a7ae1ed89c65ab958b48d489350c233c7') }).strict();
@@ -13,13 +13,21 @@ export type CoacdRunner = (request: CoacdProcessRequest) => Promise<{ stdout: st
 export const coacdScript = fileURLToPath(new URL('../../scripts/coacd_decompose.py', import.meta.url));
 let active = false;
 
+/** Narrow child environment: preserve Windows architecture discovery without inheriting credentials or profiles. */
+export function coacdChildEnvironment(request: Pick<CoacdProcessRequest, 'cwd' | 'python'>, host: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const environment: NodeJS.ProcessEnv={ HOME:request.cwd, USERPROFILE:request.cwd, TMP:request.cwd, TEMP:request.cwd, TMPDIR:request.cwd, PATH:path.dirname(request.python), OMP_NUM_THREADS:'1', OMP_THREAD_LIMIT:'1', OMP_DYNAMIC:'FALSE', OPENBLAS_NUM_THREADS:'1', MKL_NUM_THREADS:'1', VECLIB_MAXIMUM_THREADS:'1', NUMEXPR_NUM_THREADS:'1' };
+  // CPython's Windows platform.machine() reads these architecture variables, not uname().
+  for (const key of ['SystemRoot', 'WINDIR', 'PROCESSOR_ARCHITECTURE', 'PROCESSOR_ARCHITEW6432']) {
+    if (host[key]) environment[key] = host[key];
+  }
+  return environment;
+}
+
 export const runCoacdPython: CoacdRunner = async request => {
   if(active) throw invalidState('A CoACD child is already active in this process; wait for it to finish');
   active=true;
   try {
-    const environment: NodeJS.ProcessEnv={ HOME:request.cwd, USERPROFILE:request.cwd, TMP:request.cwd, TEMP:request.cwd, TMPDIR:request.cwd, PATH:path.dirname(request.python), OMP_NUM_THREADS:'1', OMP_THREAD_LIMIT:'1', OMP_DYNAMIC:'FALSE', OPENBLAS_NUM_THREADS:'1', MKL_NUM_THREADS:'1', VECLIB_MAXIMUM_THREADS:'1', NUMEXPR_NUM_THREADS:'1' };
-    if(process.env.SystemRoot) environment.SystemRoot=process.env.SystemRoot;
-    if(process.env.WINDIR) environment.WINDIR=process.env.WINDIR;
+    const environment = coacdChildEnvironment(request);
     return await new Promise((resolve,reject)=>{
       const child=spawn(request.python,['-I','-B',request.script,...request.args],{cwd:request.cwd,env:environment,shell:false,windowsHide:true,stdio:['ignore','pipe','pipe']});
       let stdout='',stderr='',timedOut=false,overflow=false;
@@ -44,5 +52,5 @@ export async function diagnoseCoacd(options:{env?:NodeJS.ProcessEnv;runner?:Coac
     const result=await (options.runner??runCoacdPython)({python,script:coacdScript,args:['--diagnose'],cwd,timeoutMs:15000});
     const environment=coacdEnvironmentSchema.parse(JSON.parse(result.stdout));
     return {schema:'game_dev.coacd_diagnostics.v1' as const,available:true as const,python,environment,processIntent:'isolated CPU-only Python; no Blender, GPU, provider, or automatic setup'};
-  }catch(error){return {schema:'game_dev.coacd_diagnostics.v1' as const,available:false as const,reason:error instanceof Error?error.message:String(error),setup:'docs/coacd.md',automaticInstallation:false};}
+  }catch(error){return {schema:'game_dev.coacd_diagnostics.v1' as const,available:false as const,reason:error instanceof Error?error.message:String(error),failure:describeError(error),setup:'docs/coacd.md',automaticInstallation:false};}
 }

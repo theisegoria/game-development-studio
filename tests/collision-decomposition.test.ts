@@ -5,7 +5,8 @@ import { createHash } from 'node:crypto';
 import { afterEach,describe,expect,it } from 'vitest';
 import { decomposeCollisionMesh } from '../src/collision/decomposition.js';
 import { extractCollisionTriangles,meshBounds,validateTriangleMesh,validateConvexHull,measureApproximation,type TriangleMesh } from '../src/collision/geometry.js';
-import { diagnoseCoacd,runCoacdPython,type CoacdRunner } from '../src/collision/process.js';
+import { coacdChildEnvironment,diagnoseCoacd,runCoacdPython,type CoacdRunner } from '../src/collision/process.js';
+import { invalidState } from '../src/util/errors.js';
 import { boxMesh,concaveU,uParts,collisionGlb } from './helpers/collision-fixture.js';
 const roots:string[]=[];
 async function scratch(){const root=await fs.mkdtemp(path.join(os.tmpdir(),'coacd-test-'));roots.push(root);return root;}
@@ -21,6 +22,18 @@ function mockRunner(parts:TriangleMesh[],calls:string[][]):CoacdRunner{return as
 };}
 
 describe('CPU collision contracts without native execution',()=>{
+  it('preserves Windows Python architecture metadata while excluding ambient secrets and profiles',()=>{
+    const cwd=path.resolve('isolated-job'),python=path.resolve('venv','python.exe');
+    const child=coacdChildEnvironment({cwd,python},{SystemRoot:'C:\\Windows',WINDIR:'C:\\Windows',PROCESSOR_ARCHITECTURE:'AMD64',PROCESSOR_ARCHITEW6432:'AMD64',HOME:'private-profile',USERPROFILE:'private-profile',PATH:'ambient-tools',PYTHONPATH:'injected-code',PROVIDER_API_KEY:'secret'});
+    expect(child).toMatchObject({SystemRoot:'C:\\Windows',WINDIR:'C:\\Windows',PROCESSOR_ARCHITECTURE:'AMD64',PROCESSOR_ARCHITEW6432:'AMD64',HOME:cwd,USERPROFILE:cwd,PATH:path.dirname(python)});
+    expect(child).not.toHaveProperty('PROVIDER_API_KEY');expect(child).not.toHaveProperty('PYTHONPATH');
+    expect(coacdChildEnvironment({cwd,python},{})).not.toHaveProperty('PROCESSOR_ARCHITECTURE');
+  });
+  it('retains actionable bounded worker stderr and termination evidence in free diagnostics',async()=>{
+    const details={code:1,signal:null,timedOut:false,logOverflow:false,stderrTail:'Unsupported CoACD wheel platform/architecture: Windows/<unknown>'};
+    const result=await diagnoseCoacd({env:{GAME_DEV_COACD_PYTHON:process.execPath},runner:async()=>{throw invalidState('CoACD CPU worker failed; no collision result was accepted',details);}});
+    expect(result).toMatchObject({available:false,automaticInstallation:false,failure:{error:'INVALID_STATE',retryable:false,details}});
+  });
   it('extracts transformed and mirrored scene triangles with closed topology',async()=>{
     const geometry=await extractCollisionTriangles(await collisionGlb(boxMesh([0,0,0],[1,2,3]),[10,20,30],[-2,1,1]));
     expect(meshBounds(geometry)).toMatchObject({min:[8,20,30],max:[10,22,33]});

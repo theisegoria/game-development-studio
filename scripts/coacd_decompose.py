@@ -25,7 +25,7 @@ _JOB_HANDLE = None
 
 def environment():
     if (platform.system(), platform.machine()) not in SUPPORTED:
-        raise ValueError("Unsupported CoACD wheel platform/architecture")
+        raise ValueError(f"Unsupported CoACD wheel platform/architecture: {platform.system()}/{platform.machine() or '<unknown>'}. See docs/coacd.md for verified platforms and Python configuration.")
     if not ((3, 9) <= sys.version_info[:2] <= (3, 12)) or platform.python_implementation() != "CPython":
         raise ValueError("This pinned tool environment requires CPython 3.9 through 3.12")
     if sys.prefix == sys.base_prefix:
