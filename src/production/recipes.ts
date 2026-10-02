@@ -1,6 +1,6 @@
 import { hostname } from 'node:os';
 import { createHash, randomUUID } from 'node:crypto';
-import { promises as fs } from 'node:fs';
+import { promises as fs, createReadStream } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import { invalidInput, invalidState } from '../util/errors.js';
@@ -30,15 +30,15 @@ export async function fileDigest(file: string): Promise<string> {
     const entries = (await fs.readdir(file)).sort();
     return digest(await Promise.all(entries.map(async name => ({ name, digest: await fileDigest(path.join(file, name)) }))));
   }
-  const bytes = await fs.readFile(file);
-  const hash = createHash('sha256').update(bytes);
+  const hash = createHash('sha256');
+  for await (const chunk of createReadStream(file)) hash.update(chunk);
   if (path.extname(file).toLowerCase() === '.gltf') {
-    const json = JSON.parse(bytes.toString('utf8')) as { buffers?: { uri?: string }[]; images?: { uri?: string }[] };
+    const json = JSON.parse(await fs.readFile(file, 'utf8')) as { buffers?: { uri?: string }[]; images?: { uri?: string }[] };
     for (const item of [...(json.buffers ?? []), ...(json.images ?? [])]) if (item.uri && !item.uri.startsWith('data:')) {
       if (/^[a-z]+:/i.test(item.uri)) throw invalidState('Remote glTF dependencies cannot be verified for checkpoint reuse.');
       const resource = path.resolve(path.dirname(file), decodeURIComponent(item.uri));
       if (resource === path.resolve(file)) throw invalidState('Recursive glTF dependency');
-      hash.update(await fs.readFile(resource));
+      for await (const chunk of createReadStream(resource)) hash.update(chunk);
     }
   }
   return hash.digest('hex');
@@ -83,7 +83,7 @@ function resolve(value: unknown, record: RecordState): unknown {
 /** Paid dispatch must cross the transport's current per-operation authorization boundary. */
 export type RecipeDispatch = (operation: string, args: Record<string, unknown>) => Promise<ToolResult>;
 export class RecipeStore {
-  constructor(readonly root: string, readonly toolVersion: string) {}
+  constructor(readonly root: string, readonly toolVersion: string, readonly operationIdentity?: (operation: string) => Promise<unknown>) {}
   private target(recipeId: string): string { return path.join(this.root, `${id.parse(recipeId)}.json`); }
   private async locked<T>(recipeId: string, body: () => Promise<T>): Promise<T> {
     await fs.mkdir(this.root, { recursive: true });
@@ -128,7 +128,7 @@ export class RecipeStore {
           const files = await Promise.all(step.files.map(async file => ({ file, digest: await fileDigest(file) })));
           // Direct file arguments are fingerprinted too: no stale checkpoint when callers omit files.
           for (const [key, value] of Object.entries(args)) if (/Path$/.test(key) && key !== 'outputPath' && typeof value === 'string') files.push({ file: value, digest: await fileDigest(value) });
-          fingerprint = digest({ step, args, files, toolVersion: this.toolVersion, dependencies: step.dependsOn.map(dep => record.checkpoints[dep]?.fingerprint) });
+          fingerprint = digest({ step, args, files, toolVersion: this.toolVersion, operationIdentity: await this.operationIdentity?.(step.operation), dependencies: step.dependsOn.map(dep => record.checkpoints[dep]?.fingerprint) });
         } catch (error) { issue = String(error); }
       }
       const cp = record.checkpoints[step.id];
@@ -158,7 +158,7 @@ export class RecipeStore {
           const collect = (value: unknown): void => {
             if (!value || typeof value !== 'object') return;
             for (const [key, child] of Object.entries(value)) {
-              if ((key === 'path' || /Path$/.test(key)) && typeof child === 'string') paths.add(child);
+              if (['path', 'outputPath', 'modelPath', 'manifestPath', 'receiptPath', 'packagePath'].includes(key) && typeof child === 'string' && path.isAbsolute(child)) paths.add(child);
               else if (typeof child === 'object') collect(child);
             }
           };

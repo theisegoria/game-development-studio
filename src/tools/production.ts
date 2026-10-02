@@ -1,16 +1,22 @@
 import path from 'node:path';
+import { promises as fs } from 'node:fs';
+import { findBlender, packagedScript } from '../util/blender.js';
 import { GAME_DEV_VERSION } from '../version.js';
 import { z } from 'zod';
 import type { ToolRegistrar } from '../commands/registry.js';
 import { invalidState } from '../util/errors.js';
-import { RecipeStore, recipeSchema, type RecipeDispatch } from '../production/recipes.js';
+import { RecipeStore, recipeSchema, fileDigest, type RecipeDispatch } from '../production/recipes.js';
 import { FamilyStore, familySchema } from '../production/families.js';
 import { planPlatform, platformSchema, prepareCollisionBox, validatePlatformAsset } from '../production/platform.js';
 import { guard, ok, type ToolContext } from './context.js';
 
 /** Caller supplies dispatch through its current authorization boundary; never raw registry.call. */
 export function registerProductionTools(server: ToolRegistrar, ctx: ToolContext, dispatch?: RecipeDispatch): void {
-  const recipes = new RecipeStore(path.join(ctx.config.outputDir, '.production', 'recipes'), `${GAME_DEV_VERSION}:production-v1`);
+  const recipes = new RecipeStore(path.join(ctx.config.outputDir, '.production', 'recipes'), `${GAME_DEV_VERSION}:production-v1`, async operation => {
+    if (operation !== 'normalize_mesh') return null;
+    const executable = findBlender();
+    return { executable: executable ? await fileDigest(await fs.realpath(executable)) : 'unavailable', script: await fileDigest(packagedScript('blender_normalize.py')) };
+  });
   const families = new FamilyStore(path.join(ctx.config.outputDir, '.production', 'families'), recipes);
   const annotation = (readOnly: boolean) => ({ readOnlyHint: readOnly, destructiveHint: false, idempotentHint: readOnly, openWorldHint: false });
   server.registerTool('save_production_recipe', { description: 'Persist a versioned workflow graph. Does not execute any step. Invalidates changed inputs on the next plan.', inputSchema: { recipe: recipeSchema }, annotations: annotation(false) }, guard(ctx.logger, 'save_production_recipe', async args => ok(await recipes.save(args.recipe))));

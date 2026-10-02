@@ -26,18 +26,20 @@ Inspect the `validate` step's arguments and `fingerprint`. Execute exactly that 
 game-dev tool call run_production_step --input '{"recipeId":"prop_v1","stepId":"validate","approvedFingerprint":"COPY_64_CHARACTER_FINGERPRINT_FROM_PLAN"}' --confirm --json
 ```
 
-Plan again, inspect `package`, and execute with its current fingerprint and `--confirm`. Failed validation (`passed:false`) blocks packaging, even when the underlying command returned a well-formed result. Source edits, changed recipes, changed tool version, missing/tampered outputs, or changed dependencies invalidate reuse. Recipe `files` may include additional local policy/reference inputs to fingerprint. glTF external buffers/images are included in input fingerprints; remote dependencies and symlink evidence are refused.
+Plan again, inspect `package`, and execute with its current fingerprint and `--confirm`. Failed validation (`passed:false`) blocks packaging, even when the underlying command returned a well-formed result. Source edits, changed recipes, changed tool version or Blender executable/script identity (hashed without launching Blender), missing/tampered outputs, or changed dependencies invalidate reuse. Recipe `files` may include additional local policy/reference inputs to fingerprint. glTF external buffers/images are included in input fingerprints; remote dependencies and symlink evidence are refused.
 
 ## Generate, normalize, validate, package
 
 The allowlist includes `generate_asset_reference`, `select_reference`, `create_3d_asset`, `get_asset_job`, `download_asset`, `normalize_mesh`, `validate_game_asset`, `validate_platform_asset`, `build_asset_package`, and `prepare_collision_box` (plus provider retexturing). There is no arbitrary command execution.
+
+The complete [text-to-package request](../examples/production-recipes/text-to-package.json) can be saved with `save_production_recipe --request examples/production-recipes/text-to-package.json --confirm`. Saving is local; only an explicitly approved generate step spends credits. Its unknown license intentionally makes no rights claim.
 
 Connect results using an exact object such as `{"$step":"normalize","field":"outputPath"}`; the referenced step must be in `dependsOn`. Nested result fields and numeric array indexes are supported (for example `files.0.path` after inspecting a download result). Use a `get_asset_job` step after generation and before download: pending jobs leave polling ready to repeat without resubmitting generation. Reference candidate selection is an explicit step supplied by the reviewer; it is never auto-picked. Polling accepts `reference_ready` or `ready`; generation itself checkpoints the returned durable job id and does not pretend its model is downloaded.
 
 For example, the ordered graph is:
 
 1. `create_3d_asset` with `textPrompt`, `spec`, and per-operation provider options.
-2. `get_asset_job` with `assetJobId: {"$step":"generate","field":"assetJobId"}` (use the actual returned job-id field shown by the preceding tool).
+2. `get_asset_job` with `assetJobId: {"$step":"generate","field":"assetJobId"}`.
 3. `download_asset` with that same id, depending on polling.
 4. `normalize_mesh` with the downloaded job id, depending on download.
 5. `validate_game_asset` using the normalization `outputPath`.
