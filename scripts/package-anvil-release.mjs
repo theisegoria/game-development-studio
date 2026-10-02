@@ -89,8 +89,11 @@ async function verifyApp(app, version) {
   const runtimeEvidence = await verifyRuntimePayload(runtime);
   const node = path.join(runtime, 'payload/node/bin/node');
   const nodeVersion = run(node, ['--version']).trim();
+  // This verifier resolves legal/third-party-licenses relative to the source profile.
+  // The installed ThirdPartyLicenses roster, bytes and derived Anvil provenance
+  // have already been independently checked above against that exact profile.
   run(process.execPath, [path.join(root, 'scripts/verify-macos-runtime-provenance.mjs'), '--runtime', runtime,
-    '--provenance', path.join(resources, 'THIRD_PARTY_PROVENANCE.json'), '--node-version', nodeVersion]);
+    '--provenance', path.join(profile, 'THIRD_PARTY_PROVENANCE.json'), '--node-version', nodeVersion]);
   assert(run(node, [path.join(runtime, 'payload/app/dist/cli.js'), '--version']).trim() === version, 'Bundled CLI version mismatch');
   return { tree, cdhash, nodeVersion, runtime: runtimeEvidence, build };
 }
