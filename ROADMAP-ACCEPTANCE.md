@@ -1,5 +1,9 @@
 # Studio roadmap acceptance matrix
 
+Goal: implement and debug the full standalone Studio roadmap, commit and push
+reviewable increments, then release verified source and canonical skills artifacts
+on GitHub. A passing partial milestone does not complete this goal.
+
 Scope: public Studio and canonical skills export only. No engine integration,
 provider purchases, profile installation, paid services, store/npm publication,
 or new signing credentials. Local validation uses mocks/compile-only; real
