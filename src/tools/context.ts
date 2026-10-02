@@ -71,6 +71,7 @@ export function createToolContext(params: {
     async charge(tool, options) {
       const reservation = await spend.reserve({
         tool,
+        approval: { source: 'caller tool invocation under configured spend policy', at: new Date().toISOString() },
         ...(options?.units !== undefined ? { units: options.units } : {}),
         ...(options?.assetJobId !== undefined ? { assetJobId: options.assetJobId } : {}),
       });
