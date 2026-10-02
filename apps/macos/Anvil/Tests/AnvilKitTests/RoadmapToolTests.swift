@@ -4,6 +4,29 @@ import Testing
 
 @Suite("Roadmap tool requests")
 struct RoadmapToolTests {
+    @Test("Permanent purge requires an explicit irreversible and stopped-writer acknowledgment")
+    func purgeWarning() throws {
+        let purge = try #require(CommandCatalog.byRegistryTool["purge_workspace_retention"])
+        #expect(purge.summary.contains("IRREVERSIBLE"))
+        #expect(purge.summary.contains("cannot be restored"))
+        #expect(purge.confirmationLabel.contains("deletion is permanent"))
+        #expect(purge.confirmationLabel.contains("stopped ALL other workspace and quarantine writers"))
+        #expect(purge.authorities == [.confirm])
+        #expect(purge.createsDurableJob)
+        for name in ["plan_workspace_purge", "diagnose_texture_compression", "diagnose_collision_decomposition"] {
+            let spec = try #require(CommandCatalog.byRegistryTool[name])
+            #expect(spec.authorities.isEmpty)
+            #expect(!spec.createsDurableJob)
+            #expect(!spec.conditionalSpend)
+        }
+        for name in ["compress_texture_variant", "decompose_collision_mesh"] {
+            let spec = try #require(CommandCatalog.byRegistryTool[name])
+            #expect(spec.authorities == [.confirm])
+            #expect(!spec.conditionalSpend)
+            #expect(spec.createsDurableJob)
+        }
+    }
+
     @Test("Only bounded JSON objects can enter the tool request pipe")
     func requestValidation() throws {
         #expect(try RoadmapToolRequest(json: "{\"recipeId\":\"sample\"}").data == Data("{\"recipeId\":\"sample\"}".utf8))

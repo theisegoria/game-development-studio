@@ -451,6 +451,132 @@
     "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
+  "plan_workspace_purge": {
+    "type": "object",
+    "properties": {
+      "receiptId": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "required": [
+      "receiptId"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "purge_workspace_retention": {
+    "type": "object",
+    "properties": {
+      "plan": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.retention_purge_plan.v1"
+          },
+          "root": {
+            "type": "string"
+          },
+          "receiptId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "receiptSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "journalSha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metadataRoots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "required": [
+                "path",
+                "bytes",
+                "sha256"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "interruptedMissing": {
+            "type": "array",
+            "items": {
+              "$ref": "#/properties/plan/properties/files/items"
+            }
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "totalBytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "irreversibleWarning": {
+            "type": "string",
+            "const": "IRREVERSIBLE: permanently deletes the listed quarantine files. They cannot be restored from this receipt after purge. Review/export any needed bytes before confirming. ALL other workspace and quarantine writers must be stopped; portable path checks do not isolate hostile concurrent writers."
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "schema",
+          "root",
+          "receiptId",
+          "receiptSha256",
+          "journalSha256",
+          "metadataRoots",
+          "files",
+          "interruptedMissing",
+          "blockers",
+          "totalBytes",
+          "irreversibleWarning",
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "plan"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
   "list_workspace_retention": {
     "type": "object",
     "properties": {},
@@ -655,8 +781,10 @@
                     "validate_game_asset",
                     "build_asset_package",
                     "prepare_collision_box",
+                    "decompose_collision_mesh",
                     "validate_platform_asset",
-                    "prepare_texture_variant"
+                    "prepare_texture_variant",
+                    "compress_texture_variant"
                   ]
                 },
                 "dependsOn": {
@@ -898,8 +1026,10 @@
                         "validate_game_asset",
                         "build_asset_package",
                         "prepare_collision_box",
+                        "decompose_collision_mesh",
                         "validate_platform_asset",
-                        "prepare_texture_variant"
+                        "prepare_texture_variant",
+                        "compress_texture_variant"
                       ]
                     },
                     "dependsOn": {
@@ -1261,6 +1391,45 @@
     "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
+  "diagnose_texture_compression": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "compress_texture_variant": {
+    "type": "object",
+    "properties": {
+      "modelPath": {
+        "type": "string",
+        "minLength": 1
+      },
+      "colorCodec": {
+        "type": "string",
+        "enum": [
+          "etc1s",
+          "uastc"
+        ],
+        "default": "etc1s"
+      },
+      "quality": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 255,
+        "default": 128
+      },
+      "timeoutSeconds": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 300,
+        "default": 120
+      }
+    },
+    "required": [
+      "modelPath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
   "prepare_texture_variant": {
     "type": "object",
     "properties": {
@@ -1319,6 +1488,79 @@
       "maxTriangles",
       "maxMaterials",
       "maxTextureSize"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "diagnose_collision_decomposition": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "decompose_collision_mesh": {
+    "type": "object",
+    "properties": {
+      "modelPath": {
+        "type": "string",
+        "minLength": 1
+      },
+      "threshold": {
+        "type": "number",
+        "minimum": 0.01,
+        "maximum": 0.2,
+        "default": 0.05
+      },
+      "maxParts": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 32,
+        "default": 16
+      },
+      "maxVerticesPerPart": {
+        "type": "integer",
+        "minimum": 8,
+        "maximum": 256,
+        "default": 64
+      },
+      "seed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647,
+        "default": 0
+      },
+      "memoryMB": {
+        "type": "integer",
+        "minimum": 512,
+        "maximum": 4096,
+        "default": 2048
+      },
+      "cpuSeconds": {
+        "type": "integer",
+        "minimum": 10,
+        "maximum": 600,
+        "default": 120
+      },
+      "timeoutSeconds": {
+        "type": "integer",
+        "minimum": 10,
+        "maximum": 600,
+        "default": 180
+      },
+      "sampleCount": {
+        "type": "integer",
+        "minimum": 64,
+        "maximum": 512,
+        "default": 256
+      },
+      "maxApproximationError": {
+        "type": "number",
+        "minimum": 0.001,
+        "maximum": 0.2,
+        "default": 0.05
+      }
+    },
+    "required": [
+      "modelPath"
     ],
     "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"

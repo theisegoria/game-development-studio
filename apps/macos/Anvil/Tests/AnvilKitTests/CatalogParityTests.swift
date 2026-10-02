@@ -100,7 +100,7 @@ struct CatalogParityTests {
         guard case let .array(operations)? = envelope.data["localOperations"] else {
             Issue.record("Missing runtime operations"); return
         }
-        #expect(RoadmapToolSchemas.all.count == 35)
+        #expect(RoadmapToolSchemas.all.count == 41)
         for (name, schema) in RoadmapToolSchemas.all {
             let spec = try #require(CommandCatalog.byRegistryTool[name])
             let operation = try #require(operations.first { $0["name"]?.stringValue == name })
