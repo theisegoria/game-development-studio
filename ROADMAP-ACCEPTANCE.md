@@ -63,7 +63,7 @@ The full implementation goal continues through these independently verified chan
 | --- | --- | --- |
 | Quarantine purge | Digest-bound dry run, fresh reference protection, explicit irreversible confirmation, durable partial-failure recovery; fixture-only tests | Implemented; owner 56 focused tests and independent 27-test purge audit passed; final release pending |
 | Actual GPU texture compression | CPU Basis Universal ETC1S/UASTC KTX2, valid glTF extension and package round trip, versioned tool/source receipts, bounded real remote CPU tests | Implemented; real Basis CPU tests passed Linux/macOS/Windows; adversarial package MIME validation fix under review |
-| Actual convex decomposition | Pinned CoACD CPU multi-hull output, geometric validation, concave fixture retaining its opening, honest approximation error and platform limits | Implemented; real Linux x64/ARM64 and macOS passed; Windows architecture fix pushed, remote proof pending |
+| Actual convex decomposition | Pinned CoACD CPU multi-hull output, geometric validation, concave fixture retaining its opening, honest approximation error and platform limits | Implemented; real Linux x64/ARM64 and macOS passed; Windows repaired; all four real CPU gates passed run 36951772468 |
 | Standalone Anvil bundle | Copy and verify SwiftPM schema resource bundle; prove lookup independently of build tree | Implemented; installed resource fixture and all 108 native tests passed |
 | Native GitHub archive | Adapt existing ZIP verification for Anvil/current version/pinned runtime, verify extracted archive on remote macOS; explicitly ad-hoc and non-notarized | Actual macOS staging, archive extraction and signature/runtime verification passed run 36951396198; final 1.3.0 release pending |
 
@@ -71,7 +71,7 @@ Verified update/rollback **planning** is the original installation requirement a
 is implemented. Automatic installation and DMG/PKG delivery are different features.
 Developer ID/notarization is not configured by the existing release chain; acquiring
 new credentials/accounts is excluded. This does not assert that the user lacks an
-account. An ad-hoc ZIP has an engineering gap rather than that credential blocker.
+account. The ad-hoc ZIP engineering gap is now implemented and remote-verified; its tagged release gate remains required.
 
 ## 1.3.0 validation checkpoint
 
