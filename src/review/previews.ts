@@ -15,6 +15,21 @@ export async function previewGlb(bytes: Uint8Array): Promise<CpuPreviews> {
   if ([...(source.buffers ?? []), ...(source.images ?? [])].some(r => r.uri && !r.uri.startsWith('data:'))) throw new Error('Review accepts self-contained GLB only; external resources are not loaded');
   const doc = await io.readJSON(json);
   const root = doc.getRoot();
+  // NodeIO types describe valid glTF, but the reader can retain malformed JSON scalars.
+  // Validate every material, including unused ones displayed by the swatch inspector.
+  const unitFactor = (value: unknown, label: string): number => {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
+      throw new Error(`Invalid material ${label}: expected a finite number from 0 through 1`);
+    }
+    return value;
+  };
+  for (const material of root.listMaterials()) {
+    unitFactor(material.getMetallicFactor(), 'metallicFactor');
+    unitFactor(material.getRoughnessFactor(), 'roughnessFactor');
+    const color: unknown = material.getBaseColorFactor();
+    if (!Array.isArray(color) || color.length !== 4) throw new Error('Invalid material baseColorFactor');
+    color.forEach(value => unitFactor(value, 'baseColorFactor'));
+  }
   const faces: Face[] = [];
   const warnings = [...log.messages, 'CPU static geometry preview: base colors and texture swatches only; no lighting, texture mapping, skinning, morphs or GPU quality certification.'];
   const scene = root.getDefaultScene() ?? root.listScenes()[0];
