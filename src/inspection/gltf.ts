@@ -17,7 +17,7 @@
 
 import { promises as fs } from 'node:fs';
 import { KHRTextureBasisu } from '@gltf-transform/extensions';
-import { inspectKtx2, isKtx2 } from '../production/ktx2.js';
+import { inspectKtx2, isKtx2, validateKtxDeclarations } from '../production/ktx2.js';
 import { NodeIO, getBounds } from '@gltf-transform/core';
 import type { Document, ILogger, Material, Primitive, Root, Texture } from '@gltf-transform/core';
 import { AssetPipelineError } from '../util/errors.js';
@@ -162,7 +162,9 @@ export async function inspectGltf(filePath: string): Promise<AssetInspection> {
     // have said about the file. A missing buffer still throws, as it must —
     // without it there is no geometry to describe.
     const io = new NodeIO().registerExtensions([KHRTextureBasisu]).setLogger(readerLog).setStrictResources(false);
-    document = await io.read(filePath);
+    const json = await io.readAsJSON(filePath);
+    validateKtxDeclarations(json);
+    document = await io.readJSON(json);
   } catch (err) {
     // A file requiring an unregistered extension (Draco, meshopt) fails
     // here, and the underlying message names the extension — which is the

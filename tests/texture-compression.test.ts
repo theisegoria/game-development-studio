@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { NodeIO } from '@gltf-transform/core';
+import { NodeIO, type JSONDocument } from '@gltf-transform/core';
 import { KHRTextureBasisu } from '@gltf-transform/extensions';
 import { afterEach, expect, it, vi } from 'vitest';
 import { compressTextureVariant, verifyCompressedModel } from '../src/production/compression.js';
@@ -81,4 +81,39 @@ it('refuses a valid compressed payload whose material slot contradicts its trans
   const material = doc.getRoot().listMaterials()[0]!; const texture = material.getBaseColorTexture()!;
   material.setBaseColorTexture(null).setMetallicRoughnessTexture(texture); await io.write(result.outputPath, doc);
   await expect(verifyCompressedModel(result.outputPath, { identity: f.identity, runner: f.runner })).rejects.toThrow(/material usage/);
+});
+
+async function rewriteGlbJson(file: string, change: (json: JSONDocument['json']) => void) {
+  const bytes = await fs.readFile(file), jsonLength = bytes.readUInt32LE(12);
+  const json = JSON.parse(bytes.subarray(20, 20 + jsonLength).toString('utf8')) as JSONDocument['json']; change(json);
+  const text = Buffer.from(JSON.stringify(json)); const padded = Buffer.alloc(Math.ceil(text.length / 4) * 4, 0x20); text.copy(padded);
+  const tail = bytes.subarray(20 + jsonLength); const header = Buffer.from(bytes.subarray(0, 20));
+  header.writeUInt32LE(20 + padded.length + tail.length, 8); header.writeUInt32LE(padded.length, 12);
+  await fs.writeFile(file, Buffer.concat([header, padded, tail]));
+}
+it('rejects synthetic KTX2 disguised as PNG without a Basis extension during inspection and packaging', async () => {
+  const f = await fixture(); const io = new NodeIO(); const doc = await io.read(f.model);
+  doc.getRoot().listTextures()[0]!.setImage(syntheticKtx()).setMimeType('image/png'); await io.write(f.model, doc);
+  vi.stubEnv('GAME_DEV_BASISU_PATH', ''); vi.stubEnv('GAME_DEV_BASISU_SHA256', '');
+  await expect(inspectGltf(f.model)).rejects.toThrow(/MIME/);
+  await expect(verifyCompressedModel(f.model)).rejects.toThrow(/MIME/);
+  await expect(buildAssetPackage({ sourcePath: f.model, packagesRoot: path.join(f.root, 'packages'), name: 'Forged PNG', license: 'MIT' })).rejects.toThrow(/MIME/);
+});
+it('rejects missing or inconsistent raw Basis extension declarations before payload admission', async () => {
+  const f = await fixture(); const result = await compressTextureVariant({ modelPath: f.model, outputRoot: path.join(f.root, 'out') }, { identity: f.identity, runner: f.runner });
+  const original = await fs.readFile(result.outputPath);
+  const edits: Array<(json: JSONDocument['json']) => void> = [
+    json => { json.images![0]!.mimeType = 'image/png'; },
+    json => { delete json.extensionsUsed; },
+    json => { delete json.extensionsRequired; },
+    json => { json.textures![0]!.source = 0; delete json.textures![0]!.extensions; },
+    json => { json.textures![0]!.extensions = { KHR_texture_basisu: { source: 999 } }; },
+  ];
+  for (const edit of edits) {
+    await fs.writeFile(result.outputPath, original); await rewriteGlbJson(result.outputPath, edit);
+    await expect(verifyCompressedModel(result.outputPath, { identity: f.identity, runner: f.runner })).rejects.toThrow(/MIME|KHR_texture_basisu/);
+    await expect(buildAssetPackage({ sourcePath: result.outputPath, packagesRoot: path.join(f.root, 'packages'), name: 'Bad binding', license: 'MIT' })).rejects.toThrow(/MIME|KHR_texture_basisu/);
+  }
+  await rewriteGlbJson(f.model, json => { json.extensionsUsed = ['KHR_texture_basisu']; json.extensionsRequired = ['KHR_texture_basisu']; json.textures![0]!.extensions = { KHR_texture_basisu: { source: 0 } }; delete json.textures![0]!.source; });
+  await expect(verifyCompressedModel(f.model)).rejects.toThrow(/actual KTX2/);
 });

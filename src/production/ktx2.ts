@@ -1,3 +1,4 @@
+import { GLB_BUFFER, type JSONDocument } from '@gltf-transform/core';
 import { invalidState } from '../util/errors.js';
 export const KTX2_MAGIC = [0xab, 0x4b, 0x54, 0x58, 0x20, 0x32, 0x30, 0xbb, 0x0d, 0x0a, 0x1a, 0x0a] as const;
 export function isKtx2(bytes: Uint8Array): boolean { return KTX2_MAGIC.every((value, index) => bytes[index] === value); }
@@ -50,4 +51,34 @@ export function inspectKtx2(bytes: Uint8Array): Ktx2Info {
     if (model === 163 && rawLength !== 0) reject('ETC1S uncompressed size must be zero');
   }
   return { width, height, levels, codec: model === 163 ? 'etc1s' : 'uastc', transfer: transfer === 2 ? 'srgb' : 'linear', primaries, bytes: bytes.length };
+}
+
+/** Check raw image bytes and extension wiring before NodeIO can normalize texture sources. */
+export function validateKtxDeclarations({ json, resources }: JSONDocument): number {
+  const images = json.images ?? [], compressed = new Set<number>(), referenced = new Set<number>();
+  for (const [index, image] of images.entries()) {
+    let bytes = image.uri ? resources[image.uri] : undefined;
+    if (image.bufferView !== undefined) {
+      const view = json.bufferViews?.[image.bufferView]; const buffer = view && json.buffers?.[view.buffer];
+      const data = buffer && resources[buffer.uri ?? GLB_BUFFER];
+      if (!view || !data || !Number.isSafeInteger(view.byteOffset ?? 0) || (view.byteOffset ?? 0) < 0 || !Number.isSafeInteger(view.byteLength) || view.byteLength < 0 || (view.byteOffset ?? 0) + view.byteLength > data.length) throw invalidState('Invalid embedded image buffer view.');
+      bytes = data.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength);
+    }
+    const detected = !!bytes && isKtx2(bytes);
+    if (detected !== (image.mimeType === 'image/ktx2')) throw invalidState('KTX2 image bytes and declared MIME type disagree.');
+    if (detected) compressed.add(index);
+  }
+  for (const texture of json.textures ?? []) {
+    const extension = texture.extensions?.KHR_texture_basisu;
+    if (texture.source !== undefined && compressed.has(texture.source)) throw invalidState('KTX2 image requires a KHR_texture_basisu source, not a core texture source.');
+    if (extension !== undefined) {
+      const source = (extension as { source?: unknown }).source;
+      if (!Number.isInteger(source) || !compressed.has(source as number)) throw invalidState('KHR_texture_basisu source must reference an actual KTX2 image.');
+      if (!json.extensionsUsed?.includes('KHR_texture_basisu')) throw invalidState('KHR_texture_basisu must be declared in extensionsUsed.');
+      if (texture.source === undefined && !json.extensionsRequired?.includes('KHR_texture_basisu')) throw invalidState('KHR_texture_basisu must be required when no fallback image exists.');
+      referenced.add(source as number);
+    }
+  }
+  if ([...compressed].some(index => !referenced.has(index))) throw invalidState('KTX2 image is not bound through KHR_texture_basisu.');
+  return compressed.size;
 }

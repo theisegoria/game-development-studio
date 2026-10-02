@@ -7,7 +7,7 @@ import { KHRTextureBasisu } from '@gltf-transform/extensions';
 import { readImageSize } from '../inspection/gltf.js';
 import { decodeImage, encodePNG, sniffImageFormat } from '../inspection/image.js';
 import { invalidInput, invalidState } from '../util/errors.js';
-import { inspectKtx2, isKtx2, type Ktx2Info } from './ktx2.js';
+import { inspectKtx2, isKtx2, validateKtxDeclarations, type Ktx2Info } from './ktx2.js';
 import { withTransaction } from '../storage/transaction.js';
 import { requireBasis, runBasis, verifyBasisVersion, hashBasisFile, type BasisIdentity, type BasisRunner } from './basis.js';
 
@@ -44,7 +44,15 @@ export async function validateKtxPayload(file: string, info: Ktx2Info, identity:
 }
 /** Returns evidence only after metadata and actual CPU transcoding; a report never substitutes for payload verification. */
 export async function verifyCompressedModel(modelPath: string, deps: CompressionDeps = {}) {
-  const { document } = await readEmbedded(modelPath);
+  const stat = await fs.lstat(modelPath);
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 512 * 1024 * 1024) throw invalidInput('Package model must be a regular GLB within the 512 MiB verification budget.');
+  const bytes = new Uint8Array(await fs.readFile(modelPath));
+  if (bytes.length > 512 * 1024 * 1024) throw invalidInput('Package model exceeded verification byte budget.');
+  const io = strictIO(); const json = await io.binaryToJSON(bytes);
+  const compressedCount = validateKtxDeclarations(json);
+  if (!compressedCount) return { count: 0, cpuTranscoded: false, payloadSHA256: [] as string[] };
+  if (bytes.length > MAX_MODEL_BYTES) throw invalidInput('Compressed GLB exceeds its 128 MiB byte budget.');
+  const document = await io.readJSON(json);
   const textures = document.getRoot().listTextures().filter(t => t.getMimeType() === 'image/ktx2' || isKtx2(t.getImage() ?? new Uint8Array()));
   if (!textures.length) return { count: 0, cpuTranscoded: false, payloadSHA256: [] as string[] };
   const infos = textures.map(t => inspectKtx2(t.getImage()!));
