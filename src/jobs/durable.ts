@@ -361,3 +361,6 @@ export class DurableJobStore {
     });
   }
 }
+
+/** Shared structural validation for consumers of durable job metadata. */
+export { jobSchema as durableJobSchema };

@@ -38,7 +38,7 @@ No saved recipe, review digest or family sample grants permission for later spen
 | Provider history | `get_provider_history`, `record_provider_outcome`, `rate_provider_result` |
 | Review/package | `create_asset_review`, `decide_asset_review`, `package_reviewed_asset` |
 | Regression history | `name_visual_baseline`, `compare_visual_matrix`, `decide_visual_regression`, `visual_regression_dashboard` |
-| Workspace | `inspect_workspace_storage`, `plan_workspace_retention`, `execute_workspace_retention`, `list_workspace_retention`, `restore_workspace_retention`, `export_workspace_files` |
+| Workspace | `inspect_workspace_storage`, `plan_workspace_retention`, `execute_workspace_retention`, `list_workspace_retention`, `restore_workspace_retention`, `export_workspace_files`, `plan_workspace_purge`, `purge_workspace_retention` |
 | Recipes | `save_production_recipe`, `plan_production_recipe`, `run_production_step`, `recover_production_lock`, `reconcile_production_step` |
 | Families | `create_asset_family`, `plan_family_approval`, `approve_family_sample`, `expand_asset_family` |
 | Platform variants | `plan_platform_preparation`, `save_platform_preparation`, `validate_platform_asset`, `prepare_collision_box`, `prepare_texture_variant` |
@@ -57,8 +57,14 @@ never alter the original numerical comparison or silently promote a baseline.
 Retention protects referenced baselines/packages/jobs and originals. Review the
 measured plan; stop independent writers before execution. Quarantine is reversible
 and reclaims zero physical bytes. Folder export copies only the reviewed plan to a
-user-selected destination. The three retention writes also need the configured
-project-write launch grant. Never clean actual user files as a test.
+user-selected destination. To permanently remove quarantined bytes, inspect
+`plan_workspace_purge` and obtain fresh explicit authorization for its irreversible
+`purge_workspace_retention` plan. ALL other workspace and quarantine writers must be stopped. Portable path checks
+do not isolate hostile concurrent same-user writers. Never infer purge consent
+from quarantine or a previous failed attempt. Partial purge resumes require a new plan and confirmation.
+All retention writes also need the configured project-write launch grant. Unlinked
+logical bytes are reported; actual filesystem space reclaimed remains unknown.
+Never clean actual user files as a test.
 
 Upgrade/rollback planning verifies downloaded artifacts against fixed-repository
 GitHub release digests; missing provenance stays blocked. It does not install,
