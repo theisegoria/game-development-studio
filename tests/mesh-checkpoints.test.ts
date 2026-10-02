@@ -1,3 +1,4 @@
+import { checkpointGlb } from './helpers/checkpoint-glb.js';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -9,7 +10,7 @@ afterEach(async () => { await Promise.all(roots.splice(0).map(root => fs.rm(root
 it('only reuses verified content and invalidates source, policy, options, and tool changes', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'mesh-checkpoint-')); roots.push(root);
   const source = path.join(root, 'source.glb'); const output = path.join(root, 'output.glb');
-  await fs.writeFile(source, 'original'); await fs.writeFile(output, 'normalized');
+  await fs.writeFile(source, checkpointGlb()); await fs.writeFile(output, checkpointGlb({ extras: { prepared: true } }));
   const store = new MeshCheckpoints(path.join(root, 'checkpoints'), 'tool-v1');
   const options = { normalize: true, skipAlreadyValid: true, policy: {} };
   const key = (await store.key(source, options))!;
@@ -31,4 +32,27 @@ it('validates known receipt fields and versions while supporting legacy wrappers
   expect(() => parseBlenderReceipt({ ...receipt, trianglesAfter: '1' })).toThrow();
   expect(() => parseBlenderReceipt({ trianglesAfter: -1 })).toThrow();
   expect(() => parseBlenderReceipt(null)).toThrow();
+});
+
+it('never checkpoints external-resource GLBs, even after dependency changes or a fake extension', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'mesh-closure-')); roots.push(root);
+  const source = path.join(root, 'source.glb');
+  const store = new MeshCheckpoints(path.join(root, 'checkpoints'), 'tool-v1');
+  const options = { normalize: true, skipAlreadyValid: true, policy: {} };
+  for (const fields of [{ images: [{ uri: 'texture.png' }] }, { buffers: [{ uri: 'mesh.bin', byteLength: 4 }] }]) {
+    await fs.writeFile(source, checkpointGlb(fields));
+    const dependency = path.join(root, 'images' in fields ? 'texture.png' : 'mesh.bin');
+    await fs.writeFile(dependency, 'before');
+    expect(await store.key(source, options)).toBeUndefined();
+    await fs.writeFile(dependency, 'after');
+    expect(await store.key(source, options)).toBeUndefined();
+  }
+  await fs.writeFile(source, '{"asset":{"version":"2.0"}}');
+  expect(await store.key(source, options)).toBeUndefined();
+  await fs.writeFile(source, checkpointGlb({ extensions: { FUTURE_resource: { file: 'external.bin' } } }));
+  expect(await store.key(source, options)).toBeUndefined();
+  await fs.writeFile(source, checkpointGlb({ images: [{ uri: 'data:image/png;base64,AAAA' }] }));
+  expect(await store.key(source, options)).toMatch(/^[a-f0-9]{64}$/);
+  const broken = checkpointGlb(); broken.writeUInt32LE(1, 8); await fs.writeFile(source, broken);
+  expect(await store.key(source, options)).toBeUndefined();
 });

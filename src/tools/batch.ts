@@ -171,7 +171,7 @@ export function registerBatchTools(server: ToolRegistrar, ctx: ToolContext): voi
         // Hash executable bytes, never execute Blender merely to query its version.
         const identity = createHash('sha256').update('mesh-batch-v1;threads=2;').update(await fs.readFile(packagedScript('blender_normalize.py')));
         const extension = import.meta.url.endsWith('.ts') ? 'ts' : 'js';
-        for (const relative of [`../domain/asset-policy.${extension}`, `../domain/mesh-batch.${extension}`, `../inspection/gltf.${extension}`, '../../package.json']) {
+        for (const relative of [`./batch.${extension}`, `../domain/asset-policy.${extension}`, `../domain/mesh-batch.${extension}`, `../inspection/gltf.${extension}`, '../../package.json']) {
           identity.update(await fs.readFile(fileURLToPath(new URL(relative, import.meta.url))));
         }
         let nativeExecutable = false;

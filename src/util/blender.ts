@@ -386,8 +386,14 @@ export async function runBlenderScript(
           // in the caller — AFTER the staged file had been renamed into place.
           throw new Error('receipt is not a JSON object');
         }
+        const receipt = parseBlenderReceipt(parsed);
+        const expectedOperation = path.basename(scriptPath) === 'blender_normalize.py' ? 'normalize_mesh'
+          : path.basename(scriptPath) === 'blender_usd_export.py' ? 'export_usd_preview' : undefined;
+        if (receipt.schema && expectedOperation && receipt.operation !== expectedOperation) {
+          throw new Error(`Receipt operation ${receipt.operation} does not match ${expectedOperation}`);
+        }
         resolve({
-          receipt: parseBlenderReceipt(parsed),
+          receipt,
           stdoutTruncated,
           stderrTail,
           exitCode: code ?? 0,

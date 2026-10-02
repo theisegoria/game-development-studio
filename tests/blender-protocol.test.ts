@@ -146,3 +146,10 @@ describe('resource controls', () => {
     await expect(run(executable)).resolves.toMatchObject({ exitCode: 0 });
   });
 });
+
+it('refuses a versioned receipt for the wrong packaged operation', async () => {
+  const executable = await stub(RECEIPT('"schema":"org.gamedebug.blender_receipt.v1","operation":"export_usd_preview","blenderVersion":"4.5","input":"a","output":"b"'));
+  await expect(runBlenderScript(path.join(work, 'blender_normalize.py'), {}, {
+    timeoutMs: 30000, blenderPath: executable,
+  })).rejects.toThrow(/unparseable receipt/);
+});

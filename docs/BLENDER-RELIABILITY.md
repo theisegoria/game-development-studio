@@ -17,13 +17,14 @@ stderr details identify failures without leaving an unbounded capture directory.
 
 Both packaged Python scripts emit `org.gamedebug.blender_receipt.v1`. The shared
 TypeScript parser validates known numeric counters and versioned identity fields;
-unknown versions fail. Legacy wrappers without a schema remain compatible.
+unknown versions fail. Versioned receipt operations must match the packaged script. Legacy wrappers without a schema remain compatible.
 CLI and MCP tools use the same parser. Produced mesh geometry and hashes are still
 measured independently: a valid receipt is a subprocess claim, not proof of quality.
 
-`batch_prepare_meshes` accepts an optional `checkpointDir`. Each completed GLB is
-checkpointed immediately. A subsequent call reuses it only if the source path and
-bytes, complete policy and batch options, normalization script bytes and Blender
+`batch_prepare_meshes` accepts an optional `checkpointDir`. Each completed self-contained GLB is checkpointed immediately. GLB envelopes are
+validated; external resource URIs and unknown extensions disable reuse for both
+inputs and outputs. The extension alone never proves dependency closure. A subsequent call reuses it only if the source path and
+bytes, complete policy and batch options, normalization script and option-wiring module bytes and Blender
 executable bytes match. Output bytes must match their sealed SHA-256 and pass a
 fresh inspection under the current policy. Changing output bytes, source bytes,
 policy, options or tool executable forces preparation again. Corrupt checkpoints

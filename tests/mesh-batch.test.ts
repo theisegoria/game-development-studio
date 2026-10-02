@@ -1,3 +1,4 @@
+import { checkpointGlb } from './helpers/checkpoint-glb.js';
 /**
  * Tests for the batch preparation loop.
  *
@@ -799,7 +800,7 @@ it('resumes a sealed GLB checkpoint without writing another mesh', async () => {
   const root = mkdtempSync(path.join(tmpdir(), 'batch-resume-'));
   try {
     const source = path.join(root, 'source.glb'); const output = path.join(root, 'output.glb');
-    writeFileSync(source, 'original'); writeFileSync(output, 'prepared');
+    writeFileSync(source, checkpointGlb()); writeFileSync(output, checkpointGlb({ extras: { prepared: true } }));
     const h = harness({});
     h.deps.checkpoints = new MeshCheckpoints(path.join(root, 'checkpoints'), 'tool-v1');
     const key = (await h.deps.checkpoints.key(source, OPTIONS))!;
