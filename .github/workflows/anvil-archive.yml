@@ -19,7 +19,8 @@ jobs:
       - name: Test archive and resource-boundary fixtures
         run: |
           node --test scripts/tests/anvil-release.test.mjs
-          swift test --package-path apps/macos/Anvil -j 2
+          # The main CI macos-app job runs the complete catalog/process suite.
+          swift test --package-path apps/macos/Anvil -j 2 --filter AnvilResourceStagingTests
       - name: Fetch checksum-pinned upstream Node runtime
         run: |
           profile=distribution/macos-ci-upstream-node/THIRD_PARTY_PROVENANCE.json
