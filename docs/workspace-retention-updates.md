@@ -32,8 +32,18 @@ Purge byte counters are cumulative for the receipt, including when a completed p
 
 ## Upgrade and rollback planning
 
-`plan_release_change` requires `installedVersion`, `targetVersion`, local `artifact` and `checksums`, and retained `rollbackArtifact` and `rollbackChecksums`. It supports the existing release CLI `.tgz` and skills-plugin `.zip` artifacts, requires the exact versioned file name, rejects ambiguous checksums, and hashes local bytes without extracting or executing them.
+`plan_release_change` requires `installedVersion`, `targetVersion`, local `artifact` and `checksums`, and retained `rollbackArtifact` and `rollbackChecksums`. It supports these exact versioned release filenames:
+
+| Distribution | Artifact filename |
+| --- | --- |
+| CLI | `theisegoria-game-development-studio-VERSION.tgz` |
+| Skills plugin | `game-development-studio-plugin-VERSION.zip` |
+| Anvil, macOS ARM64 | `Anvil-VERSION-macos-arm64.zip` |
+
+Replace `VERSION` with the corresponding explicit stable version. Target and rollback must have the **same distribution type**; a CLI archive cannot serve as an app or plugin rollback. The planner rejects ambiguous checksums and hashes local bytes without extracting or executing them.
 
 Set `verifyGitHub: true` to fetch stable release metadata from the fixed public `theisegoria/game-development-studio` GitHub API. The target **and** rollback artifact must match release identity, canonical download URL, size, and GitHub's SHA-256 asset digest before `readyForManualInstall` is true. A release lacking a GitHub digest is a blocker; the tool does not silently lower verification to local checksum agreement. Without the option, a useful offline integrity plan is produced but readiness remains false. Versions are explicit; the tool never silently selects a latest release or upgrades to a prerelease.
 
 The result contains staged installation, smoke-test and rollback steps using the existing GitHub release chain. It performs no install, profile change, signing, notarization, npm publication, store submission, or automatic launcher switch. GitHub HTTPS digest agreement is provenance relative to the release API, not a publisher signing guarantee. Use existing `doctor` to check runtime/dependency discovery and `capabilities` against a temporary workspace before switching a manually managed installation. Doctor does not contact providers or launch Blender/GPU processes.
+
+Installation steps depend on the verified distribution. CLI plans retain the previous installation while checking the staged CLI's version, doctor and capabilities. Skills plans check the plugin manifest and skill inventory and retain the previous plugin selection; they do not switch a CLI launcher. Anvil plans apply only to Apple Silicon Macs running macOS 26 or later and require a new user-chosen extraction directory, retention of the previous app/archive, and the archive README's bundled CLI smoke checks before a manual switch. The existing Anvil archive is ad-hoc signed and not notarized; stop if system security policy does not permit it. A matching GitHub digest establishes neither Developer ID trust nor notarization. This tool plans use of the existing artifacts; it creates no new installer and performs no app launch or installation.

@@ -82,5 +82,49 @@ Package metadata should bind the original source digest, provider and job identi
 | `game-dev doctor` | `run_doctor` |
 
 Paid tools are disabled over MCP unless the server was configured with a spend
-ceiling, and each charge is confirmed in the client. Everything else here is
-free and needs no authority.
+ceiling, and each charge is confirmed in the client. Free operations may still
+mutate files or launch processes and require the applicable authorization.
+
+
+## Standalone CPU preparation and recipes (CLI 1.3.0+)
+
+```text
+game-dev tool call diagnose_texture_compression --json
+game-dev tool call diagnose_collision_decomposition --json
+game-dev tool call prepare_texture_variant --request resize.json --confirm --json
+game-dev tool call compress_texture_variant --request compression.json --confirm --json
+game-dev tool call decompose_collision_mesh --request collision.json --confirm --json
+game-dev tool call plan_platform_preparation --request platform.json --json
+game-dev tool call save_platform_preparation --request platform.json --confirm --json
+game-dev tool call plan_production_recipe --input '{"recipeId":"prop_v1"}' --json
+```
+
+Read installed schemas before building requests. A compression request uses an
+absolute `modelPath`, optional `colorCodec` (`etc1s` or `uastc`), `quality`, and
+`timeoutSeconds`. It requires `GAME_DEV_BASISU_PATH` and
+`GAME_DEV_BASISU_SHA256` from a trusted pinned CPU build. The diagnostic does not
+start it. A collision request uses an absolute `modelPath` and explicit geometry/
+resource budgets; `GAME_DEV_COACD_PYTHON` must name the configured isolated,
+hash-pinned environment. That diagnostic starts a bounded metadata reader.
+Neither optional dependency ships inside the native CLI runtime; do not install
+into profiles or infer setup permission from an asset request.
+
+KTX2 compression is limited to embedded GLB with unambiguous color/data/normal
+usage and bounded 8-bit PNG/JPEG inputs. It validates metadata and CPU-transcodes
+every mip, including again during package admission. CoACD requires static,
+closed manifold geometry and returns separate parts plus a manifest; it refuses
+unsupported glTF features and measures approximation with samples. Inspect
+reported platform/resource limits, particularly macOS's sampled RSS watchdog,
+before execution. Neither CPU operation uses Blender/GPU or proves engine import.
+
+Recipes execute one approved step at a time using the current plan fingerprint;
+input/tool changes invalidate checkpoints. `create_asset_family` first creates
+one sample recipe. Complete it, review its evidence with `plan_family_approval`,
+record `approve_family_sample`, then `expand_asset_family`. Expansion creates
+recipes only. Every subsequent write/process and paid call still needs its own
+current approval; uncertain submissions must be reconciled from existing job
+evidence rather than silently retried.
+
+See the source [production guide](https://github.com/theisegoria/game-development-studio/blob/main/docs/PRODUCTION_RECIPES.md),
+[Basis setup](https://github.com/theisegoria/game-development-studio/blob/main/docs/TEXTURE_COMPRESSION.md),
+and [CoACD setup](https://github.com/theisegoria/game-development-studio/blob/main/docs/coacd.md).
