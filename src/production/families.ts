@@ -52,6 +52,8 @@ export class FamilyStore {
     return record;
   }
   private async sampleDigest(record: z.infer<typeof recordSchema>) {
+    const sample = await this.recipes.read(record.sampleRecipeId);
+    if (digest(sample.recipe) !== digest(this.memberRecipe(record.family, 0))) throw invalidState('Sample recipe no longer matches its approved family template; create a new family revision.');
     const plan = await this.recipes.plan(record.sampleRecipeId);
     if (!plan.steps.every(s => s.status === 'complete')) throw invalidState('Sample must complete validation and packaging before visual approval and expansion.');
     return digest({ family: record.family, sample: await this.recipes.read(record.sampleRecipeId) });
