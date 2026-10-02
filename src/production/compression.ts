@@ -23,6 +23,15 @@ async function readEmbedded(file: string): Promise<{ bytes: Uint8Array; document
   if (bytes.byteLength > MAX_MODEL_BYTES) throw invalidInput('GLB grew beyond input byte budget.');
   return { bytes, document: await strictIO().readBinary(bytes) };
 }
+function textureKinds(document: Document) {
+  const kinds = new Map<Texture, Set<'srgb' | 'data' | 'normal'>>();
+  const bind = (texture: Texture | null, kind: 'srgb' | 'data' | 'normal') => { if (texture) { const usages = kinds.get(texture) ?? new Set(); usages.add(kind); kinds.set(texture, usages); } };
+  for (const material of document.getRoot().listMaterials()) {
+    bind(material.getBaseColorTexture(), 'srgb'); bind(material.getEmissiveTexture(), 'srgb');
+    bind(material.getNormalTexture(), 'normal'); bind(material.getOcclusionTexture(), 'data'); bind(material.getMetallicRoughnessTexture(), 'data');
+  }
+  return kinds;
+}
 export async function validateKtxPayload(file: string, info: Ktx2Info, identity: BasisIdentity, runner: BasisRunner, cwd: string, timeoutMs: number): Promise<void> {
   if (await hashBasisFile(identity.path) !== identity.sha256) throw invalidState('Encoder identity changed before transcoding.');
   // Format 6 is BC7_RGBA in the pinned transcoder enum. This decodes every mip on CPU and writes nothing.
@@ -39,6 +48,12 @@ export async function verifyCompressedModel(modelPath: string, deps: Compression
   const textures = document.getRoot().listTextures().filter(t => t.getMimeType() === 'image/ktx2' || isKtx2(t.getImage() ?? new Uint8Array()));
   if (!textures.length) return { count: 0, cpuTranscoded: false, payloadSHA256: [] as string[] };
   const infos = textures.map(t => inspectKtx2(t.getImage()!));
+  const kinds = textureKinds(document);
+  for (const [index, texture] of textures.entries()) {
+    const usages = kinds.get(texture); const info = infos[index]!;
+    if (!usages || usages.size !== 1 || info.transfer !== (usages.has('srgb') ? 'srgb' : 'linear')) throw invalidState('Compressed texture material usage disagrees with its color transfer metadata.');
+    if (usages.has('normal') && info.codec !== 'uastc') throw invalidState('Compressed normal maps require the supported UASTC profile.');
+  }
   if (infos.reduce((sum, info) => sum + info.width * info.height, 0) > MAX_TOTAL_PIXELS || textures.length > 64) throw invalidInput('Compressed texture validation exceeds pixel/count budget.');
   const identity = deps.identity ?? await requireBasis(); const runner = deps.runner ?? runBasis;
   const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'game-dev-ktx-verify-'));
@@ -63,12 +78,7 @@ async function compressTextureVariantLocked(options: CompressionOptions, deps: C
   if (options.colorCodec !== undefined && !['etc1s', 'uastc'].includes(options.colorCodec)) throw invalidInput('Unsupported color codec.');
   const { bytes: original, document } = await readEmbedded(options.modelPath);
   const sourceSHA256 = createHash('sha256').update(original).digest('hex');
-  const kinds = new Map<Texture, Set<'srgb' | 'data' | 'normal'>>();
-  const bind = (texture: Texture | null, kind: 'srgb' | 'data' | 'normal') => { if (texture) { const usages = kinds.get(texture) ?? new Set(); usages.add(kind); kinds.set(texture, usages); } };
-  for (const material of document.getRoot().listMaterials()) {
-    bind(material.getBaseColorTexture(), 'srgb'); bind(material.getEmissiveTexture(), 'srgb');
-    bind(material.getNormalTexture(), 'normal'); bind(material.getOcclusionTexture(), 'data'); bind(material.getMetallicRoughnessTexture(), 'data');
-  }
+  const kinds = textureKinds(document);
   const textures = document.getRoot().listTextures();
   if (!textures.length || textures.length > 64) throw invalidInput('Compression requires between 1 and 64 embedded textures.');
   let totalPixels = 0;

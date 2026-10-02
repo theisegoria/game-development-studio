@@ -39,6 +39,6 @@ Inspection validates bounded KTX2 structure and dimensions without decoding text
 
 ## Licenses and distribution
 
-Basis Universal's main code is Apache-2.0, with additional third-party licenses recorded in its pinned source. The build helper preserves upstream `LICENSE`, `LICENSES` and `.reuse` metadata in the build's `notices` directory. Keep those notices and inspect their file attribution before redistributing a separately built encoder. This project distributes the build instructions only, not Basis binaries or source. The optional encoder is separate from the packaged native CLI runtime.
+Basis Universal's main code is Apache-2.0, with additional third-party licenses recorded in its pinned source. The build helper preserves upstream `LICENSE`, `NOTICE`, `LICENSES` and `.reuse` metadata in the build's `notices` directory. Keep those notices and inspect their file attribution before redistributing a separately built encoder. This project distributes the build instructions only, not Basis binaries or source. The optional encoder is separate from the packaged native CLI runtime.
 
 The JavaScript extension integration is pinned to `@gltf-transform/extensions` 4.4.2 (MIT), alongside the existing glTF Transform core. Its transitive `ktx-parse` dependency is covered by the generated npm third-party notices. No signing credentials or paid service is required.

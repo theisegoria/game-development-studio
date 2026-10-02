@@ -29,6 +29,6 @@ const sha256 = digest.digest('hex');
 const version = spawnSync(binary, ['-version'], { encoding: 'utf8', timeout: 10_000, shell: false });
 if (version.status !== 0 || !/\bv?2\.50\b/.test(version.stdout)) throw new Error('Built encoder has an unexpected version.');
 const notices = path.join(output, 'notices'); await fs.mkdir(notices);
-for (const name of ['LICENSE', 'LICENSES', '.reuse']) await fs.cp(path.join(source, name), path.join(notices, name), { recursive: true });
+for (const name of ['LICENSE', 'NOTICE', 'LICENSES', '.reuse']) await fs.cp(path.join(source, name), path.join(notices, name), { recursive: true });
 await fs.writeFile(path.join(output, 'basis-cpu.json'), `${JSON.stringify({ schema: 'game_dev.basis_build.v1', sourceCommit: COMMIT, version: '2.50', path: binary, sha256, cpuOnly: true, opencl: false, platform: process.platform, arch: process.arch, notices }, null, 2)}\n`);
 console.log(JSON.stringify({ GAME_DEV_BASISU_PATH: binary, GAME_DEV_BASISU_SHA256: sha256 }));

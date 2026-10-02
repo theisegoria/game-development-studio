@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { NodeIO } from '@gltf-transform/core';
+import { KHRTextureBasisu } from '@gltf-transform/extensions';
 import { afterEach, expect, it, vi } from 'vitest';
 import { compressTextureVariant, verifyCompressedModel } from '../src/production/compression.js';
 import { BASIS_COMMIT, BASIS_VERSION, diagnoseTextureCompression, hashBasisFile, type BasisRunner } from '../src/production/basis.js';
@@ -71,4 +72,13 @@ it('package admission requires actual payload validation, not a plausible header
   const f=await fixture(); const result=await compressTextureVariant({modelPath:f.model,outputRoot:path.join(f.root,'out')},{identity:f.identity,runner:f.runner});
   vi.stubEnv('GAME_DEV_BASISU_PATH',''); vi.stubEnv('GAME_DEV_BASISU_SHA256','');
   await expect(buildAssetPackage({sourcePath:result.outputPath,packagesRoot:path.join(f.root,'packages'),name:'Compressed',license:'MIT'})).rejects.toThrow(/Configure/);
+});
+
+it('refuses a valid compressed payload whose material slot contradicts its transfer function', async () => {
+  const f = await fixture();
+  const result = await compressTextureVariant({ modelPath: f.model, outputRoot: path.join(f.root, 'out') }, { identity: f.identity, runner: f.runner });
+  const io = new NodeIO().registerExtensions([KHRTextureBasisu]); const doc = await io.read(result.outputPath);
+  const material = doc.getRoot().listMaterials()[0]!; const texture = material.getBaseColorTexture()!;
+  material.setBaseColorTexture(null).setMetallicRoughnessTexture(texture); await io.write(result.outputPath, doc);
+  await expect(verifyCompressedModel(result.outputPath, { identity: f.identity, runner: f.runner })).rejects.toThrow(/material usage/);
 });
