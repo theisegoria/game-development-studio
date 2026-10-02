@@ -38,9 +38,9 @@ Outputs:
   archive checksum and bounded acceptance claims.
 - `ANVIL_SHA256SUMS.txt`, the producer's intermediate verification manifest.
 
-The shared release workflow should upload these as an exact-head CI artifact,
-verify them before publication, then publish the ZIP and `ANVIL_RELEASE.json` with
-the existing overall `SHA256SUMS.txt` covering both. The intermediate manifest
+The shared release workflow uploads these as an exact-head CI artifact and
+verifies them before publication. Its release artifact contains the ZIP and
+`ANVIL_RELEASE.json` with the overall `SHA256SUMS.txt` covering both. The intermediate manifest
 need not become a second public checksum document. This script does not publish.
 
 The included README documents manual extraction and free diagnostic commands

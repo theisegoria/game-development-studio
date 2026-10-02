@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.3.0
+
+- Adds digest-bound permanent quarantine purge with fresh reference checks, explicit
+  irreversible confirmation, and durable partial-failure recovery. All independent
+  workspace writers must be stopped; reported unlinked bytes are not measured free space.
+- Adds real CPU Basis Universal ETC1S/UASTC KTX2 texture compression, material-slot
+  color validation and package admission, with pinned-tool receipts and remote
+  Linux/macOS/Windows execution tests. The optional encoder requires explicit setup.
+- Adds isolated pinned CoACD CPU convex decomposition with independently validated
+  standalone parts and sampled approximation error. Optional Python dependencies
+  require setup; macOS memory monitoring is best-effort rather than a hard limit.
+- Exposes compression, decomposition and purge through CLI/MCP, production recipes
+  where appropriate, and the native request editor with fresh mutation approvals.
+- Fixes installed Anvil resource lookup and adds a verified Apple Silicon macOS 26+
+  archive with pinned Node, complete license evidence and extracted-tree checks.
+  The ZIP is ad-hoc signed and non-notarized; no installer or Gatekeeper acceptance
+  is claimed. Upgrade/rollback plans distinguish native, CLI and skills distributions.
+- Keeps engine integration excluded and default tests free of Blender/GPU launches.
+
 ## 1.2.0
 
 - Serializes spend reservations across processes, validates accounting and job
