@@ -136,6 +136,6 @@ describe('production recipes', () => {
     expect(plan.executable).toBe(true); expect(plan.recipe.steps.filter(s => s.operation === 'build_asset_package')).toHaveLength(2); validateRecipe(plan.recipe);
     const result = await prepareCollisionBox(model, path.join(root, 'collisions')); expect(result.engineVerified).toBe(false); expect((await readFile(result.outputPath, 'utf8')).match(/^v /gm)).toHaveLength(8);
     expect((await validatePlatformAsset({ modelPath: model, maxTriangles: 1000, maxMaterials: 4, maxTextureSize: 2048 })).passed).toBe(true);
-    const unsupported = planPlatform({ schema: 'game_dev.platform_recipe.v1', id: 'x', name: 'X', modelPath: model, license: 'MIT', variants: [{ id: 'x', lodTriangles: [1], maxMaterials: 1, maxTextureSize: 1, collision: 'convex', textureMode: 'compress' }] }); expect(unsupported.unavailable).toHaveLength(2);
+    const unsupported = planPlatform({ schema: 'game_dev.platform_recipe.v1', id: 'x', name: 'X', modelPath: model, license: 'MIT', variants: [{ id: 'x', lodTriangles: [1], maxMaterials: 1, maxTextureSize: 1, collision: 'convex', textureMode: 'compress' }] }); expect(unsupported.unavailable).toHaveLength(1);
   });
 });

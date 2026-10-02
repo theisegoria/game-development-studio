@@ -41,6 +41,7 @@
     "scripts/*.py",
     "scripts/*.mjs",
     "distribution/skills-repo",
+    "distribution/coacd",
     "probe",
     "adapters",
     "skills",
@@ -79,6 +80,7 @@
   },
   "dependencies": {
     "@gltf-transform/core": "^4.1.1",
+    "@gltf-transform/extensions": "4.4.2",
     "@modelcontextprotocol/sdk": "1.30.0",
     "jpeg-js": "^0.4.4",
     "pngjs": "^7.0.0",

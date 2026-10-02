@@ -1,3 +1,4 @@
+import { verifyCompressedModel } from '../production/compression.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { promises as fs } from 'node:fs';
@@ -332,6 +333,9 @@ export async function buildAssetPackage(
     if (copiedModel.sha256 !== sourceIdentity.sha256 || copiedModel.bytes !== sourceIdentity.bytes) {
       throw invalidState('copied model does not match its source bytes');
     }
+    const compressedTextures = inspected.textureResolutions.some(texture => texture.mimeType === 'image/ktx2')
+      ? await verifyCompressedModel(modelTarget) : undefined;
+    if (compressedTextures) Object.assign(validationDocument, { compressedTextures });
     const files: AssetPackageFile[] = [
       { path: 'model.glb', kind: 'model', ...copiedModel },
     ];

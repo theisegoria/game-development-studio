@@ -22,22 +22,24 @@ export function planPlatform(input: unknown) {
   if (new Set(spec.variants.map(v => v.id)).size !== spec.variants.length) throw invalidState('Variant ids must be unique.');
   const steps: Recipe['steps'] = [];
   for (const [variantIndex, variant] of spec.variants.entries()) {
-    if (variant.textureMode === 'compress') unavailable.push(`${variant.id}: texture ${variant.textureMode} is not supported by the current local preparation tool; supply preprocessed textures.`);
     if (variant.collision === 'convex') unavailable.push(`${variant.id}: convex collision decomposition is unavailable; choose a conservative box or provide authored collision.`);
     const textureStep = `v${variantIndex}_textures`;
-    if (variant.textureMode === 'resize') steps.push({ id: textureStep, operation: 'prepare_texture_variant', dependsOn: [], files: [spec.modelPath], arguments: { modelPath: spec.modelPath, maxTextureSize: variant.maxTextureSize } });
+    if (variant.textureMode !== 'preserve') steps.push({ id: textureStep, operation: 'prepare_texture_variant', dependsOn: [], files: [spec.modelPath], arguments: { modelPath: spec.modelPath, maxTextureSize: variant.maxTextureSize } });
     for (const [index, triangles] of variant.lodTriangles.entries()) {
       const prefix = `v${variantIndex}_lod${index}`;
-      steps.push({ id: `${prefix}_normalize`, operation: 'normalize_mesh', dependsOn: variant.textureMode === 'resize' ? [textureStep] : [], files: variant.textureMode === 'resize' ? [] : [spec.modelPath], arguments: { modelPath: variant.textureMode === 'resize' ? { $step: textureStep, field: 'outputPath' } : spec.modelPath, targetTriangles: triangles, normalizeMaterials: variant.materialMode === 'opaque' } });
-      const source = { $step: `${prefix}_normalize`, field: 'outputPath' };
-      steps.push({ id: `${prefix}_validate`, operation: 'validate_game_asset', dependsOn: [`${prefix}_normalize`], files: [], arguments: { modelPath: source, maxTriangles: triangles, maxMaterials: variant.maxMaterials } });
-      steps.push({ id: `${prefix}_budget`, operation: 'validate_platform_asset', dependsOn: [`${prefix}_normalize`, `${prefix}_validate`], files: [], arguments: { modelPath: source, maxTriangles: triangles, maxMaterials: variant.maxMaterials, maxTextureSize: variant.maxTextureSize } });
-      steps.push({ id: `${prefix}_package`, operation: 'build_asset_package', dependsOn: [`${prefix}_normalize`, `${prefix}_validate`, `${prefix}_budget`], files: [], arguments: { modelPath: source, name: `${spec.name}_${variant.id}_lod${index}`, license: spec.license } });
-      if (variant.collision === 'box') steps.push({ id: `${prefix}_collision`, operation: 'prepare_collision_box', dependsOn: [`${prefix}_normalize`, `${prefix}_validate`, `${prefix}_budget`], files: [], arguments: { modelPath: source } });
+      steps.push({ id: `${prefix}_normalize`, operation: 'normalize_mesh', dependsOn: variant.textureMode !== 'preserve' ? [textureStep] : [], files: variant.textureMode !== 'preserve' ? [] : [spec.modelPath], arguments: { modelPath: variant.textureMode !== 'preserve' ? { $step: textureStep, field: 'outputPath' } : spec.modelPath, targetTriangles: triangles, normalizeMaterials: variant.materialMode === 'opaque' } });
+      const normalized = { $step: `${prefix}_normalize`, field: 'outputPath' };
+      const preparedId = variant.textureMode === 'compress' ? `${prefix}_compress` : `${prefix}_normalize`;
+      if (variant.textureMode === 'compress') steps.push({ id: preparedId, operation: 'compress_texture_variant', dependsOn: [`${prefix}_normalize`], files: [], arguments: { modelPath: normalized } });
+      const source = { $step: preparedId, field: 'outputPath' };
+      steps.push({ id: `${prefix}_validate`, operation: 'validate_game_asset', dependsOn: [preparedId], files: [], arguments: { modelPath: source, maxTriangles: triangles, maxMaterials: variant.maxMaterials } });
+      steps.push({ id: `${prefix}_budget`, operation: 'validate_platform_asset', dependsOn: [preparedId, `${prefix}_validate`], files: [], arguments: { modelPath: source, maxTriangles: triangles, maxMaterials: variant.maxMaterials, maxTextureSize: variant.maxTextureSize } });
+      steps.push({ id: `${prefix}_package`, operation: 'build_asset_package', dependsOn: [preparedId, `${prefix}_validate`, `${prefix}_budget`], files: [], arguments: { modelPath: source, name: `${spec.name}_${variant.id}_lod${index}`, license: spec.license } });
+      if (variant.collision === 'box') steps.push({ id: `${prefix}_collision`, operation: 'prepare_collision_box', dependsOn: [preparedId, `${prefix}_validate`, `${prefix}_budget`], files: [], arguments: { modelPath: source } });
     }
   }
   const recipe: Recipe = { schema: 'game_dev.production_recipe.v1', id: spec.id, name: spec.name, steps };
-  return { schema: 'game_dev.platform_plan.v1', recipe, unavailable, executable: unavailable.length === 0, capabilities: { lod: 'Blender decimation followed by measured budget validation', collision: 'standalone conservative AABB OBJ; no runtime integration', textures: 'preserve or resize embedded PNG/JPEG, then verify dimensions; no compression', materials: 'preserve or normalize opaque', packages: 'canonical standalone packages per variant/LOD' } };
+  return { schema: 'game_dev.platform_plan.v1', recipe, unavailable, executable: unavailable.length === 0, capabilities: { lod: 'Blender decimation followed by measured budget validation', collision: 'standalone conservative AABB OBJ; no runtime integration', textures: 'preserve, resize, or CPU ETC1S/UASTC compression after normalization; measured KTX2 metadata and payload verification', materials: 'preserve or normalize opaque', packages: 'canonical standalone packages per variant/LOD' } };
 }
 export async function prepareCollisionBox(modelPath: string, outputRoot: string) {
   const inspection = await inspectGltf(modelPath);
