@@ -14,7 +14,7 @@ const entrySchema = z.object({
   confidence: z.enum(['documented', 'estimated']), basis: z.string(), at: z.string().datetime(),
   reportedCents: z.number().int().nonnegative().safe().optional(), assetJobId: z.string().optional(),
   releasedAt: z.string().datetime().optional(), outcome: z.enum(['pending', 'succeeded', 'failed', 'unknown']).optional(),
-  approval: z.object({ source: z.string().min(1), at: z.string().datetime(), reference: z.string().optional() }).optional(),
+  approval: z.object({ source: z.string().min(1), at: z.string().datetime(), reference: z.string().optional(), userApprovalVerified: z.boolean().optional() }).optional(),
   quality: z.object({ rating: z.number().min(0).max(5), note: z.string().max(2000), at: z.string().datetime() }).optional(),
 }).strict();
 const ledgerSchema = z.object({ schemaVersion: z.literal(1), entries: z.array(entrySchema) }).strict();
@@ -30,19 +30,46 @@ export class SpendLedger {
     await fs.mkdir(dir, { recursive: true });
     const ledger = new SpendLedger(path.join(dir, 'spend-ledger.json'), limitCents);
     ledger.refresh();
+    // Backfill presence evidence for valid legacy ledgers before returning an instance.
+    if (ledger.seen && !ledger.failure) {
+      try { await ledger.ensureMarker(); } catch (error) { ledger.failure = `Accounting marker unavailable: ${String(error)}`; }
+    }
     return ledger;
   }
 
-  private refresh(): void {
+  private markerExists(): boolean {
     try {
+      const marker = JSON.parse(readFileSync(`${this.file}.present`, 'utf8')) as Record<string, unknown>;
+      if (marker.schema !== 'game_dev.spend_presence.v1' || typeof marker.createdAt !== 'string' || !Number.isFinite(Date.parse(marker.createdAt))) throw new Error('invalid spend presence marker');
+      return true;
+    } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; }
+  }
+
+  private async ensureMarker(): Promise<void> {
+    if (this.markerExists()) return;
+    let handle;
+    try { handle = await fs.open(`${this.file}.present`, 'wx', 0o600); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code === 'EEXIST') { if (!this.markerExists()) throw error; return; } throw error; }
+    try { await handle.writeFile(JSON.stringify({ schema: 'game_dev.spend_presence.v1', createdAt: new Date().toISOString() })); await handle.sync(); }
+    finally { await handle.close(); }
+    try {
+      const directory = await fs.open(path.dirname(this.file), 'r');
+      try { await directory.sync(); } finally { await directory.close(); }
+    } catch (error) { if (!['EINVAL', 'ENOTSUP', 'EISDIR', 'EPERM', 'EACCES'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error; }
+  }
+
+  private refresh(): void {
+    let markerPresent = false;
+    try {
+      markerPresent = this.markerExists();
       const parsed = ledgerSchema.parse(JSON.parse(readFileSync(this.file, 'utf8')));
       if (new Set(parsed.entries.map((entry) => entry.id)).size !== parsed.entries.length) throw new Error('duplicate entry ids');
-      if (!Number.isSafeInteger(parsed.entries.reduce((sum, entry) => sum + entry.estimatedCents, 0))) throw new Error('ledger total overflow');
+      if (!Number.isSafeInteger(parsed.entries.reduce((sum, entry) => sum + Math.max(entry.estimatedCents, entry.reportedCents ?? 0), 0))) throw new Error('ledger total overflow');
       this.entries = parsed.entries;
       this.seen = true;
       this.failure = undefined;
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT' && !this.seen && this.failure === undefined) { this.entries = []; return; }
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT' && !markerPresent && !this.seen && this.failure === undefined) { this.entries = []; return; }
       this.failure = `Accounting unavailable: ${error instanceof Error ? error.message : String(error)}`;
     }
   }
@@ -91,8 +118,11 @@ export class SpendLedger {
       const before = structuredClone(this.entries);
       try {
         const result = action();
-        ledgerSchema.parse({ schemaVersion: 1, entries: this.entries });
-        await atomicJson(this.file, { schemaVersion: 1, entries: this.entries });
+        // Snapshot before yielding: synchronous diagnostics on this same object may refresh its cache.
+        const committed = ledgerSchema.parse({ schemaVersion: 1, entries: this.entries });
+        if (!Number.isSafeInteger(committed.entries.reduce((sum, entry) => sum + Math.max(entry.estimatedCents, entry.reportedCents ?? 0), 0))) throw invalidInput('Ledger total exceeds safe accounting range');
+        await this.ensureMarker();
+        await atomicJson(this.file, committed);
         this.seen = true;
         return result;
       } catch (error) { this.entries = before; throw error; }

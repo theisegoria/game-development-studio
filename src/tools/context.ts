@@ -71,7 +71,9 @@ export function createToolContext(params: {
     async charge(tool, options) {
       const reservation = await spend.reserve({
         tool,
-        approval: { source: 'caller tool invocation under configured spend policy', at: new Date().toISOString() },
+        // This layer observes invocation only. Human consent is enforced by the transport,
+        // and must not be fabricated as independently verified ledger evidence.
+        approval: { source: 'tool invocation; transport approval evidence not supplied', at: new Date().toISOString(), userApprovalVerified: false },
         ...(options?.units !== undefined ? { units: options.units } : {}),
         ...(options?.assetJobId !== undefined ? { assetJobId: options.assetJobId } : {}),
       });

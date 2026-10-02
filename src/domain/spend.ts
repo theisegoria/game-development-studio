@@ -191,7 +191,7 @@ export interface SpendEntry {
   at: string;
   releasedAt?: string;
   outcome?: 'pending' | 'succeeded' | 'failed' | 'unknown';
-  approval?: { source: string; at: string; reference?: string };
+  approval?: { source: string; at: string; reference?: string; userApprovalVerified?: boolean };
   quality?: { rating: number; note: string; at: string };
 }
 

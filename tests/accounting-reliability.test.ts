@@ -6,6 +6,9 @@ import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { SpendLedger } from '../src/storage/spend.js';
 import { DurableJobStore } from '../src/jobs/durable.js';
+import { createGameDevRuntime } from '../src/runtime.js';
+import { JobStore } from '../src/storage/jobs.js';
+import { createAssetJob } from '../src/domain/asset-job.js';
 import { recoverTransactionLock } from '../src/storage/transaction.js';
 
 const roots: string[] = [];
@@ -40,6 +43,47 @@ describe('transactional accounting', () => {
     await expect(ledger.reserve({ tool: 'create_3d_asset' })).rejects.toThrow(/blocked/);
     expect(await fs.readFile(file, 'utf8')).toBe(raw);
   });
+  it('preserves the balance boundary after ledger deletion and a fresh process-style reopen', async () => {
+    const dir = await root(); const first = await SpendLedger.open(dir, 100);
+    await first.reserve({ tool: 'create_3d_asset' });
+    await fs.unlink(path.join(dir, 'spend-ledger.json'));
+    const reopened = await SpendLedger.open(dir, 100);
+    expect(reopened.diagnostics().healthy).toBe(false);
+    await expect(reopened.reserve({ tool: 'create_3d_asset' })).rejects.toThrow(/blocked/);
+    expect(await fs.readFile(path.join(dir, 'spend-ledger.json.present'), 'utf8')).toContain('game_dev.spend_presence.v1');
+  });
+  it('backfills presence evidence for a valid legacy ledger', async () => {
+    const dir = await root(); const file = path.join(dir, 'spend-ledger.json');
+    await fs.writeFile(file, JSON.stringify({ schemaVersion: 1, entries: [] }));
+    expect((await SpendLedger.open(dir)).diagnostics().healthy).toBe(true);
+    await fs.unlink(file);
+    expect((await SpendLedger.open(dir)).diagnostics().healthy).toBe(false);
+  });
+  it('does not lose same-instance transactions when diagnostics refresh during asynchronous writes', async () => {
+    const ledger = await SpendLedger.open(await root(), 300);
+    const refresh = setInterval(() => { ledger.diagnostics(); }, 1);
+    try {
+      const results = await Promise.allSettled(Array.from({ length: 16 }, () => ledger.reserve({ tool: 'create_3d_asset' })));
+      expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(10);
+      expect(ledger.spentCents()).toBe(300);
+      const entries = ledger.history().entries;
+      await Promise.all(entries.slice(0, 5).map((entry) => ledger.release(entry.id)));
+      expect(ledger.spentCents()).toBe(150);
+      expect(ledger.history().entries).toHaveLength(10);
+      expect(ledger.history().entries.filter((entry) => entry.releasedAt)).toHaveLength(5);
+    } finally { clearInterval(refresh); }
+  });
+  it('fails closed on a truncated presence marker and unsafe combined totals', async () => {
+    const dir = await root(); const ledger = await SpendLedger.open(dir);
+    const first = await ledger.reserve({ tool: 'create_3d_asset' });
+    await ledger.reconcile(first.entryId, Number.MAX_SAFE_INTEGER);
+    await expect(ledger.reserve({ tool: 'create_3d_asset' })).rejects.toThrow(/safe accounting/);
+    expect(ledger.history().entries).toHaveLength(1);
+    await fs.writeFile(path.join(dir, 'spend-ledger.json.present'), '{partial');
+    const reopened = await SpendLedger.open(dir);
+    expect(reopened.diagnostics().healthy).toBe(false);
+    await expect(reopened.reserve({ tool: 'create_3d_asset' })).rejects.toThrow(/blocked/);
+  });
   it('refuses duplicate job submissions, retains released evidence, and does not invent invoice charges', async () => {
     const ledger = await SpendLedger.open(await root(), 100);
     const reservation = await ledger.reserve({ tool: 'create_3d_asset', assetJobId: 'asset_abc', approval: { source: 'test invocation', at: new Date().toISOString() } });
@@ -57,6 +101,13 @@ describe('transactional accounting', () => {
     await expect(ledger.reserve({ tool: 'create_3d_asset' })).rejects.toMatchObject({ code: 'SPEND_LIMIT_EXCEEDED' });
     await expect(ledger.reconcile(reservation.entryId, NaN)).rejects.toThrow();
     await expect(ledger.release(reservation.entryId)).rejects.toThrow(/provider-reported/);
+  });
+  it('records invocation provenance without claiming independently verified human approval', async () => {
+    const runtime = await createGameDevRuntime({ outputDir: await root(), env: { ASSET_LOG_LEVEL: 'silent', ASSET_SPEND_LIMIT_CENTS: '100' } });
+    await runtime.context.charge('create_3d_asset');
+    expect(runtime.spend.history().entries[0]?.approval).toMatchObject({ userApprovalVerified: false });
+    expect(await runtime.context.store.list()).toEqual([]);
+    expect(runtime.context.store.lastListingSkipped()).toEqual([]);
   });
   it('never recovers a live worker lock', async () => {
     const target = path.join(await root(), 'ledger');
@@ -103,5 +154,31 @@ describe('durable evidence and replay safety', () => {
     const results = await Promise.allSettled([store.create(local.operation, {}, { parentJobId: local.id }), store.create(local.operation, {}, { parentJobId: local.id })]);
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
     expect((await store.get(local.id)).supersededByJobId).toBeTruthy();
+  });
+});
+
+
+describe('complete asset job validation', () => {
+  it.each([
+    { status: 'future-status' }, { createdAt: null }, { candidates: [null] },
+    { files: [{ path: 'asset.glb', bytes: -1, sha256: 'invalid', kind: 'model' }] },
+    { model3d: { provider: 'tripo', providerTaskId: 42 } },
+    { audio: { provider: 'leonardo', requestedAt: [] } },
+    { selectedCandidateId: 'missing' }, { spec: { name: 'missing-description' } },
+    { id: 'asset_other-identity' },
+  ])('surfaces invalid records instead of crashing downstream: %j', async (changes) => {
+    const dir = await root(); const store = await JobStore.open(dir);
+    const job = createAssetJob({ spec: { name: 'crate', description: 'wood crate' }, slug: 'crate' });
+    await fs.writeFile(path.join(dir, `${job.id}.json`), JSON.stringify({ ...job, ...changes }));
+    await expect(store.get(job.id)).rejects.toMatchObject({ code: 'INVALID_STATE' });
+    expect(await store.list()).toEqual([]); expect(store.lastListingSkipped()).toHaveLength(1);
+    await expect(store.findByProviderTaskId('unknown-task')).rejects.toThrow(/lookup is incomplete/);
+  });
+  it('refuses invalid saves without replacing valid provenance', async () => {
+    const store = await JobStore.open(await root());
+    const job = createAssetJob({ spec: { name: 'crate', description: 'wood crate' }, slug: 'crate' });
+    await store.save(job);
+    await expect(store.save({ ...job, createdAt: 'not a timestamp' })).rejects.toMatchObject({ code: 'INVALID_STATE' });
+    expect(await store.get(job.id)).toEqual(job);
   });
 });
