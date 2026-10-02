@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { createReadStream, constants } from 'node:fs';
+import { constants } from 'node:fs';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
@@ -8,8 +8,17 @@ import { safeJoin, writeJsonAtomic } from '../storage/filesystem.js';
 const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export async function hashFile(file: string): Promise<string> {
   const hash = createHash('sha256');
-  for await (const chunk of createReadStream(file)) hash.update(chunk);
-  return hash.digest('hex');
+  const handle = await fs.open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    if (!(await handle.stat()).isFile()) throw new Error('Hash input must be a regular file');
+    const buffer = Buffer.alloc(64 * 1024);
+    for (;;) {
+      const { bytesRead } = await handle.read(buffer, 0, buffer.length, null);
+      if (!bytesRead) break;
+      hash.update(buffer.subarray(0, bytesRead));
+    }
+    return hash.digest('hex');
+  } finally { await handle.close(); }
 }
 const relativePath = z.string().min(1).refine(p => !path.isAbsolute(p) && !p.split(/[\\/]/).some(s => s === '..' || s === '') && !p.startsWith('.retention'), 'Unsafe workspace path');
 const entrySchema = z.object({ path: relativePath, bytes: z.number().int().nonnegative(), sha256: z.string().regex(/^[a-f0-9]{64}$/), classification: z.enum(['original', 'derived', 'capture', 'metadata', 'unknown']), protectedBy: z.array(z.string()) }).strict();
@@ -28,6 +37,28 @@ async function assertNoLinks(root: string, target: string): Promise<void> {
     try { if ((await fs.lstat(current)).isSymbolicLink()) throw new Error(`Symlink is refused: ${current}`); }
     catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return; throw error; }
   }
+}
+
+async function syncDirectory(directory: string): Promise<void> {
+  try {
+    const handle = await fs.open(directory, 'r');
+    try { await handle.sync(); } finally { await handle.close(); }
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code !== 'EINVAL' && code !== 'ENOTSUP' && !(process.platform === 'win32' && (code === 'EPERM' || code === 'EISDIR'))) throw error;
+  }
+}
+
+async function syncParents(directory: string, root: string): Promise<void> {
+  if (!isInside(root, directory)) throw new Error('Directory flush escapes workspace');
+  for (let current = directory; ; current = path.dirname(current)) {
+    await syncDirectory(current);
+    if (current === root) break;
+  }
+}
+async function writeReceipt(directory: string, receipt: unknown): Promise<void> {
+  await writeJsonAtomic(path.join(directory, 'receipt.json'), receipt);
+  await syncDirectory(directory);
 }
 
 async function filesUnder(root: string, omitRetention = true): Promise<{ files: string[]; blockers: string[] }> {
@@ -136,6 +167,13 @@ async function withLock<T>(root: string, body: (store: string) => Promise<T>): P
   try { return await body(store); } finally { await fs.rmdir(lock); }
 }
 const receiptSchema = z.object({ schema: z.literal('game_dev.retention_receipt.v1'), id: z.string().uuid(), plan: retentionPlanSchema, state: z.enum(['moving', 'quarantined', 'restoring', 'restored']), moved: z.array(relativePath) }).strict();
+function parseReceipt(value: unknown) {
+  const receipt = receiptSchema.parse(value);
+  const { id: planId, ...body } = receipt.plan;
+  if (digest(body) !== planId || body.action !== 'quarantine' || receipt.moved.some(p => !body.files.some(f => f.path === p))) throw new Error('Receipt plan integrity mismatch');
+  return receipt;
+}
+
 
 export async function quarantineWorkspace(root: string, input: unknown, metadataRoots: string[] = []) {
   return withLock(root, async store => {
@@ -143,18 +181,24 @@ export async function quarantineWorkspace(root: string, input: unknown, metadata
     if (plan.action !== 'quarantine') throw new Error('Expected quarantine plan');
     const id = randomUUID(), directory = path.join(store, id);
     await fs.mkdir(directory);
+    await syncParents(directory, plan.root);
     const receipt = receiptSchema.parse({ schema: 'game_dev.retention_receipt.v1', id, plan, state: 'moving', moved: [] });
-    await writeJsonAtomic(path.join(directory, 'receipt.json'), receipt);
+    await writeReceipt(directory, receipt);
     for (const file of plan.files) {
       const source = safeJoin(plan.root, file.path), destination = safeJoin(directory, 'files', file.path);
       await fs.mkdir(path.dirname(destination), { recursive: true });
       if (!isInside(plan.root, await fs.realpath(source)) || (await fs.lstat(source)).isSymbolicLink() || await hashFile(source) !== file.sha256) throw new Error('Source changed during quarantine');
+      await assertNoLinks(plan.root, source);
+      await assertNoLinks(store, destination);
       await fs.rename(source, destination);
+      if (await hashFile(destination) !== file.sha256) throw new Error('Quarantine bytes changed during move; receipt retained for recovery');
+      await syncParents(path.dirname(destination), plan.root);
+      await syncDirectory(path.dirname(source));
       receipt.moved.push(file.path);
-      await writeJsonAtomic(path.join(directory, 'receipt.json'), receipt);
+      await writeReceipt(directory, receipt);
     }
     receipt.state = 'quarantined';
-    await writeJsonAtomic(path.join(directory, 'receipt.json'), receipt);
+    await writeReceipt(directory, receipt);
     return { ...receipt, evidenceCeiling, bytesReclaimed: 0 };
   });
 }
@@ -166,7 +210,7 @@ export async function listRetentionReceipts(root: string) {
   for (const entry of entries) {
     if (entry.name === 'operation.lock') { receipts.push({ blocker: 'An active or interrupted retention operation holds operation.lock. Inspect receipts before manually clearing a stale lock.' }); continue; }
     if (!entry.isDirectory() || !z.string().uuid().safeParse(entry.name).success) continue;
-    try { receipts.push(receiptSchema.parse(JSON.parse(await fs.readFile(path.join(store, entry.name, 'receipt.json'), 'utf8')))); }
+    try { receipts.push(parseReceipt(JSON.parse(await fs.readFile(path.join(store, entry.name, 'receipt.json'), 'utf8')))); }
     catch (error) { receipts.push({ id: entry.name, blocker: `Corrupt receipt: ${String(error)}` }); }
   }
   return receipts;
@@ -177,10 +221,11 @@ export async function restoreWorkspace(root: string, receiptId: string) {
     const directory = path.join(store, receiptId);
     await assertNoLinks(store, directory);
     if ((await fs.lstat(directory)).isSymbolicLink()) throw new Error('Receipt directory cannot be a symlink');
-    const receipt = receiptSchema.parse(JSON.parse(await fs.readFile(path.join(directory, 'receipt.json'), 'utf8')));
+    await assertNoLinks(store, path.join(directory, 'receipt.json'));
+    const receipt = parseReceipt(JSON.parse(await fs.readFile(path.join(directory, 'receipt.json'), 'utf8')));
     if (receipt.id !== receiptId || receipt.plan.root !== await fs.realpath(root)) throw new Error('Receipt identity mismatch');
     receipt.state = 'restoring';
-    await writeJsonAtomic(path.join(directory, 'receipt.json'), receipt);
+    await writeReceipt(directory, receipt);
     // Examine all planned files, including a rename completed before a crash could journal it.
     for (const file of receipt.plan.files) {
       const source = safeJoin(directory, 'files', file.path), destination = safeJoin(receipt.plan.root, file.path);
@@ -198,10 +243,18 @@ export async function restoreWorkspace(root: string, receiptId: string) {
         if ((error as NodeJS.ErrnoException).code !== 'EEXIST' || (await fs.lstat(destination)).isSymbolicLink() || await hashFile(destination) !== file.sha256) throw error;
         // An identical destination is safe after a crash between copy and unlink.
       }
+      // Never discard the recoverable source until the restored bytes are verified and flushed.
+      await assertNoLinks(receipt.plan.root, destination);
+      if (await hashFile(destination) !== file.sha256) throw new Error('Restored bytes changed; quarantine source retained');
+      const restored = await fs.open(destination, constants.O_RDONLY | constants.O_NOFOLLOW);
+      try { await restored.sync(); } finally { await restored.close(); }
+      await syncParents(path.dirname(destination), receipt.plan.root);
+      await assertNoLinks(directory, source);
       await fs.unlink(source);
+      await syncDirectory(path.dirname(source));
     }
     receipt.state = 'restored';
-    await writeJsonAtomic(path.join(directory, 'receipt.json'), receipt);
+    await writeReceipt(directory, receipt);
     return { ...receipt, evidenceCeiling };
   });
 }
