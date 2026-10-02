@@ -41,7 +41,7 @@ No saved recipe, review digest or family sample grants permission for later spen
 | Workspace | `inspect_workspace_storage`, `plan_workspace_retention`, `execute_workspace_retention`, `list_workspace_retention`, `restore_workspace_retention`, `export_workspace_files` |
 | Recipes | `save_production_recipe`, `plan_production_recipe`, `run_production_step`, `recover_production_lock`, `reconcile_production_step` |
 | Families | `create_asset_family`, `plan_family_approval`, `approve_family_sample`, `expand_asset_family` |
-| Platform variants | `plan_platform_preparation`, `save_platform_preparation`, `validate_platform_asset`, `prepare_collision_box` |
+| Platform variants | `plan_platform_preparation`, `save_platform_preparation`, `validate_platform_asset`, `prepare_collision_box`, `prepare_texture_variant` |
 | Updates | `plan_release_change` |
 
 A recipe executes one step. Inspect its current fingerprint and exact arguments,

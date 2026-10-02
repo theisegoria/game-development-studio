@@ -7,7 +7,7 @@ export const ROADMAP_MUTATION_TOOLS: ReadonlySet<string> = new Set([
   'execute_workspace_retention', 'restore_workspace_retention', 'export_workspace_files',
   'save_production_recipe', 'run_production_step', 'recover_production_lock', 'reconcile_production_step',
   'create_asset_family', 'approve_family_sample', 'expand_asset_family',
-  'save_platform_preparation', 'prepare_collision_box',
+  'save_platform_preparation', 'prepare_collision_box', 'prepare_texture_variant',
 ]);
 
 export const ROADMAP_FREE_TOOLS: ReadonlySet<string> = new Set([

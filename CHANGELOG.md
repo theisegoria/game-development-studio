@@ -21,7 +21,8 @@
   resume, uncertain-submission recovery and fresh per-operation approvals. Asset
   families require a completed reviewed sample before creating member recipes.
 - Adds standalone platform variant/LOD, material, texture-budget and conservative
-  box-collision preparation using supported operations and explicit capability limits.
+  box-collision preparation, plus bounded color-aware PNG/JPEG texture resizing.
+  Normal vectors are renormalized; compression and convex decomposition are unavailable.
   No engine adapter or engine import acceptance integration is added.
 - Adds GitHub artifact upgrade/rollback plans with version, checksum and remote
   digest checks. Plans install nothing and make no new signing guarantee.
