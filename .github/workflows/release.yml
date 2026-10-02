@@ -18,9 +18,11 @@ jobs:
     uses: ./.github/workflows/windows-install.yml
   windows-packages:
     uses: ./.github/workflows/windows-package-fsync.yml
+  native-archive:
+    uses: ./.github/workflows/anvil-archive.yml
 
   build-artifacts:
-    needs: [platform-checks, windows-install, windows-packages]
+    needs: [platform-checks, windows-install, windows-packages, native-archive]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -33,6 +35,11 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm ci
+      - name: Retrieve verified native archive
+        uses: actions/download-artifact@v4
+        with:
+          name: anvil-native-${{ github.sha }}
+          path: ${{ runner.temp }}/game-dev-release-assets
       - name: Validate release identity
         run: |
           version="$(node -p "require('./package.json').version")"
@@ -42,6 +49,27 @@ jobs:
           fi
           grep -Fx "## $version" CHANGELOG.md
           npx vitest run tests/version-parity.test.ts --no-file-parallelism
+          node --input-type=module - "$RUNNER_TEMP/game-dev-release-assets" "$version" "$GITHUB_SHA" <<'NODE'
+          import { readFile, stat } from 'node:fs/promises';
+          import { createReadStream } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          import assert from 'node:assert/strict';
+          import path from 'node:path';
+          const [directory, version, revision] = process.argv.slice(2);
+          const metadata = JSON.parse(await readFile(path.join(directory, 'ANVIL_RELEASE.json'), 'utf8'));
+          const name = `Anvil-${version}-macos-arm64.zip`;
+          assert.equal(metadata.schema, 'game_dev.anvil_release.v1');
+          assert.equal(metadata.repository, 'theisegoria/game-development-studio');
+          assert.equal(metadata.version, version);
+          assert.equal(metadata.sourceRevision, revision);
+          assert.equal(metadata.artifact, name);
+          assert.equal(metadata.signing.kind, 'ad-hoc');
+          assert.equal(metadata.signing.notarized, false);
+          const file = path.join(directory, name), digest = createHash('sha256');
+          for await (const chunk of createReadStream(file)) digest.update(chunk);
+          assert.equal(metadata.sha256, digest.digest('hex'));
+          assert.equal(metadata.bytes, (await stat(file)).size);
+          NODE
       - name: Verify installed package and build release artifacts
         run: |
           npm run verify
@@ -54,7 +82,7 @@ jobs:
           python3 "$export_tree/scripts/verify.py"
           python3 "$export_tree/scripts/build_release.py" "$assets/game-development-studio-plugin-$version.zip"
           cd "$assets"
-          sha256sum *.tgz *.zip > SHA256SUMS.txt
+          sha256sum *.tgz *.zip ANVIL_RELEASE.json > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: game-development-studio-${{ github.sha }}

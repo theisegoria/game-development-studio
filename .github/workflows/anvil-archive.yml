@@ -1,0 +1,53 @@
+name: Anvil native archive
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  native-archive:
+    runs-on: macos-26
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '25.2.1'
+          cache: npm
+      - run: npm ci
+      - name: Test archive and resource-boundary fixtures
+        run: |
+          node --test scripts/tests/anvil-release.test.mjs
+          swift test --package-path apps/macos/Anvil -j 2
+      - name: Fetch checksum-pinned upstream Node runtime
+        run: |
+          profile=distribution/macos-ci-upstream-node/THIRD_PARTY_PROVENANCE.json
+          runtime_url="$(node -p "require('./$profile').bundledRuntime.node.sourceArtifact.url")"
+          runtime_sha="$(node -p "require('./$profile').bundledRuntime.node.sourceArtifact.sha256")"
+          runtime_dir="$RUNNER_TEMP/gds-anvil-node"
+          mkdir -p "$runtime_dir"
+          curl --fail --location --retry 3 "$runtime_url" -o "$runtime_dir/node.tar.gz"
+          printf '%s  %s\n' "$runtime_sha" "$runtime_dir/node.tar.gz" | shasum -a 256 --check
+          tar -xzf "$runtime_dir/node.tar.gz" -C "$runtime_dir" node-v25.2.1-darwin-arm64/bin/node node-v25.2.1-darwin-arm64/LICENSE
+          cmp "$runtime_dir/node-v25.2.1-darwin-arm64/LICENSE" distribution/macos-ci-upstream-node/legal/third-party-licenses/node-25.2.1-LICENSE.txt
+          echo "GAME_DEV_NODE_EXECUTABLE=$runtime_dir/node-v25.2.1-darwin-arm64/bin/node" >> "$GITHUB_ENV"
+      - name: Stage release app without launching it
+        env:
+          GAME_DEV_RUNTIME_PROFILE: upstream-node-ci
+          GAME_DEV_BUILD_CONFIGURATION: release
+        run: ./script/build_and_run_anvil.sh --build-only
+      - name: Package, extract, and verify the standalone ad-hoc archive
+        run: |
+          node scripts/package-anvil-release.mjs package --app apps/macos/Anvil/dist/Anvil.app --output "$RUNNER_TEMP/anvil-assets"
+          node scripts/package-anvil-release.mjs verify --release-root "$RUNNER_TEMP/anvil-assets"
+      - name: Preserve verified native release artifacts
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: anvil-native-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/anvil-assets/Anvil-*-macos-arm64.zip
+            ${{ runner.temp }}/anvil-assets/ANVIL_RELEASE.json
+          if-no-files-found: error
+          retention-days: 3
