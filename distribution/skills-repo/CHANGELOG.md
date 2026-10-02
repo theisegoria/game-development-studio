@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.1
+
+- Aligns the canonical skills export with the native optional-dependency process
+  boundary repair in Studio 1.3.1. No additional authorization is granted.
+
 ## 1.3.0
 
 - Adds routes for reviewed irreversible quarantine purge and optional CPU Basis

@@ -82,3 +82,19 @@ account. The ad-hoc ZIP engineering gap is now implemented and remote-verified; 
 - Native archive is verified ad-hoc/non-notarized, not Developer ID signing or Gatekeeper acceptance.
 - Independent admission/authorization/recipe review found and verified fixes for MIME spoofing and diagnostic process intent; no remaining blocker from that scoped audit.
 - Full exact-head gates and uploaded 1.3.0 artifact verification remain required before release.
+
+## Native integration correction before publication
+
+The 1.3.0 candidate passed all 21 exact-head PR checks and its native archive was
+downloaded and verified (2,304 entries). Before public release, code review found
+Anvil stripped the three explicit optional CPU dependency settings. The 1.3.0 tags
+remain unchanged and unpublished. A narrow process-boundary repair and regression
+test are being released as 1.3.1; no inherited spend/mutation grants are retained.
+The final broad mock suite at the 1.3.0 candidate was 916 passed, 30 skipped.
+
+1.3.1 correction is implemented: exactly the three dependency settings pass the
+native process boundary; inherited spend/mutation/provider authority stays stripped.
+All 109 native tests pass; independent boundary review found no remaining blocker.
+Disposable 1.3.1 package checks verify 479 files, 88 operations and canonical parity.
+Source PR #10 and canonical skills PR #7 carry this patch; source Action-pinning
+PR #7 and skills Action-pinning PR #4 remain unrelated and unmerged.

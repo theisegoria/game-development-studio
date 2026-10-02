@@ -626,6 +626,11 @@ public struct GameDevCLIClient: GameDevCLIClientProtocol, Sendable {
         "LC_ALL",
         "LC_CTYPE",
         "TERM",
+        // Explicit optional CPU dependencies, validated by their runtime tools.
+        // These are configuration only, never spend or mutation authority.
+        "GAME_DEV_BASISU_PATH",
+        "GAME_DEV_BASISU_SHA256",
+        "GAME_DEV_COACD_PYTHON",
     ]
 
     private static func sanitizedEnvironment(_ environment: [String: String]) -> [String: String] {

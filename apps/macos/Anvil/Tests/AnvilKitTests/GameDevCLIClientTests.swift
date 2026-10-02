@@ -301,6 +301,31 @@ struct GameDevCLIClientTests {
         #expect(!result.standardOutput.contains("explicit-provider-secret"))
     }
 
+    @Test("Explicit CPU dependency settings cross the child boundary without approval authority")
+    func optionalDependencyEnvironment() async throws {
+        let settings = [
+            "GAME_DEV_BASISU_PATH": "/chosen tools/basisu;$(must-not-run)",
+            "GAME_DEV_BASISU_SHA256": String(repeating: "a", count: 64),
+            "GAME_DEV_COACD_PYTHON": "/chosen tools/coacd/bin/python",
+        ]
+        var environment = settings
+        for key in ["GAME_DEV_APPROVE_SPEND", "GAME_DEV_CONFIRM", "GAME_DEV_SPEND_CEILING_CENTS",
+                    "GAME_DEV_ALLOW_GPU", "GAME_DEV_MCP_ALLOW_PROJECT_WRITE", "GAME_DEV_MCP_SPEND",
+                    "ASSET_SPEND_LIMIT_CENTS", "TRIPO_API_KEY"] {
+            environment[key] = "must-be-stripped"
+        }
+        let script = #"import json,os; print(json.dumps({'schema':'game_dev.result.v1','operation':'test.environment','ok':True,'data':{'environment':dict(os.environ)}}))"#
+        // This child only captures its environment. Configured paths are never executed.
+        let client = GameDevCLIClient(executableURL: python, baseEnvironment: environment)
+        let result = try await client.execute(CLIInvocation(arguments: ["-c", script]), credentials: [:], timeout: .seconds(5))
+        guard case let .object(inherited)? = result.envelope.data["environment"] else {
+            Issue.record("Missing child environment"); return
+        }
+        for (key, value) in settings { #expect(inherited[key] == .string(value)) }
+        for key in environment.keys where settings[key] == nil { #expect(inherited[key] == nil) }
+        #expect(!result.standardOutput.contains("must-be-stripped"))
+    }
+
     @Test("Sensitive operations reject PATH lookup and require a canonical executable")
     func sensitiveOperationsRejectPATHLookup() async throws {
         let executable = try makeHandshakeExecutable(body: #"""
