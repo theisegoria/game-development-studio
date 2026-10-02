@@ -50,6 +50,39 @@ describe('production recipes', () => {
     await store.reconcileNotSubmitted('paid', 'generate', 'Provider and local job audit confirms no request sent.');
     expect((await store.plan('paid')).steps[0]?.status).toBe('ready');
   });
+  it('resumes a complete generate/download/normalize/package graph without resubmitting or hashing mutable workspaces', async () => {
+    const { root, store } = await setup();
+    const input = JSON.parse(await readFile(new URL('../examples/production-recipes/text-to-package.json', import.meta.url), 'utf8'));
+    await store.save(input.recipe);
+    const model = path.join(root, 'download.glb'); const normalized = path.join(root, 'normalized.glb');
+    const dispatched: string[] = []; let polls = 0;
+    const dispatch = vi.fn(async (operation: string) => {
+      dispatched.push(operation);
+      if (operation === 'create_3d_asset') return ok({ assetJobId: 'existing_job', status: 'generating_3d', workspacePath: root });
+      if (operation === 'get_asset_job') return ok({ assetJobId: 'existing_job', status: ++polls === 1 ? 'processing' : 'ready' });
+      if (operation === 'download_asset') { await writeFile(model, 'model'); return ok({ modelPath: model, workspacePath: root }); }
+      if (operation === 'normalize_mesh') { await writeFile(normalized, 'normalized'); return ok({ outputPath: normalized }); }
+      return ok({ passed: true });
+    });
+    for (const step of ['generate', 'wait', 'wait', 'download', 'normalize', 'validate', 'package']) {
+      const plan = await store.plan('text_prop_v1');
+      await store.run('text_prop_v1', step, plan.steps.find(s => s.id === step)!.fingerprint!, dispatch);
+    }
+    expect(dispatched.filter(s => s === 'create_3d_asset')).toHaveLength(1);
+    expect((await store.plan('text_prop_v1')).steps.every(s => s.status === 'complete')).toBe(true);
+    await writeFile(path.join(root, 'unrelated-derived-output.bin'), 'new');
+    expect((await store.plan('text_prop_v1')).steps.every(s => s.status === 'complete')).toBe(true);
+  });
+  it('invalidates external glTF buffer edits and tool identity changes', async () => {
+    const { root } = await setup(); let identity = 'blender-a';
+    const store = new RecipeStore(path.join(root, 'recipes'), 'test', async () => identity);
+    const model = path.join(root, 'mesh.gltf'); const buffer = path.join(root, 'data.bin');
+    await writeFile(model, JSON.stringify({ asset: { version: '2.0' }, buffers: [{ uri: 'data.bin' }] })); await writeFile(buffer, 'a');
+    await store.save(recipe(model)); await run(store, 'test', 'validate');
+    expect((await store.plan('test')).steps[0]?.status).toBe('complete');
+    await writeFile(buffer, 'b'); expect((await store.plan('test')).steps[0]?.status).toBe('ready');
+    await run(store, 'test', 'validate'); identity = 'blender-b'; expect((await store.plan('test')).steps[0]?.status).toBe('ready');
+  });
   it('rejects corrupt records, cycles, forbidden operations, and undeclared references', async () => {
     const { root, store } = await setup(); await writeFile(path.join(root, 'a'), 'a'); await store.save(recipe(path.join(root, 'a')));
     await writeFile(path.join(store.root, 'test.json'), '{'); await expect(store.save(recipe('x'))).rejects.toThrow();
