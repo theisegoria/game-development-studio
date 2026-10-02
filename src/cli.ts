@@ -40,6 +40,7 @@ import { createOptimizationGoal, evaluateOptimizationGoal } from './harness/goal
 import { installSkillBundle, listSkillBundle } from './skills/bundle.js';
 import { installProcessSignalHandlers } from './util/process-lifecycle.js';
 import { authorizedDispatcher, operationRefusal } from './commands/authorized-dispatch.js';
+import { ROADMAP_MUTATION_TOOLS } from './commands/mutation-policy.js';
 
 const HELP = `Game Development Studio local harness
 
@@ -622,6 +623,12 @@ async function dispatch(
 
   if (family === 'tool' && action === 'call') {
     const name = requirePositional(parsed, 2, 'local command name');
+    if (ROADMAP_MUTATION_TOOLS.has(name) && !booleanFlag(parsed, 'confirm')) {
+      return { operation: `approval.${name}`, isError: true, data: {
+        error: 'APPROVAL_REQUIRED', tool: name,
+        message: 'This operation records a review or changes workspace state. Review its inputs and invoke with --confirm.',
+      } };
+    }
     if (isSpendingTool(name)) {
       const approval = approvalRequired(name, parsed);
       if (approval) return approval;
@@ -669,6 +676,7 @@ async function dispatch(
       data: {
         schema: 'game_dev.job_list.v1',
         durable,
+        skippedDurableRecords: runtime.durableJobs.lastListingSkipped(),
         assets: assetResult.data,
       },
     };

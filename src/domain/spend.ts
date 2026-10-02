@@ -12,6 +12,8 @@
  * which numbers are real.
  */
 
+import { ROADMAP_FREE_TOOLS } from '../commands/mutation-policy.js';
+
 export type CostConfidence = 'documented' | 'estimated';
 
 export interface CostEstimate {
@@ -79,6 +81,8 @@ const TOOL_COSTS: Record<string, CostEstimate> = {
 
 /** Tools that can never cost money. Used to keep the two lists from drifting. */
 export const FREE_TOOLS: ReadonlySet<string> = new Set([
+  // Recipe orchestration is local; its selected leaf operation crosses a fresh spend gate.
+  ...ROADMAP_FREE_TOOLS,
   'preview_asset_prompt',
   'select_reference',
   'get_asset_job',
