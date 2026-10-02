@@ -16,6 +16,8 @@
  */
 
 import { promises as fs } from 'node:fs';
+import { KHRTextureBasisu } from '@gltf-transform/extensions';
+import { inspectKtx2, isKtx2, validateKtxDeclarations } from '../production/ktx2.js';
 import { NodeIO, getBounds } from '@gltf-transform/core';
 import type { Document, ILogger, Material, Primitive, Root, Texture } from '@gltf-transform/core';
 import { AssetPipelineError } from '../util/errors.js';
@@ -159,10 +161,12 @@ export async function inspectGltf(filePath: string): Promise<AssetInspection> {
     // defect worth REPORTING, not a reason to abandon everything else we could
     // have said about the file. A missing buffer still throws, as it must —
     // without it there is no geometry to describe.
-    const io = new NodeIO().setLogger(readerLog).setStrictResources(false);
-    document = await io.read(filePath);
+    const io = new NodeIO().registerExtensions([KHRTextureBasisu]).setLogger(readerLog).setStrictResources(false);
+    const json = await io.readAsJSON(filePath);
+    validateKtxDeclarations(json);
+    document = await io.readJSON(json);
   } catch (err) {
-    // A file requiring an unregistered extension (Draco, meshopt, KTX2) fails
+    // A file requiring an unregistered extension (Draco, meshopt) fails
     // here, and the underlying message names the extension — which is the
     // useful part, so it is preserved verbatim.
     throw new AssetPipelineError(
@@ -799,6 +803,7 @@ const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] as const;
  * Pure: no I/O, no allocation beyond a DataView onto the caller's bytes.
  */
 export function readImageSize(bytes: Uint8Array): ImageSize | undefined {
+  if (isKtx2(bytes)) { const info = inspectKtx2(bytes); return { width: info.width, height: info.height }; }
   if (bytes.byteLength < 16) return undefined;
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 

@@ -22,6 +22,7 @@ import type { ToolRegistrar } from './registry.js';
 import { registerReviewTools } from '../tools/review.js';
 import { registerWorkspaceTools } from '../tools/workspace.js';
 import { registerProductionTools } from '../tools/production.js';
+import { registerCollisionDecompositionTools } from '../tools/collision-decomposition.js';
 
 export function registerAssetCommands(registry: ToolRegistrar, ctx: ToolContext): void {
   registerWorkflowTools(registry, ctx);
@@ -46,4 +47,5 @@ export function registerAssetCommands(registry: ToolRegistrar, ctx: ToolContext)
   registerReviewTools(registry, ctx);
   registerWorkspaceTools(registry, ctx);
   registerProductionTools(registry, ctx);
+  registerCollisionDecompositionTools(registry, ctx);
 }

@@ -394,8 +394,9 @@ npm pack --dry-run --json
 ```
 
 The full local suite may need permission to bind a loopback HTTPS fixture.
-Blender-gated tests run when Blender is discoverable and are independently
-enforced in CI.
+Real Blender/GPU tests require their explicit opt-in switches and are independently
+enforced in CI. Optional Basis and CoACD CPU verification uses dedicated CI lanes;
+default tests mock those native backends.
 
 See [Contributing](CONTRIBUTING.md), [Security](SECURITY.md),
 [Privacy](PRIVACY.md), and [Terms](TERMS.md).
@@ -407,7 +408,7 @@ source assets, and vendored assets remain subject to their own terms and
 licenses.
 
 
-## Standalone production workflows (1.2)
+## Standalone production workflows (1.3)
 
 All new operations are discoverable through `game-dev capabilities --json` and
 usable through `game-dev tool call NAME --input JSON --json` or the same MCP name.
@@ -423,10 +424,21 @@ standing permission.
 - [Asset review](docs/ASSET_REVIEW.md): local CPU candidate views, reviewed packages,
   named baselines, scenario matrices and expected-change history.
 - [Workspace retention and updates](docs/workspace-retention-updates.md): measured
-  storage, protected evidence, reversible quarantine, folder exports and verified
-  GitHub upgrade/rollback plans.
+  storage, protected evidence, reversible quarantine, folder exports, separately
+  confirmed irreversible quarantine purge, and verified same-distribution GitHub
+  upgrade/rollback plans for CLI, skills and the existing Anvil ARM64 archive.
 - [Production recipes](docs/PRODUCTION_RECIPES.md): checkpointed workflow graphs,
   approved sample families, standalone platform variants, LODs and collision proxies.
+- [CPU texture compression](docs/TEXTURE_COMPRESSION.md): ETC1S/UASTC KTX2 GLBs,
+  material-aware color handling and per-mip CPU verification before packaging.
+- [CPU convex decomposition](docs/coacd.md): separate validated convex parts,
+  bounded native processing and sampled approximation evidence.
+
+Basis and CoACD require explicitly configured optional dependencies; they are not
+automatically installed or bundled into the native CLI runtime. Missing dependencies
+block their operations without blocking ordinary inspection. Purge permanently removes
+reviewed quarantined files and requires stopped writers and fresh explicit consent;
+reported logical bytes are not a measurement of filesystem space reclaimed.
 
 These workflows do not integrate a game engine. CPU previews are static inspection,
 not final rendering or quality certification. Unsupported conversions remain explicit.

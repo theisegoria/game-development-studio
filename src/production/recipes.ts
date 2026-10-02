@@ -7,7 +7,7 @@ import { invalidInput, invalidState } from '../util/errors.js';
 import type { ToolResult } from '../tools/context.js';
 import { resultText } from '../tools/context.js';
 
-export const operations = ['generate_asset_reference', 'create_3d_asset', 'texture_existing_asset', 'download_asset', 'get_asset_job', 'select_reference', 'normalize_mesh', 'validate_game_asset', 'build_asset_package', 'prepare_collision_box', 'validate_platform_asset', 'prepare_texture_variant'] as const;
+export const operations = ['generate_asset_reference', 'create_3d_asset', 'texture_existing_asset', 'download_asset', 'get_asset_job', 'select_reference', 'normalize_mesh', 'validate_game_asset', 'build_asset_package', 'prepare_collision_box', 'decompose_collision_mesh', 'validate_platform_asset', 'prepare_texture_variant', 'compress_texture_variant'] as const;
 export const paidOperations = new Set<string>(['generate_asset_reference', 'create_3d_asset', 'texture_existing_asset']);
 const id = z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
 export const stepSchema = z.object({ id, operation: z.enum(operations), dependsOn: z.array(id).max(64).default([]), arguments: z.record(z.unknown()), files: z.array(z.string().min(1)).max(128).default([]) }).strict();

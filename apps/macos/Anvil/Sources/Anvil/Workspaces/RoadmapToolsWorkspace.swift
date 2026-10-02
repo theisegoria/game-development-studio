@@ -69,7 +69,7 @@ struct RoadmapToolsWorkspace: View {
                     }
                 }
                 if spec.authorities.contains(.confirm) {
-                    Toggle("Confirm the current request and its workspace changes", isOn: $confirmed)
+                    Toggle(spec.confirmationLabel, isOn: $confirmed)
                 }
                 if let message { Text(message).textSelection(.enabled).font(.callout) }
                 HStack {

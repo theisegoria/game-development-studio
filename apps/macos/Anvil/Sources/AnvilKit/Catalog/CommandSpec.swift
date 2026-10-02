@@ -248,3 +248,12 @@ public struct CommandSpec: Sendable, Hashable, Identifiable {
         return path.prefix(2).joined(separator: ".")
     }
 }
+
+public extension CommandSpec {
+    /// Human acknowledgment text for a fresh invocation; never persisted as authority.
+    var confirmationLabel: String {
+        registryTool == "purge_workspace_retention"
+            ? "I understand deletion is permanent, have exported anything needed, and have stopped ALL other workspace and quarantine writers"
+            : "Confirm the current request and its workspace changes"
+    }
+}

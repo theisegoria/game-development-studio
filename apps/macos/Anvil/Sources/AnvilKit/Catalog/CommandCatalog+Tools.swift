@@ -109,6 +109,21 @@ extension CommandCatalog {
             route: .setup
         ),
         tool(
+            "plan_workspace_purge",
+            title: "Plan permanent quarantine deletion",
+            summary: "Preview irreversible deletion of completed quarantine files; recheck protected references and digests. Deletes nothing.",
+            route: .setup
+        ),
+        tool(
+            "purge_workspace_retention",
+            title: "Permanently delete quarantined files",
+            summary: "IRREVERSIBLE: permanently delete the exact reviewed quarantine files. Deleted bytes cannot be restored; export anything needed first. ALL other workspace and quarantine writers must be stopped. Portable path checks are not a security boundary against hostile concurrent writers.",
+            lane: .workspaceWrite,
+            route: .setup,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
             "export_workspace_files",
             title: "Export workspace files",
             summary: "Copy verified workspace files to an explicitly chosen folder without replacing originals.",
@@ -284,6 +299,36 @@ extension CommandCatalog {
             "prepare_texture_variant",
             title: "Prepare a texture variant",
             summary: "Resize embedded GLB textures locally with color-aware filtering and normal renormalization.",
+            lane: .workspaceWrite,
+            route: .mesh,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "diagnose_texture_compression",
+            title: "Diagnose texture compression",
+            summary: "Verify the configured Basis CPU encoder identity and report missing setup without starting a process.",
+            route: .setup
+        ),
+        tool(
+            "compress_texture_variant",
+            title: "Compress a texture variant",
+            summary: "Create embedded KTX2 textures with the pinned Basis CPU encoder and verify every mip by CPU transcoding. No provider cost.",
+            lane: .workspaceWrite,
+            route: .mesh,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "diagnose_collision_decomposition",
+            title: "Diagnose collision decomposition",
+            summary: "Inspect the configured CoACD CPU worker with a bounded metadata-only Python process; no decomposition, Blender or GPU work.",
+            route: .setup
+        ),
+        tool(
+            "decompose_collision_mesh",
+            title: "Decompose collision geometry",
+            summary: "Create validated standalone convex parts using the pinned CPU-only CoACD worker. No engine verification or provider cost.",
             lane: .workspaceWrite,
             route: .mesh,
             durable: true,

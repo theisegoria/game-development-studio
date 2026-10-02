@@ -31,3 +31,20 @@ Keychain store. Missing credentials remain runtime configuration errors. No new
 credentials are provisioned by this surface. Results are visible in Runs. Bespoke
 scenario and visual pages remain unchanged; this is a generic request surface, not
 a new visual artist workflow.
+
+## Standalone resource staging
+
+Known issue in the initial v1.2.0 source build helper: it copied Anvil's executable
+but omitted the SwiftPM `Anvil_AnvilKit.bundle`. A bundle separated from its build
+tree could therefore lose schema lookup. CLI and skills release artifacts are
+unaffected; v1.2.0 did not distribute an Anvil binary.
+
+The follow-up build helper stages that resource bundle before signing and verifies
+its closed roster and canonical schema again after moving the completed app.
+`stage-resource-bundle.mjs` accepts the flat native SwiftPM layout and the structured
+Swift Build layout, rejects unknown files, links and changed/missing schema bytes,
+and never overwrites an existing staged bundle. Installed apps use only their own
+resource directory; a missing bundle disables tools instead of attempting a
+build-tree fallback. Fixture tests remove the source build products before resolving
+the staged resource through Foundation. These checks do not claim a launched-app
+or quarantined-download acceptance test, and do not add a native GitHub archive lane.

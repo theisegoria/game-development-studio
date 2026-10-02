@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0
+
+- Adds routes for reviewed irreversible quarantine purge and optional CPU Basis
+  texture compression/CoACD convex decomposition, including setup and resource limits.
+- Documents distinct native, CLI and skills upgrade/rollback plans and the ad-hoc
+  non-notarized macOS archive. No engine integration or automatic spending.
+
 ## 1.2.0
 
 - Documents standalone production recipes, reviewed asset families, asset review,

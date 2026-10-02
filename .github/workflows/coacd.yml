@@ -1,0 +1,54 @@
+name: CoACD CPU
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['src/collision/**', 'src/tools/collision-decomposition.ts', 'scripts/coacd_decompose.py', 'tests/*coacd*', 'tests/collision-decomposition.test.ts', 'tests/helpers/collision-fixture.ts', 'distribution/coacd/**', '.github/scripts/check-coacd-limits.py', '.github/workflows/coacd.yml']
+  pull_request:
+    paths: ['src/collision/**', 'src/tools/collision-decomposition.ts', 'scripts/coacd_decompose.py', 'tests/*coacd*', 'tests/collision-decomposition.test.ts', 'tests/helpers/collision-fixture.ts', 'distribution/coacd/**', '.github/scripts/check-coacd-limits.py', '.github/workflows/coacd.yml']
+permissions:
+  contents: read
+jobs:
+  cpu:
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Create isolated pinned binary-only CPU environment
+        shell: bash
+        run: |
+          python -m venv "$RUNNER_TEMP/coacd-env"
+          if [ "$RUNNER_OS" = Windows ]; then
+            tool_python="$RUNNER_TEMP/coacd-env/Scripts/python.exe"
+          else
+            tool_python="$RUNNER_TEMP/coacd-env/bin/python"
+          fi
+          "$tool_python" -m pip install --disable-pip-version-check --only-binary=:all: --require-hashes -r distribution/coacd/requirements.txt
+          echo "GAME_DEV_COACD_PYTHON=$tool_python" >> "$GITHUB_ENV"
+      - name: Prove CPU and memory controls interrupt synthetic workers
+        shell: bash
+        run: '"$GAME_DEV_COACD_PYTHON" -I -B .github/scripts/check-coacd-limits.py'
+      - run: npm ci
+      - name: Compile wrapper without running native code
+        shell: bash
+        run: python -c "import ast,pathlib; ast.parse(pathlib.Path('scripts/coacd_decompose.py').read_text())"
+      - name: Prove the real CPU concave-fixture test ran
+        shell: bash
+        env:
+          GAME_DEV_TEST_COACD: '1'
+        run: |
+          npm run build
+          npx vitest run tests/coacd-native.test.ts --no-file-parallelism --reporter=default --reporter=json --outputFile=coacd-results.json
+          node -e "const r=require('./coacd-results.json'); if(r.numPassedTests!==1||r.numPendingTests!==0||r.numFailedTests!==0) throw new Error('real CoACD test did not pass without skips'); console.log('Validated real CPU U-fixture on',process.platform,process.arch);"

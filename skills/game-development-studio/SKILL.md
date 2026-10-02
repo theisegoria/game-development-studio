@@ -10,12 +10,12 @@ developers and coding agents.
 
 ## Route the request
 
-- Use `$game-asset-production` for provider jobs, mesh inspection or normalization, PBR preparation, and canonical asset packages.
+- Use `$game-asset-production` for provider jobs, mesh inspection or normalization, PBR preparation, CPU texture compression/convex decomposition, resumable recipes, asset families, and canonical asset packages.
 - Use `$game-asset-vendoring` for catalog search, license and hash checks, migration, and explicit admission into a game project.
 - Use `$game-visual-debugging` for game adapters, windowless captures, structured telemetry, raster statistics, semantic attachment diffs, and heatmaps.
 - Use `$game-performance-optimization` for metric summaries, run comparisons, and bounded optimization goals.
 
-Read [references/routes.md](references/routes.md) when a request crosses workflows or needs an exact handoff.
+Read [references/routes.md](references/routes.md) when a request crosses workflows or needs an exact handoff. It also covers standalone workspace retention, separately approved irreversible purge, and verified CLI/skills/Anvil upgrade and rollback planning. These routes require CLI 1.3.0+ for the CPU preparation and purge additions.
 
 ## Shared operating contract
 

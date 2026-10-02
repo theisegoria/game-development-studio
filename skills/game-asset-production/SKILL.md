@@ -7,7 +7,7 @@ description: Create, inspect, normalize, validate, and package game-development 
 
 Drive the local `game-dev` CLI and finish with a verified canonical package whenever the result is meant for reuse or vendoring.
 
-Read [references/commands.md](references/commands.md) for command shapes and lifecycle handoffs.
+Read [references/commands.md](references/commands.md) for command shapes and lifecycle handoffs, including CLI 1.3.0+ standalone CPU compression, convex collision parts, recipes and families.
 
 ## Workflow
 
@@ -20,6 +20,10 @@ Read [references/commands.md](references/commands.md) for command shapes and lif
 7. Build a canonical package with provenance, license, hashes, validation results, and optional preview. Package construction is also a write and requires exact invocation authorization even though the CLI command has no `--confirm` option. Verify the package before reporting it ready.
 
 When the host exposes ImageGen, it is an optional host-native capability for a bespoke 2D concept or texture source. Use it only when the user requests generated imagery or it is genuinely the selected art workflow; never assume it is installed or available. Preserve that image's prompt and provenance before any Tripo or offline PBR derivation.
+
+## Standalone preparation
+
+Use `prepare_texture_variant` for explicit PNG/JPEG resize, `compress_texture_variant` for CPU ETC1S/UASTC KTX2, and `decompose_collision_mesh` for separate convex OBJ/GLB parts. Run each dependency diagnostic first; no dependency is installed automatically. Compression/package payload decoding and sampled collision approximation are technical evidence, not human visual approval or engine acceptance. Preserve source files, keep convex parts separate, and carry the returned receipts into the recipe/review handoff. `plan_platform_preparation` declares required tools but does not verify their availability. Its LOD normalization still launches Blender when approved; the standalone CPU tools do not.
 
 ## Stop conditions
 

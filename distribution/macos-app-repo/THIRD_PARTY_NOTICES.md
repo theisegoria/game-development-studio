@@ -17,9 +17,9 @@ The app is a native macOS application built with Apple's Swift and SwiftUI
 toolchain and links Apple system frameworks supplied by macOS. It also carries
 a closed local runtime. That runtime includes:
 
-- `game-dev` CLI 1.2.0, licensed under MIT;
+- `game-dev` CLI 1.3.0, licensed under MIT;
 - Node.js 25.2.1, including Node's complete distributed `LICENSE` notice;
-- the 98 lockfile-pinned production npm package paths below; and
+- the 100 lockfile-pinned production npm package paths below; and
 - the 18 non-system dynamic libraries below.
 
 The npm production closure is pinned by the shipped CLI's `package-lock.json`,
@@ -28,6 +28,7 @@ not by the broader semver ranges in `package.json`:
 | Package install path | Locked version | Declared license |
 | --- | --- | --- |
 | `node_modules/@gltf-transform/core` | 4.4.2 | MIT |
+| `node_modules/@gltf-transform/extensions` | 4.4.2 | MIT |
 | `node_modules/@hono/node-server` | 2.1.1 | MIT |
 | `node_modules/@modelcontextprotocol/sdk` | 1.30.0 | MIT |
 | `node_modules/accepts` | 2.0.0 | MIT |
@@ -81,6 +82,7 @@ not by the broader semver ranges in `package.json`:
 | `node_modules/jpeg-js` | 0.4.4 | BSD-3-Clause |
 | `node_modules/json-schema-traverse` | 1.0.0 | MIT |
 | `node_modules/json-schema-typed` | 8.0.2 | BSD-2-Clause |
+| `node_modules/ktx-parse` | 1.1.0 | MIT |
 | `node_modules/math-intrinsics` | 1.1.0 | MIT |
 | `node_modules/media-typer` | 1.1.1 | MIT |
 | `node_modules/merge-descriptors` | 2.0.0 | MIT |
