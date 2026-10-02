@@ -322,7 +322,7 @@ extension CommandCatalog {
         tool(
             "diagnose_collision_decomposition",
             title: "Diagnose collision decomposition",
-            summary: "Inspect the configured CoACD CPU worker and report missing setup without starting a process.",
+            summary: "Inspect the configured CoACD CPU worker with a bounded metadata-only Python process; no decomposition, Blender or GPU work.",
             route: .setup
         ),
         tool(
