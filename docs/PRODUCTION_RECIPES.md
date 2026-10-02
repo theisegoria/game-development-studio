@@ -32,7 +32,7 @@ Plan again, inspect `package`, and execute with its current fingerprint and `--c
 
 The allowlist includes `generate_asset_reference`, `select_reference`, `create_3d_asset`, `get_asset_job`, `download_asset`, `normalize_mesh`, `validate_game_asset`, `validate_platform_asset`, `build_asset_package`, `prepare_texture_variant`, and `prepare_collision_box` (plus provider retexturing). There is no arbitrary command execution.
 
-The complete [text-to-package request](../examples/production-recipes/text-to-package.json) can be saved with `save_production_recipe --request examples/production-recipes/text-to-package.json --confirm`. Saving is local; only an explicitly approved generate step spends credits. Its unknown license intentionally makes no rights claim.
+The complete [text-to-package request](examples/production-recipes/text-to-package.json) can be saved with `save_production_recipe --request docs/examples/production-recipes/text-to-package.json --confirm`. Saving is local; only an explicitly approved generate step spends credits. Its unknown license intentionally makes no rights claim.
 
 Connect results using an exact object such as `{"$step":"normalize","field":"outputPath"}`; the referenced step must be in `dependsOn`. Nested result fields and numeric array indexes are supported (for example `files.0.path` after inspecting a download result). Use a `get_asset_job` step after generation and before download: pending jobs leave polling ready to repeat without resubmitting generation. Reference candidate selection is an explicit step supplied by the reviewer; it is never auto-picked. Polling accepts `reference_ready` or `ready`; generation itself checkpoints the returned durable job id and does not pretend its model is downloaded.
 

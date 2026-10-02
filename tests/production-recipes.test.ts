@@ -52,7 +52,7 @@ describe('production recipes', () => {
   });
   it('resumes a complete generate/download/normalize/package graph without resubmitting or hashing mutable workspaces', async () => {
     const { root, store } = await setup();
-    const input = JSON.parse(await readFile(new URL('../examples/production-recipes/text-to-package.json', import.meta.url), 'utf8'));
+    const input = JSON.parse(await readFile(new URL('../docs/examples/production-recipes/text-to-package.json', import.meta.url), 'utf8'));
     await store.save(input.recipe);
     const model = path.join(root, 'download.glb'); const normalized = path.join(root, 'normalized.glb');
     const dispatched: string[] = []; let polls = 0;
