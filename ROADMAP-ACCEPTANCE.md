@@ -38,6 +38,8 @@ expanded or presented as new engine acceptance evidence.
 
 - Broad local suite: 874 passed, 27 skipped (real Blender/GPU opt-in and platform gates).
 - Latest focused texture/recipe/transport/skill-reference run: 20 passed.
+- Anvil compiles with all 104 native mock tests passing; all 35 new tools have
+  runtime-derived request schemas, stdin transport and fresh approval controls.
 - Typecheck and lint passed; both license profiles bind to the refreshed lockfile.
 - Dependency audit reported zero vulnerabilities after compatible updates.
 - Source: https://github.com/theisegoria/game-development-studio/pull/8

@@ -26,6 +26,9 @@
   No engine adapter or engine import acceptance integration is added.
 - Adds GitHub artifact upgrade/rollback plans with version, checksum and remote
   digest checks. Plans install nothing and make no new signing guarantee.
+- Exposes all new operations in Anvil's Production tools request editor using
+  runtime-derived schemas, reviewed recipe fingerprints and fresh invocation
+  approvals. Unknown estimates remain unknown in saved approval records.
 - Refreshes compatible locked dependencies and complete production license notices.
   Distribution remains GitHub CLI tarball and skills ZIP; no npm/store publication.
 
