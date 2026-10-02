@@ -26,7 +26,7 @@ only pin Actions and remain independent, unmerged work.
 | Regression dashboard | Named baselines, scenario matrix, expected-change review/history over sealed comparisons; differences never labelled quality automatically | Implemented; `asset-review.test.ts`; changed sealed runs and replaced heatmaps reject approval/display |
 | Asset families | Shared approved style/scale/palette/naming, sample approval before expansion, fresh provider authorization | Implemented; `production-recipes.test.ts`; template substitution and sample-graph edits covered |
 | Provider history | Estimates separated from reported charges, unknown costs stay unknown, failures and approvals visible | Implemented; `accounting-reliability.test.ts`, transport approval-scope regression; unknown charges/outcomes explicit |
-| Release | Source + canonical export parity; typecheck/lint/regression/security/license/package checks; exact-head remote CI; Windows artifact installation; checksums and honest release notes | Source PR #8 and skills PR #5 pushed; skills verifier/parity pass. Exact-head CI, merge and release pending |
+| Release | Source + canonical export parity; typecheck/lint/regression/security/license/package checks; exact-head remote CI; Windows artifact installation; checksums and honest release notes | [Studio 1.2.0](https://github.com/theisegoria/game-development-studio/releases/tag/v1.2.0) and [skills 1.2.0](https://github.com/theisegoria/game-development-studio-skills/releases/tag/v1.2.0) published after all 16 tagged release jobs passed; uploaded digests verified |
 
 Each row must gain concrete tests and release links before it is complete.
 A schema, a plan, a skipped test or a capability refusal alone is not evidence
@@ -36,7 +36,7 @@ expanded or presented as new engine acceptance evidence.
 
 ## Current validation checkpoint
 
-- Broad local suite: 874 passed, 27 skipped (real Blender/GPU opt-in and platform gates).
+- Final 1.2.0 local suite: 880 passed, 27 skipped (real Blender/GPU opt-in and platform gates).
 - Latest focused texture/recipe/transport/skill-reference run: 20 passed.
 - Anvil compiles with all 104 native mock tests passing; all 35 new tools have
   runtime-derived request schemas, stdin transport and fresh approval controls.
@@ -53,3 +53,22 @@ checks and AABB collision produce real standalone artifacts. Recovery never prov
 provider non-submission merely from a timeout. Retention requires independent
 writers stopped, retains reversible quarantine bytes, and reports no space reclaimed.
 Upgrade plans do not install software or attest signing. No engine integration added.
+
+## Functional gap closure after 1.2.0
+
+The published release does not claim the unavailable capabilities above work.
+The full implementation goal continues through these independently verified changes:
+
+| Follow-up | Concrete acceptance | Status |
+| --- | --- | --- |
+| Quarantine purge | Digest-bound dry run, fresh reference protection, explicit irreversible confirmation, durable partial-failure recovery; fixture-only tests | Implementing in isolated branch |
+| Actual GPU texture compression | CPU Basis Universal ETC1S/UASTC KTX2, valid glTF extension and package round trip, versioned tool/source receipts, bounded real remote CPU tests | Implementing; no GPU execution required |
+| Actual convex decomposition | Pinned CoACD CPU multi-hull output, geometric validation, concave fixture retaining its opening, honest approximation error and platform limits | Implementing; no engine integration |
+| Standalone Anvil bundle | Copy and verify SwiftPM schema resource bundle; prove lookup independently of build tree | Fixing newly discovered staging omission |
+| Native GitHub archive | Adapt existing ZIP verification for Anvil/current version/pinned runtime, verify extracted archive on remote macOS; explicitly ad-hoc and non-notarized | Implementation under review; not a signed installer |
+
+Verified update/rollback **planning** is the original installation requirement and
+is implemented. Automatic installation and DMG/PKG delivery are different features.
+Developer ID/notarization is not configured by the existing release chain; acquiring
+new credentials/accounts is excluded. This does not assert that the user lacks an
+account. An ad-hoc ZIP has an engineering gap rather than that credential blocker.
