@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+- Documents standalone production recipes, reviewed asset families, asset review,
+  workspace retention, provider history and verified GitHub update planning.
+- Preserves fresh operation-level mutation/spend approvals and explicit evidence
+  limits. Skills remain declarative and contain no provider client or engine integration.
+
 ## 1.1.0
 
 - Adds verified Windows CLI release-tarball, checksum, installation and PATH guidance.

@@ -23,8 +23,7 @@ import { SpendGate, type SpendMode } from './spend-gate.js';
 import { ExecutionGate } from './execution-gate.js';
 import { registerEvidenceResources } from './resources.js';
 import { registerSkillPrompts } from './prompts.js';
-import { authorizedDispatcher, operationRefusal } from '../commands/authorized-dispatch.js';
-import { isSpendingTool } from '../domain/spend.js';
+import { operationRefusal } from '../commands/authorized-dispatch.js';
 
 export interface McpServerOptions {
   profile?: ToolProfile;
@@ -88,19 +87,16 @@ export async function createMcpServer(
   );
   const recipeContext = {
     ...runtime.context,
-    dispatchOperation: authorizedDispatcher(runtime.registry, async (name, args, readOnly) => {
-      if (isSpendingTool(name)) {
-        // Run only the gate here. The dispatcher calls the operation once after approval.
-        const result = await gate.wrap(name, async () => ({ content: [] }))(args);
-        if (result.isError) return result;
-      }
-      if (!readOnly) {
+    dispatchOperation: async (name: string, args: Record<string, unknown>) => {
+      const capability = runtime.registry.capabilities().find(item => item.name === name);
+      if (!capability) return operationRefusal(name, 'The requested operation is unavailable.');
+      if (!capability.readOnly) {
         if (!canElicit() || !await elicit(`Execute recipe operation ${name} with these resolved inputs?\n\n${JSON.stringify(args)}\n\nThis approves this operation only.`).catch(() => false)) {
           return operationRefusal(name, 'This recipe operation was not confirmed.');
         }
       }
-      return undefined;
-    }),
+      return gate.wrap(name, () => runtime.registry.call(name, args))(args);
+    },
   };
   registerAssetCommands(registrar, recipeContext);
 

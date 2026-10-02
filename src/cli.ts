@@ -41,6 +41,7 @@ import { installSkillBundle, listSkillBundle } from './skills/bundle.js';
 import { installProcessSignalHandlers } from './util/process-lifecycle.js';
 import { authorizedDispatcher, operationRefusal } from './commands/authorized-dispatch.js';
 import { ROADMAP_MUTATION_TOOLS } from './commands/mutation-policy.js';
+import { withSpendApproval } from './util/spend-approval.js';
 
 const HELP = `Game Development Studio local harness
 
@@ -1448,7 +1449,9 @@ export async function main(
         : undefined,
     );
     events.emit('started', { version: GAME_DEV_VERSION });
-    const result = await dispatch(runtime, parsed, events, signal);
+    const result = await (booleanFlag(parsed, 'approve-spend') && spendLimitCents !== undefined
+      ? withSpendApproval('cli flags', () => dispatch(runtime!, parsed, events!, signal))
+      : dispatch(runtime, parsed, events, signal));
     signal?.throwIfAborted();
     outputResult(result.operation, result, jsonLines, events);
     if (durable) {

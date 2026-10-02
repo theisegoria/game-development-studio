@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.2.0
+
+- Serializes spend reservations across processes, validates accounting and job
+  records, preserves missing/corrupt state, and adds explicit recovery diagnostics.
+  Provider history distinguishes estimated, reported and unknown charges, observed
+  outcomes and user ratings; approvals are recorded without replaying authority.
+- Adds versioned Blender receipts and verified mesh-batch checkpoints. Default
+  tests never auto-launch Blender/GPU; opt-in remote lanes retain real coverage.
+  Blender reports process intent and enforces bounded threads, time and concurrency.
+- Adds CPU asset review with synchronized turntables, wireframes, UV layouts,
+  material swatches, side-by-side selection and content-bound package approval.
+  Static previews do not claim final PBR, animation or artistic-quality validation.
+- Adds named sealed visual baselines, scenario matrices, verified preview/heatmap
+  history and expected-change reviews. Pixel difference remains separate from quality.
+- Adds measured workspace inventories, protected-reference retention plans,
+  reversible quarantine/restore and verified exports to user-selected folders.
+  Quarantine preserves bytes and reclaims no physical disk space.
+- Adds persisted production graphs with input/tool/output invalidation, one-step
+  resume, uncertain-submission recovery and fresh per-operation approvals. Asset
+  families require a completed reviewed sample before creating member recipes.
+- Adds standalone platform variant/LOD, material, texture-budget and conservative
+  box-collision preparation using supported operations and explicit capability limits.
+  No engine adapter or engine import acceptance integration is added.
+- Adds GitHub artifact upgrade/rollback plans with version, checksum and remote
+  digest checks. Plans install nothing and make no new signing guarantee.
+- Refreshes compatible locked dependencies and complete production license notices.
+  Distribution remains GitHub CLI tarball and skills ZIP; no npm/store publication.
+
 ## 1.1.0
 
 - Adds Windows source and GitHub tarball installation guidance, checksum manifests,

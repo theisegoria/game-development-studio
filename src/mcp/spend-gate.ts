@@ -1,5 +1,6 @@
 import { estimateCost, isSpendingTool } from '../domain/spend.js';
 import type { ToolResult } from '../tools/context.js';
+import { withSpendApproval } from '../util/spend-approval.js';
 
 /**
  * How a paid tool may be authorized over MCP.
@@ -138,7 +139,7 @@ export class SpendGate {
         ]);
       }
 
-      return handler(args);
+      return withSpendApproval('mcp elicitation', () => handler(args));
     };
   }
 }

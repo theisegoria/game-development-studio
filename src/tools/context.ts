@@ -20,6 +20,7 @@ import { LeonardoProvider } from '../providers/image/leonardo.js';
 import { LeonardoAudioProvider } from '../providers/audio/leonardo.js';
 import { TripoProvider } from '../providers/model3d/tripo.js';
 import { describeError } from '../util/errors.js';
+import { currentSpendApproval } from '../util/spend-approval.js';
 
 export interface ToolContext {
   /** Fresh transport authorization for one recipe step; never persisted in a recipe. */
@@ -73,7 +74,7 @@ export function createToolContext(params: {
         tool,
         // This layer observes invocation only. Human consent is enforced by the transport,
         // and must not be fabricated as independently verified ledger evidence.
-        approval: { source: 'tool invocation; transport approval evidence not supplied', at: new Date().toISOString(), userApprovalVerified: false },
+        approval: currentSpendApproval() ?? { source: 'tool invocation; transport approval evidence not supplied', at: new Date().toISOString(), userApprovalVerified: false },
         ...(options?.units !== undefined ? { units: options.units } : {}),
         ...(options?.assetJobId !== undefined ? { assetJobId: options.assetJobId } : {}),
       });
