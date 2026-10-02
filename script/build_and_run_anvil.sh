@@ -88,7 +88,9 @@ esac
 
 npm run build
 swift build --disable-sandbox --package-path "$PACKAGE_DIR"
-BUILD_BINARY="$(swift build --disable-sandbox --package-path "$PACKAGE_DIR" --show-bin-path)/$APP_NAME"
+BUILD_PRODUCTS="$(swift build --disable-sandbox --package-path "$PACKAGE_DIR" --show-bin-path)"
+BUILD_BINARY="$BUILD_PRODUCTS/$APP_NAME"
+RESOURCE_BUNDLE_STAGER="$PACKAGE_DIR/Tools/stage-resource-bundle.mjs"
 
 STAGE_ROOT="$(mktemp -d /private/tmp/anvil-app-stage.XXXXXX)"
 trap 'rm -rf "$STAGE_ROOT"' EXIT
@@ -103,6 +105,9 @@ NODE_EXECUTABLE="$(node -p 'process.execPath')"
 mkdir -p "$APP_MACOS" "$APP_RESOURCES"
 cp "$BUILD_BINARY" "$APP_BINARY"
 chmod +x "$APP_BINARY"
+# SwiftPM resource bundles are not contained inside the executable. Stage and
+# verify their closed roster before signing, without depending on the build tree.
+node "$RESOURCE_BUNDLE_STAGER" --build-products "$BUILD_PRODUCTS" --app-resources "$APP_RESOURCES"
 
 cp "$ICON_COMPILED" "$APP_RESOURCES/AppIcon.icns"
 /usr/bin/sips -g format -g pixelWidth -g pixelHeight "$APP_RESOURCES/AppIcon.icns" \
@@ -192,6 +197,7 @@ APP_RESOURCES="$APP_CONTENTS/Resources"
 APP_BINARY="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 /usr/bin/xattr -cr "$APP_BUNDLE"
 node "$RUNTIME_VERIFIER" --runtime "$APP_RESOURCES/$RUNTIME_NAME" >/dev/null
+node "$RESOURCE_BUNDLE_STAGER" --verify "$APP_RESOURCES/Anvil_AnvilKit.bundle"
 
 # This repository lives under an iCloud-synced path, and the File Provider re-attaches
 # com.apple.FinderInfo and com.apple.fileprovider.fpfs#P to the bundle root shortly

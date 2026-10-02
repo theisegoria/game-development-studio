@@ -3,11 +3,25 @@ import Foundation
 /// Exported from the shipped runtime's MCP tools/list, never handwritten field types.
 public enum RoadmapToolSchemas {
     public static let all: [String: JSONValue] = {
-        guard let url = Bundle.module.url(forResource: "roadmap-tool-schemas", withExtension: "json"),
+        if Bundle.main.bundleURL.pathExtension == "app" {
+            // Installed apps must use their own staged resources. Never fall back to
+            // a developer's build tree, and never invoke Bundle.module's fatalError.
+            return Bundle.main.resourceURL.map(load(appResources:)) ?? [:]
+        }
+        return load(bundle: Bundle.module)
+    }()
+
+    static func load(appResources: URL) -> [String: JSONValue] {
+        guard let bundle = Bundle(url: appResources.appendingPathComponent("Anvil_AnvilKit.bundle")) else { return [:] }
+        return load(bundle: bundle)
+    }
+
+    private static func load(bundle: Bundle) -> [String: JSONValue] {
+        guard let url = bundle.url(forResource: "roadmap-tool-schemas", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let schemas = try? JSONDecoder().decode([String: JSONValue].self, from: data) else { return [:] }
         return schemas
-    }()
+    }
 
     public static func formatted(_ name: String) -> String {
         guard let schema = all[name] else { return "Schema unavailable; operation disabled." }
