@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, expect, test } from 'vitest';
 import { writeGameReadyGlb } from './helpers/model-fixture.js';
+import { encodePNG } from '../src/inspection/image.js';
 import { previewGlb } from '../src/review/previews.js';
 import { createAssetReview, decideAssetReview, packageReviewedAsset, nameVisualBaseline, compareVisualMatrix, decideVisualRegression, writeRegressionDashboard } from '../src/review/workspace.js';
 import { writeHarnessProject } from './helpers/harness-fixture.js';
@@ -97,4 +98,14 @@ test('material scalars reject markup, strings and non-finite/out-of-range values
   const named=mutateGlbJson(bytes,json=>{(json.materials as Array<{name:string}>)[0]!.name='<script>document.body.dataset.injection="yes"</script>';});
   await fs.writeFile(source,named);const session=await createAssetReview(root,[{name:'Escaped name',modelPath:source}]);
   const html=await fs.readFile(session.dashboardPath,'utf8');expect(html).not.toContain('<script>document.body.dataset.injection');expect(html).toContain('&lt;script&gt;');expect(html).toContain("script-src 'sha256-");expect(html).not.toContain("script-src 'unsafe-inline'");
+});
+
+test('CPU preview accepts a self-contained data URI texture without external resolution',async()=>{
+  const root=await temp();const source=await writeGameReadyGlb(path.join(root,'embedded.glb'));const bytes=await fs.readFile(source);
+  const png=encodePNG({width:1,height:1,data:new Uint8Array([240,120,30,255])});
+  const embedded=mutateGlbJson(bytes,json=>{
+    json.images=[{uri:`data:image/png;base64,${Buffer.from(png).toString('base64')}`,mimeType:'image/png'}];json.textures=[{source:0}];
+    (json.materials as Array<{pbrMetallicRoughness:Record<string,unknown>}>)[0]!.pbrMetallicRoughness.baseColorTexture={index:0};
+  });
+  const preview=await previewGlb(embedded);expect(preview.materials[0]?.texture).toMatch(/^data:image\/png;base64,/);
 });

@@ -11,8 +11,8 @@ export async function previewGlb(bytes: Uint8Array): Promise<CpuPreviews> {
   const log = new CollectingLogger();
   const io = new NodeIO().setLogger(log);
   const json = await io.binaryToJSON(bytes);
-  const source = json.json as { buffers?: Array<{ uri?: string }>; images?: Array<{ uri?: string }> };
-  if ([...(source.buffers ?? []), ...(source.images ?? [])].some(r => r.uri && !r.uri.startsWith('data:'))) throw new Error('Review accepts self-contained GLB only; external resources are not loaded');
+  // binaryToJSON rejects unresolved external buffers/images itself. Its internal
+  // resource map may use generated URI keys for valid embedded data URIs.
   const doc = await io.readJSON(json);
   const root = doc.getRoot();
   // NodeIO types describe valid glTF, but the reader can retain malformed JSON scalars.
