@@ -62,7 +62,7 @@ The full implementation goal continues through these independently verified chan
 | Follow-up | Concrete acceptance | Status |
 | --- | --- | --- |
 | Quarantine purge | Digest-bound dry run, fresh reference protection, explicit irreversible confirmation, durable partial-failure recovery; fixture-only tests | Implemented; owner 56 focused tests and independent 27-test purge audit passed; final release pending |
-| Actual GPU texture compression | CPU Basis Universal ETC1S/UASTC KTX2, valid glTF extension and package round trip, versioned tool/source receipts, bounded real remote CPU tests | Implemented; real Basis CPU tests passed Linux/macOS/Windows; adversarial package MIME validation fix under review |
+| Actual GPU texture compression | CPU Basis Universal ETC1S/UASTC KTX2, valid glTF extension and package round trip, versioned tool/source receipts, bounded real remote CPU tests | Implemented; real Basis CPU tests passed Linux/macOS/Windows; adversarial MIME/source binding regressions fixed; independent 35-test audit passed |
 | Actual convex decomposition | Pinned CoACD CPU multi-hull output, geometric validation, concave fixture retaining its opening, honest approximation error and platform limits | Implemented; real Linux x64/ARM64 and macOS passed; Windows repaired; all four real CPU gates passed run 36951772468 |
 | Standalone Anvil bundle | Copy and verify SwiftPM schema resource bundle; prove lookup independently of build tree | Implemented; installed resource fixture and all 108 native tests passed |
 | Native GitHub archive | Adapt existing ZIP verification for Anvil/current version/pinned runtime, verify extracted archive on remote macOS; explicitly ad-hoc and non-notarized | Actual macOS staging, archive extraction and signature/runtime verification passed run 36951396198; final 1.3.0 release pending |
@@ -80,4 +80,5 @@ account. The ad-hoc ZIP engineering gap is now implemented and remote-verified; 
 - Local mock suite: 912 passed, 30 skipped; real Blender/GPU/optional CPU opt-ins disabled.
 - Disposable tarball installation: 479 files, 88 CLI/MCP operations, five skills, clean MCP stdout.
 - Native archive is verified ad-hoc/non-notarized, not Developer ID signing or Gatekeeper acceptance.
+- Independent admission/authorization/recipe review found and verified fixes for MIME spoofing and diagnostic process intent; no remaining blocker from that scoped audit.
 - Full exact-head gates and uploaded 1.3.0 artifact verification remain required before release.
