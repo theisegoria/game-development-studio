@@ -49,4 +49,7 @@ it('keeps native rollback separate from skills ZIPs and makes its platform and s
  const unsupported=target.artifact.replace('arm64.zip','x64.zip');
  await fs.copyFile(target.artifact,unsupported);
  await expect(verifyReleaseArtifact({version:target.version,artifact:unsupported,checksums:target.checksums})).rejects.toThrow('name');
+ const skillsPlan=await planReleaseChange({...args,targetVersion:skills.version,artifact:skills.artifact,checksums:skills.checksums,targetRelease:skills.release,rollbackArtifact:skills.artifact,rollbackChecksums:skills.checksums,rollbackRelease:skills.release});
+ expect(skillsPlan.steps.join(' ')).toContain('does not contain the CLI runtime');
+ expect(skillsPlan.steps.join(' ')).toContain('Do not change a CLI launcher');
 });

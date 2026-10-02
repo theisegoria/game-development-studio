@@ -76,6 +76,11 @@ export async function planReleaseChange(options: { installedVersion: string; tar
       'Keep the current app and workspace backup. Extract the verified target archive into a new user-chosen folder; do not overwrite a running app.',
       'Follow the archive README to verify the bundled CLI version, doctor and capabilities against a temporary workspace before switching apps. Stop if system security policy does not permit this non-notarized build.',
       'Switch to the new app only after these checks pass; retain the same-distribution rollback archive and previous app. No installation or application launch has occurred while creating this plan.',
+    ] : target.distribution === 'skills' ? [
+      'Keep the current plugin directory and its user-managed selection until the replacement is checked.',
+      'Extract the verified skills ZIP into a new user-chosen folder. Check its plugin manifest version and skill inventory against the release documentation; this archive does not contain the CLI runtime.',
+      'Use the documented plugin selection flow only after the matching CLI and plugin checks pass. If they fail, retain or select the previous verified plugin directory.',
+      'Do not change a CLI launcher as part of this skills-only plan. No profile or plugin selection has been changed while creating it.',
     ] : [
       'Keep the current installation and workspace backup until the replacement passes doctor and capabilities checks.',
       'Stage the verified target artifact into a new user-chosen installation folder using the existing GitHub release installation instructions. Do not overwrite the running installation.',
