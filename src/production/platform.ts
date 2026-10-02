@@ -22,13 +22,14 @@ export function planPlatform(input: unknown) {
   if (new Set(spec.variants.map(v => v.id)).size !== spec.variants.length) throw invalidState('Variant ids must be unique.');
   const steps: Recipe['steps'] = [];
   for (const [variantIndex, variant] of spec.variants.entries()) {
-    if (variant.collision === 'convex') unavailable.push(`${variant.id}: convex collision decomposition is unavailable; choose a conservative box or provide authored collision.`);
     const textureStep = `v${variantIndex}_textures`;
     if (variant.textureMode !== 'preserve') steps.push({ id: textureStep, operation: 'prepare_texture_variant', dependsOn: [], files: [spec.modelPath], arguments: { modelPath: spec.modelPath, maxTextureSize: variant.maxTextureSize } });
     for (const [index, triangles] of variant.lodTriangles.entries()) {
       const prefix = `v${variantIndex}_lod${index}`;
       steps.push({ id: `${prefix}_normalize`, operation: 'normalize_mesh', dependsOn: variant.textureMode !== 'preserve' ? [textureStep] : [], files: variant.textureMode !== 'preserve' ? [] : [spec.modelPath], arguments: { modelPath: variant.textureMode !== 'preserve' ? { $step: textureStep, field: 'outputPath' } : spec.modelPath, targetTriangles: triangles, normalizeMaterials: variant.materialMode === 'opaque' } });
       const normalized = { $step: `${prefix}_normalize`, field: 'outputPath' };
+      // Geometry extraction precedes optional KTX2 compression; CoACD never needs to decode textures.
+      if (variant.collision === 'convex') steps.push({ id: `${prefix}_collision`, operation: 'decompose_collision_mesh', dependsOn: [`${prefix}_normalize`], files: [], arguments: { modelPath: normalized } });
       const preparedId = variant.textureMode === 'compress' ? `${prefix}_compress` : `${prefix}_normalize`;
       if (variant.textureMode === 'compress') steps.push({ id: preparedId, operation: 'compress_texture_variant', dependsOn: [`${prefix}_normalize`], files: [], arguments: { modelPath: normalized } });
       const source = { $step: preparedId, field: 'outputPath' };
@@ -39,7 +40,7 @@ export function planPlatform(input: unknown) {
     }
   }
   const recipe: Recipe = { schema: 'game_dev.production_recipe.v1', id: spec.id, name: spec.name, steps };
-  return { schema: 'game_dev.platform_plan.v1', recipe, unavailable, executable: unavailable.length === 0, capabilities: { lod: 'Blender decimation followed by measured budget validation', collision: 'standalone conservative AABB OBJ; no runtime integration', textures: 'preserve, resize, or CPU ETC1S/UASTC compression after normalization; measured KTX2 metadata and payload verification', materials: 'preserve or normalize opaque', packages: 'canonical standalone packages per variant/LOD' } };
+  return { schema: 'game_dev.platform_plan.v1', recipe, unavailable, executable: unavailable.length === 0, dependencyAvailabilityChecked: false, requiredTools: ['Blender', ...(spec.variants.some(v => v.textureMode === 'compress') ? ['Pinned CPU Basis Universal'] : []), ...(spec.variants.some(v => v.collision === 'convex') ? ['Isolated pinned CoACD Python environment'] : [])], capabilities: { lod: 'Blender decimation followed by measured budget validation', collision: 'standalone conservative AABB OBJ or validated CoACD convex parts; no runtime integration', textures: 'preserve, resize, or CPU ETC1S/UASTC compression after normalization; measured KTX2 metadata and payload verification', materials: 'preserve or normalize opaque', packages: 'canonical standalone packages per variant/LOD; separate collision parts and manifest' } };
 }
 export async function prepareCollisionBox(modelPath: string, outputRoot: string) {
   const inspection = await inspectGltf(modelPath);

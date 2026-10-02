@@ -53,6 +53,7 @@ fi
 # The icon is generated, not stored: Tools/make-icon.swift renders the master
 # deterministically and make-icns.sh compiles it, so committing ~1.9 MB of derived
 # binaries would add weight without adding a source of truth.
+mkdir -p "$PACKAGE_DIR/Resources"
 if [[ ! -f "$ICON_SOURCE" ]]; then
   swift "$PACKAGE_DIR/Tools/make-icon.swift" "$ICON_SOURCE" >/dev/null
 fi

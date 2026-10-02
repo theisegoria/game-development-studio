@@ -20,9 +20,13 @@ jobs:
     uses: ./.github/workflows/windows-package-fsync.yml
   native-archive:
     uses: ./.github/workflows/anvil-archive.yml
+  texture-compression:
+    uses: ./.github/workflows/basis.yml
+  convex-decomposition:
+    uses: ./.github/workflows/coacd.yml
 
   build-artifacts:
-    needs: [platform-checks, windows-install, windows-packages, native-archive]
+    needs: [platform-checks, windows-install, windows-packages, native-archive, texture-compression, convex-decomposition]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

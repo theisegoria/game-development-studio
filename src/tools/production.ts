@@ -12,11 +12,16 @@ import { prepareTextureVariant } from '../production/textures.js';
 import { FamilyStore, familySchema } from '../production/families.js';
 import { planPlatform, platformSchema, prepareCollisionBox, validatePlatformAsset } from '../production/platform.js';
 import { guard, ok, type ToolContext } from './context.js';
+import { coacdScript, diagnoseCoacd } from '../collision/process.js';
 
 /** Caller supplies dispatch through its current authorization boundary; never raw registry.call. */
 export function registerProductionTools(server: ToolRegistrar, ctx: ToolContext, dispatch?: RecipeDispatch): void {
   const recipes = new RecipeStore(path.join(ctx.config.outputDir, '.production', 'recipes'), `${GAME_DEV_VERSION}:production-v1`, async operation => {
     if (operation === 'compress_texture_variant') return diagnoseTextureCompression();
+    if (operation === 'decompose_collision_mesh') {
+      const diagnostic = await diagnoseCoacd();
+      return { diagnostic, wrapperSHA256: await fileDigest(coacdScript), pythonSHA256: diagnostic.available ? await fileDigest(await fs.realpath(diagnostic.python)) : null };
+    }
     if (operation !== 'normalize_mesh') return null;
     const executable = findBlender();
     return { executable: executable ? await fileDigest(await fs.realpath(executable)) : 'unavailable', script: await fileDigest(packagedScript('blender_normalize.py')) };

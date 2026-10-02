@@ -40,5 +40,8 @@ export { recipeSchema, stepSchema, validateRecipe, RecipeStore, type Recipe, typ
 export { familySchema, FamilyStore } from './production/families.js';
 export { platformSchema, planPlatform, validatePlatformAsset, prepareCollisionBox } from './production/platform.js';
 export { prepareTextureVariant } from './production/textures.js';
+export { compressTextureVariant } from './production/compression.js';
+export { decompositionSchema, decomposeCollisionMesh, type DecompositionOptions } from './collision/decomposition.js';
+export { diagnoseCoacd, coacdEnvironmentSchema, type CoacdEnvironment } from './collision/process.js';
 export { retentionPlanSchema, type RetentionPlan } from './workspace/retention.js';
 export { verifyReleaseArtifact, planReleaseChange, type ReleaseEvidence, type ReleaseDistribution } from './installation/releases.js';

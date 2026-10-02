@@ -136,6 +136,12 @@ describe('production recipes', () => {
     expect(plan.executable).toBe(true); expect(plan.recipe.steps.filter(s => s.operation === 'build_asset_package')).toHaveLength(2); validateRecipe(plan.recipe);
     const result = await prepareCollisionBox(model, path.join(root, 'collisions')); expect(result.engineVerified).toBe(false); expect((await readFile(result.outputPath, 'utf8')).match(/^v /gm)).toHaveLength(8);
     expect((await validatePlatformAsset({ modelPath: model, maxTriangles: 1000, maxMaterials: 4, maxTextureSize: 2048 })).passed).toBe(true);
-    const unsupported = planPlatform({ schema: 'game_dev.platform_recipe.v1', id: 'x', name: 'X', modelPath: model, license: 'MIT', variants: [{ id: 'x', lodTriangles: [1], maxMaterials: 1, maxTextureSize: 1, collision: 'convex', textureMode: 'compress' }] }); expect(unsupported.unavailable).toHaveLength(1);
+    const prepared = planPlatform({ schema: 'game_dev.platform_recipe.v1', id: 'x', name: 'X', modelPath: model, license: 'MIT', variants: [{ id: 'x', lodTriangles: [1], maxMaterials: 1, maxTextureSize: 1, collision: 'convex', textureMode: 'compress' }] });
+    expect(prepared.unavailable).toHaveLength(0); validateRecipe(prepared.recipe);
+    const convex = prepared.recipe.steps.find(step => step.operation === 'decompose_collision_mesh')!;
+    expect(convex.arguments.modelPath).toEqual({ $step: 'v0_lod0_normalize', field: 'outputPath' });
+    expect(convex.dependsOn).toEqual(['v0_lod0_normalize']);
+    expect(prepared.dependencyAvailabilityChecked).toBe(false);
+    expect(prepared.requiredTools).toContain('Isolated pinned CoACD Python environment');
   });
 });
