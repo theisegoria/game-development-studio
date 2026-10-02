@@ -18,7 +18,16 @@ RUNTIME_NAME="GameDevelopmentStudioRuntime"
 RUNTIME_BUILDER="$ROOT_DIR/scripts/build-cli-runtime.mjs"
 RUNTIME_VERIFIER="$ROOT_DIR/scripts/verify-cli-runtime.mjs"
 RUNTIME_PROVENANCE_VERIFIER="$ROOT_DIR/scripts/verify-macos-runtime-provenance.mjs"
-THIRD_PARTY_TEMPLATE_DIR="$ROOT_DIR/distribution/macos-app-repo"
+RUNTIME_PROFILE="${GAME_DEV_RUNTIME_PROFILE:-homebrew}"
+case "$RUNTIME_PROFILE" in
+  homebrew) THIRD_PARTY_TEMPLATE_DIR="$ROOT_DIR/distribution/macos-app-repo" ;;
+  upstream-node-ci) THIRD_PARTY_TEMPLATE_DIR="$ROOT_DIR/distribution/macos-ci-upstream-node" ;;
+  *) echo "unknown runtime provenance profile: $RUNTIME_PROFILE" >&2; exit 1 ;;
+esac
+BUILD_CONFIGURATION="${GAME_DEV_BUILD_CONFIGURATION:-debug}"
+case "$BUILD_CONFIGURATION" in debug|release) ;; *) echo "invalid build configuration" >&2; exit 1 ;; esac
+APP_VERSION="$(node -p 'require(process.argv[1]).version' "$ROOT_DIR/package.json")"
+[[ "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "invalid app version" >&2; exit 1; }
 THIRD_PARTY_NOTICE="$THIRD_PARTY_TEMPLATE_DIR/THIRD_PARTY_NOTICES.md"
 THIRD_PARTY_PROVENANCE="$THIRD_PARTY_TEMPLATE_DIR/THIRD_PARTY_PROVENANCE.json"
 THIRD_PARTY_LICENSE_SOURCE="$THIRD_PARTY_TEMPLATE_DIR/legal/third-party-licenses"
@@ -44,6 +53,7 @@ fi
 # The icon is generated, not stored: Tools/make-icon.swift renders the master
 # deterministically and make-icns.sh compiles it, so committing ~1.9 MB of derived
 # binaries would add weight without adding a source of truth.
+mkdir -p "$PACKAGE_DIR/Resources"
 if [[ ! -f "$ICON_SOURCE" ]]; then
   swift "$PACKAGE_DIR/Tools/make-icon.swift" "$ICON_SOURCE" >/dev/null
 fi
@@ -87,8 +97,10 @@ case "$FINAL_APP_BUNDLE" in
 esac
 
 npm run build
-swift build --disable-sandbox --package-path "$PACKAGE_DIR"
-BUILD_BINARY="$(swift build --disable-sandbox --package-path "$PACKAGE_DIR" --show-bin-path)/$APP_NAME"
+swift build --disable-sandbox --configuration "$BUILD_CONFIGURATION" --package-path "$PACKAGE_DIR"
+BUILD_PRODUCTS="$(swift build --disable-sandbox --configuration "$BUILD_CONFIGURATION" --package-path "$PACKAGE_DIR" --show-bin-path)"
+BUILD_BINARY="$BUILD_PRODUCTS/$APP_NAME"
+RESOURCE_BUNDLE_STAGER="$PACKAGE_DIR/Tools/stage-resource-bundle.mjs"
 
 STAGE_ROOT="$(mktemp -d /private/tmp/anvil-app-stage.XXXXXX)"
 trap 'rm -rf "$STAGE_ROOT"' EXIT
@@ -99,10 +111,18 @@ APP_RESOURCES="$APP_CONTENTS/Resources"
 APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
 NODE_EXECUTABLE="$(node -p 'process.execPath')"
+if [[ "$RUNTIME_PROFILE" == "upstream-node-ci" ]]; then
+  NODE_EXECUTABLE="${GAME_DEV_NODE_EXECUTABLE:?upstream-node-ci requires GAME_DEV_NODE_EXECUTABLE}"
+  node "$ROOT_DIR/scripts/verify-upstream-node-profile.mjs" \
+    --node "$NODE_EXECUTABLE" --profile "$THIRD_PARTY_TEMPLATE_DIR"
+fi
 
 mkdir -p "$APP_MACOS" "$APP_RESOURCES"
 cp "$BUILD_BINARY" "$APP_BINARY"
 chmod +x "$APP_BINARY"
+# SwiftPM resource bundles are not contained inside the executable. Stage and
+# verify their closed roster before signing, without depending on the build tree.
+node "$RESOURCE_BUNDLE_STAGER" --build-products "$BUILD_PRODUCTS" --app-resources "$APP_RESOURCES"
 
 cp "$ICON_COMPILED" "$APP_RESOURCES/AppIcon.icns"
 /usr/bin/sips -g format -g pixelWidth -g pixelHeight "$APP_RESOURCES/AppIcon.icns" \
@@ -143,6 +163,21 @@ cp -R "$THIRD_PARTY_LICENSE_SOURCE" \
   "$APP_RESOURCES/$THIRD_PARTY_LICENSE_DESTINATION_NAME" >/dev/null \
   || { echo "staged third-party license tree differs from its canonical source" >&2; exit 1; }
 
+# The source runtime profile describes the CLI closure. Bind the staged copy's
+# native application identity to Anvil without changing any dependency/license bytes.
+node "$ROOT_DIR/scripts/anvil-provenance.mjs" --source "$THIRD_PARTY_PROVENANCE" \
+  --version "$APP_VERSION" --output "$APP_RESOURCES/THIRD_PARTY_PROVENANCE.json"
+
+node --input-type=module - "$APP_RESOURCES/ANVIL_BUILD.json" "$ROOT_DIR" "$APP_VERSION" "$BUILD_CONFIGURATION" <<'BUILD_RECEIPT'
+import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
+const [output, root, version, configuration] = process.argv.slice(2);
+const run = (command, args) => execFileSync(command, args, {encoding:'utf8'}).trim();
+fs.writeFileSync(output, JSON.stringify({schema:'game_dev.anvil_build.v1', version, configuration,
+  sourceRevision:run('git',['-C',root,'rev-parse','HEAD']), platform:'macos', architecture:process.arch,
+  swift:run('swift',['--version']), xcode:run('xcodebuild',['-version'])}, null, 2)+'\n');
+BUILD_RECEIPT
+
 cat >"$INFO_PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -163,9 +198,9 @@ cat >"$INFO_PLIST" <<PLIST
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.0.0</string>
+  <string>$APP_VERSION</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>$APP_VERSION</string>
   <key>LSApplicationCategoryType</key>
   <string>public.app-category.developer-tools</string>
   <key>LSMinimumSystemVersion</key>
@@ -192,6 +227,7 @@ APP_RESOURCES="$APP_CONTENTS/Resources"
 APP_BINARY="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 /usr/bin/xattr -cr "$APP_BUNDLE"
 node "$RUNTIME_VERIFIER" --runtime "$APP_RESOURCES/$RUNTIME_NAME" >/dev/null
+node "$RESOURCE_BUNDLE_STAGER" --verify "$APP_RESOURCES/Anvil_AnvilKit.bundle"
 
 # This repository lives under an iCloud-synced path, and the File Provider re-attaches
 # com.apple.FinderInfo and com.apple.fileprovider.fpfs#P to the bundle root shortly

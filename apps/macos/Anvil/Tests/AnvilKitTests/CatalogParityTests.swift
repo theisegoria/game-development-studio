@@ -79,6 +79,44 @@ struct CatalogParityTests {
         )
     }
 
+    @Test("Native request types and defaults match complete MCP tool schemas")
+    func completeRoadmapSchemaParity() throws {
+        let package = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["node", package.appendingPathComponent("Tools/export-roadmap-schemas.mjs").path, "--check"]
+        let output = Pipe(); process.standardOutput = output; process.standardError = output
+        try process.run()
+        let diagnostics = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0, "Schema parity: \(String(decoding: diagnostics, as: UTF8.self))")
+    }
+
+    @Test("Roadmap form schemas and confirmation authorities match runtime metadata")
+    func roadmapSchemaAndAuthorityParity() throws {
+        let output = try runCLI(["capabilities", "--json"])
+        let envelope = try JSONDecoder().decode(CLIResultEnvelope.self, from: Data(output.utf8))
+        guard case let .array(operations)? = envelope.data["localOperations"] else {
+            Issue.record("Missing runtime operations"); return
+        }
+        #expect(RoadmapToolSchemas.all.count == 41)
+        for (name, schema) in RoadmapToolSchemas.all {
+            let spec = try #require(CommandCatalog.byRegistryTool[name])
+            let operation = try #require(operations.first { $0["name"]?.stringValue == name })
+            guard case let .object(properties)? = schema["properties"],
+                  case let .array(arguments)? = operation["arguments"] else {
+                Issue.record("Missing fields for \(name)"); continue
+            }
+            #expect(Set(properties.keys) == Set(arguments.compactMap(\.stringValue)))
+            let writes = operation["readOnly"] == .bool(false)
+            #expect(spec.authorities.contains(.confirm) == writes)
+            #expect(spec.createsDurableJob == writes)
+            #expect(spec.conditionalSpend == (name == "run_production_step"))
+            #expect(!spec.authorities.contains(.approveSpend), "Wrapper metadata must never grant blanket spend")
+        }
+    }
+
     // MARK: - 2. Every flag Anvil can emit is one the CLI accepts
 
     @Test("Every declared flag appears in the CLI's known-flag set")

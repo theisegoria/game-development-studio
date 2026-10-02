@@ -1,5 +1,64 @@
 # Changelog
 
+## 1.3.1
+
+- Preserves explicitly configured optional CPU dependency paths and encoder hash
+  across the Anvil child-process boundary, while continuing to strip inherited
+  spend/mutation authority and unrelated environment variables.
+- Documents native dependency setup and adds process-boundary regression coverage.
+  The unpublished 1.3.0 candidate tag is retained unchanged.
+
+## 1.3.0
+
+- Adds digest-bound permanent quarantine purge with fresh reference checks, explicit
+  irreversible confirmation, and durable partial-failure recovery. All independent
+  workspace writers must be stopped; reported unlinked bytes are not measured free space.
+- Adds real CPU Basis Universal ETC1S/UASTC KTX2 texture compression, material-slot
+  color validation and package admission, with pinned-tool receipts and remote
+  Linux/macOS/Windows execution tests. The optional encoder requires explicit setup.
+- Adds isolated pinned CoACD CPU convex decomposition with independently validated
+  standalone parts and sampled approximation error. Optional Python dependencies
+  require setup; macOS memory monitoring is best-effort rather than a hard limit.
+- Exposes compression, decomposition and purge through CLI/MCP, production recipes
+  where appropriate, and the native request editor with fresh mutation approvals.
+- Fixes installed Anvil resource lookup and adds a verified Apple Silicon macOS 26+
+  archive with pinned Node, complete license evidence and extracted-tree checks.
+  The ZIP is ad-hoc signed and non-notarized; no installer or Gatekeeper acceptance
+  is claimed. Upgrade/rollback plans distinguish native, CLI and skills distributions.
+- Keeps engine integration excluded and default tests free of Blender/GPU launches.
+
+## 1.2.0
+
+- Serializes spend reservations across processes, validates accounting and job
+  records, preserves missing/corrupt state, and adds explicit recovery diagnostics.
+  Provider history distinguishes estimated, reported and unknown charges, observed
+  outcomes and user ratings; approvals are recorded without replaying authority.
+- Adds versioned Blender receipts and verified mesh-batch checkpoints. Default
+  tests never auto-launch Blender/GPU; opt-in remote lanes retain real coverage.
+  Blender reports process intent and enforces bounded threads, time and concurrency.
+- Adds CPU asset review with synchronized turntables, wireframes, UV layouts,
+  material swatches, side-by-side selection and content-bound package approval.
+  Static previews do not claim final PBR, animation or artistic-quality validation.
+- Adds named sealed visual baselines, scenario matrices, verified preview/heatmap
+  history and expected-change reviews. Pixel difference remains separate from quality.
+- Adds measured workspace inventories, protected-reference retention plans,
+  reversible quarantine/restore and verified exports to user-selected folders.
+  Quarantine preserves bytes and reclaims no physical disk space.
+- Adds persisted production graphs with input/tool/output invalidation, one-step
+  resume, uncertain-submission recovery and fresh per-operation approvals. Asset
+  families require a completed reviewed sample before creating member recipes.
+- Adds standalone platform variant/LOD, material, texture-budget and conservative
+  box-collision preparation, plus bounded color-aware PNG/JPEG texture resizing.
+  Normal vectors are renormalized; compression and convex decomposition are unavailable.
+  No engine adapter or engine import acceptance integration is added.
+- Adds GitHub artifact upgrade/rollback plans with version, checksum and remote
+  digest checks. Plans install nothing and make no new signing guarantee.
+- Exposes all new operations in Anvil's Production tools request editor using
+  runtime-derived schemas, reviewed recipe fingerprints and fresh invocation
+  approvals. Unknown estimates remain unknown in saved approval records.
+- Refreshes compatible locked dependencies and complete production license notices.
+  Distribution remains GitHub CLI tarball and skills ZIP; no npm/store publication.
+
 ## 1.1.0
 
 - Adds Windows source and GitHub tarball installation guidance, checksum manifests,

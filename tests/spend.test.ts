@@ -127,7 +127,8 @@ describe('the ledger refuses rather than overspending', () => {
     await fs.writeFile(path.join(dir, 'spend-ledger.json'), '{ not json', 'utf8');
     const ledger = await SpendLedger.open(dir, 100);
     // Bookkeeping damage must not make every tool unusable.
-    expect(ledger.spentCents()).toBe(0);
+    expect(ledger.diagnostics().healthy).toBe(false);
+    expect(() => ledger.spentCents()).toThrow(/blocked/);
   });
 });
 

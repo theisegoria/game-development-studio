@@ -10,12 +10,16 @@
  * item count, and the point of a batch is that nobody is watching it.
  */
 
+import type { MeshCheckpoints } from '../storage/mesh-checkpoints.js';
 import path from 'node:path';
 import { evaluateAsset, type GameAssetPolicy } from './asset-policy.js';
 import type { AssetInspection } from '../inspection/gltf.js';
 import { invalidInput } from '../util/errors.js';
 
 export interface MeshBatchItem {
+  reused?: boolean;
+  checkpointKey?: string;
+  checkpointWarning?: string;
   input: string;
   status: 'prepared' | 'already_valid' | 'failed';
   normalizedPath?: string;
@@ -128,6 +132,7 @@ export interface MeshBatchDeps {
    */
   discardReservation(target: string): Promise<void>;
   blenderAvailable: boolean;
+  checkpoints?: MeshCheckpoints;
 }
 
 function errorIds(report: ReturnType<typeof evaluateAsset>): string[] {
@@ -321,7 +326,24 @@ export async function runMeshBatch(
     let source = typeof raw === 'string' ? raw : String(raw);
     try {
       source = path.resolve(raw);
-      items.push(await prepareOne(source, options, deps));
+      const key = await deps.checkpoints?.key(source, options);
+      const cached = key ? await deps.checkpoints?.read(key) : undefined;
+      // Re-inspect current bytes under the current policy, even after a matching hash.
+      if (cached && cached.input === source && cached.normalizedPath &&
+          evaluateAsset(await deps.inspect(cached.normalizedPath), options.policy).passed) {
+        items.push(cached);
+        continue;
+      }
+      const item = await prepareOne(source, options, deps);
+      if (key) {
+        item.checkpointKey = key;
+        // A source changing during processing must never seal a reusable checkpoint.
+        try {
+          if (await deps.checkpoints?.key(source, options) === key) await deps.checkpoints?.write(key, item);
+          else item.checkpointWarning = 'Source changed during processing; checkpoint not saved';
+        } catch (error) { item.checkpointWarning = String(error); }
+      }
+      items.push(item);
     } catch (err) {
       // One bad file must not stall a forty-item run. The error is reported
       // against its own item and the loop moves on.
@@ -345,7 +367,7 @@ export async function runMeshBatch(
     alreadyValid: items.filter((item) => item.status === 'already_valid').length,
     failed: items.filter((item) => item.status === 'failed').length,
     outputsWritten: items.filter(
-      (item) => item.normalizedPath !== undefined || item.orphanedOutput !== undefined,
+      (item) => !item.reused && (item.normalizedPath !== undefined || item.orphanedOutput !== undefined),
     ).length,
     blenderAvailable: deps.blenderAvailable,
     items,

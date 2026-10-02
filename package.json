@@ -1,6 +1,6 @@
 {
   "name": "@theisegoria/game-development-studio",
-  "version": "1.1.0",
+  "version": "1.3.1",
   "description": "Local-first CLI and native macOS studio for game-asset production, deterministic captures, visual debugging, and performance analysis.",
   "keywords": [
     "game-development",
@@ -41,6 +41,7 @@
     "scripts/*.py",
     "scripts/*.mjs",
     "distribution/skills-repo",
+    "distribution/coacd",
     "probe",
     "adapters",
     "skills",
@@ -79,6 +80,7 @@
   },
   "dependencies": {
     "@gltf-transform/core": "^4.1.1",
+    "@gltf-transform/extensions": "4.4.2",
     "@modelcontextprotocol/sdk": "1.30.0",
     "jpeg-js": "^0.4.4",
     "pngjs": "^7.0.0",

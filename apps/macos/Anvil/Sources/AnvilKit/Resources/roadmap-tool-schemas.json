@@ -1,0 +1,1568 @@
+{
+  "get_provider_history": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "rate_provider_result": {
+    "type": "object",
+    "properties": {
+      "entryId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "rating": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 5
+      },
+      "note": {
+        "type": "string",
+        "maxLength": 2000
+      }
+    },
+    "required": [
+      "entryId",
+      "rating",
+      "note"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "record_provider_outcome": {
+    "type": "object",
+    "properties": {
+      "entryId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "outcome": {
+        "type": "string",
+        "enum": [
+          "succeeded",
+          "failed",
+          "unknown"
+        ]
+      }
+    },
+    "required": [
+      "entryId",
+      "outcome"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "diagnose_durable_jobs": {
+    "type": "object",
+    "properties": {
+      "staleAfterMs": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "recover_durable_job": {
+    "type": "object",
+    "properties": {
+      "jobId": {
+        "type": "string"
+      },
+      "confirm": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "jobId",
+      "confirm"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "quarantine_corrupt_job": {
+    "type": "object",
+    "properties": {
+      "jobId": {
+        "type": "string"
+      },
+      "confirm": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "jobId",
+      "confirm"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "recover_storage_lock": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "spend",
+          "job"
+        ]
+      },
+      "jobId": {
+        "type": "string"
+      },
+      "confirm": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "kind",
+      "confirm"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "create_asset_review": {
+    "type": "object",
+    "properties": {
+      "candidates": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "modelPath": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "name",
+            "modelPath"
+          ],
+          "additionalProperties": false
+        },
+        "minItems": 1,
+        "maxItems": 6
+      }
+    },
+    "required": [
+      "candidates"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "decide_asset_review": {
+    "type": "object",
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "candidateId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "decision": {
+        "type": "string",
+        "enum": [
+          "approve",
+          "reject"
+        ]
+      },
+      "reviewer": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "reason": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4000
+      }
+    },
+    "required": [
+      "sessionId",
+      "candidateId",
+      "decision",
+      "reviewer",
+      "reason"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "package_reviewed_asset": {
+    "type": "object",
+    "properties": {
+      "decisionId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "license": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "decisionId",
+      "name",
+      "license"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "name_visual_baseline": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "scenario": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "runPath": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "name",
+      "scenario",
+      "runPath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "compare_visual_matrix": {
+    "type": "object",
+    "properties": {
+      "entries": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "baselineId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "candidateRunPath": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "baselineId",
+            "candidateRunPath"
+          ],
+          "additionalProperties": false
+        },
+        "minItems": 1,
+        "maxItems": 32
+      },
+      "threshold": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 255
+      }
+    },
+    "required": [
+      "entries"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "decide_visual_regression": {
+    "type": "object",
+    "properties": {
+      "regressionId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "decision": {
+        "type": "string",
+        "enum": [
+          "expected-change",
+          "regression",
+          "needs-review"
+        ]
+      },
+      "reviewer": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "reason": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4000
+      }
+    },
+    "required": [
+      "regressionId",
+      "decision",
+      "reviewer",
+      "reason"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "visual_regression_dashboard": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "inspect_workspace_storage": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "plan_workspace_retention": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "quarantine",
+          "export"
+        ],
+        "default": "quarantine"
+      },
+      "paths": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "execute_workspace_retention": {
+    "type": "object",
+    "properties": {
+      "plan": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.retention_plan.v1"
+          },
+          "root": {
+            "type": "string"
+          },
+          "metadataRoots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "quarantine",
+              "export"
+            ]
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "classification": {
+                  "type": "string",
+                  "enum": [
+                    "original",
+                    "derived",
+                    "capture",
+                    "metadata",
+                    "unknown"
+                  ]
+                },
+                "protectedBy": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "path",
+                "bytes",
+                "sha256",
+                "classification",
+                "protectedBy"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "totalBytes": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "schema",
+          "root",
+          "metadataRoots",
+          "action",
+          "files",
+          "blockers",
+          "totalBytes",
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "plan"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "plan_workspace_purge": {
+    "type": "object",
+    "properties": {
+      "receiptId": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "required": [
+      "receiptId"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "purge_workspace_retention": {
+    "type": "object",
+    "properties": {
+      "plan": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.retention_purge_plan.v1"
+          },
+          "root": {
+            "type": "string"
+          },
+          "receiptId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "receiptSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "journalSha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metadataRoots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "required": [
+                "path",
+                "bytes",
+                "sha256"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "interruptedMissing": {
+            "type": "array",
+            "items": {
+              "$ref": "#/properties/plan/properties/files/items"
+            }
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "totalBytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "irreversibleWarning": {
+            "type": "string",
+            "const": "IRREVERSIBLE: permanently deletes the listed quarantine files. They cannot be restored from this receipt after purge. Review/export any needed bytes before confirming. ALL other workspace and quarantine writers must be stopped; portable path checks do not isolate hostile concurrent writers."
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "schema",
+          "root",
+          "receiptId",
+          "receiptSha256",
+          "journalSha256",
+          "metadataRoots",
+          "files",
+          "interruptedMissing",
+          "blockers",
+          "totalBytes",
+          "irreversibleWarning",
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "plan"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "list_workspace_retention": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "restore_workspace_retention": {
+    "type": "object",
+    "properties": {
+      "receiptId": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "required": [
+      "receiptId"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "export_workspace_files": {
+    "type": "object",
+    "properties": {
+      "plan": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.retention_plan.v1"
+          },
+          "root": {
+            "type": "string"
+          },
+          "metadataRoots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "quarantine",
+              "export"
+            ]
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "classification": {
+                  "type": "string",
+                  "enum": [
+                    "original",
+                    "derived",
+                    "capture",
+                    "metadata",
+                    "unknown"
+                  ]
+                },
+                "protectedBy": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "path",
+                "bytes",
+                "sha256",
+                "classification",
+                "protectedBy"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "totalBytes": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "schema",
+          "root",
+          "metadataRoots",
+          "action",
+          "files",
+          "blockers",
+          "totalBytes",
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "destination": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "plan",
+      "destination"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "plan_release_change": {
+    "type": "object",
+    "properties": {
+      "installedVersion": {
+        "type": "string"
+      },
+      "targetVersion": {
+        "type": "string"
+      },
+      "artifact": {
+        "type": "string"
+      },
+      "checksums": {
+        "type": "string"
+      },
+      "rollbackArtifact": {
+        "type": "string"
+      },
+      "rollbackChecksums": {
+        "type": "string"
+      },
+      "verifyGitHub": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "required": [
+      "installedVersion",
+      "targetVersion",
+      "artifact",
+      "checksums",
+      "rollbackArtifact",
+      "rollbackChecksums"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "save_production_recipe": {
+    "type": "object",
+    "properties": {
+      "recipe": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.production_recipe.v1"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/properties/recipe/properties/id"
+                },
+                "operation": {
+                  "type": "string",
+                  "enum": [
+                    "generate_asset_reference",
+                    "create_3d_asset",
+                    "texture_existing_asset",
+                    "download_asset",
+                    "get_asset_job",
+                    "select_reference",
+                    "normalize_mesh",
+                    "validate_game_asset",
+                    "build_asset_package",
+                    "prepare_collision_box",
+                    "decompose_collision_mesh",
+                    "validate_platform_asset",
+                    "prepare_texture_variant",
+                    "compress_texture_variant"
+                  ]
+                },
+                "dependsOn": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/properties/recipe/properties/id"
+                  },
+                  "maxItems": 64,
+                  "default": []
+                },
+                "arguments": {
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "files": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "maxItems": 128,
+                  "default": []
+                }
+              },
+              "required": [
+                "id",
+                "operation",
+                "arguments"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 128
+          },
+          "family": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/properties/recipe/properties/id"
+              },
+              "member": {
+                "$ref": "#/properties/recipe/properties/id"
+              },
+              "sample": {
+                "type": "boolean"
+              },
+              "approvalDigest": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "member",
+              "sample"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "schema",
+          "id",
+          "name",
+          "steps"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "recipe"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "plan_production_recipe": {
+    "type": "object",
+    "properties": {
+      "recipeId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "recipeId"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "run_production_step": {
+    "type": "object",
+    "properties": {
+      "recipeId": {
+        "type": "string"
+      },
+      "stepId": {
+        "type": "string"
+      },
+      "approvedFingerprint": {
+        "type": "string",
+        "minLength": 64,
+        "maxLength": 64
+      }
+    },
+    "required": [
+      "recipeId",
+      "stepId",
+      "approvedFingerprint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "recover_production_lock": {
+    "type": "object",
+    "properties": {
+      "recipeId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "recipeId"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "reconcile_production_step": {
+    "type": "object",
+    "properties": {
+      "recipeId": {
+        "type": "string"
+      },
+      "stepId": {
+        "type": "string"
+      },
+      "nonSubmissionEvidence": {
+        "type": "string",
+        "minLength": 12
+      }
+    },
+    "required": [
+      "recipeId",
+      "stepId",
+      "nonSubmissionEvidence"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "create_asset_family": {
+    "type": "object",
+    "properties": {
+      "family": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.asset_family.v1"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,50}$"
+          },
+          "style": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400
+          },
+          "palette": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "minItems": 1,
+            "maxItems": 8
+          },
+          "scaleMeters": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 10000
+          },
+          "namingPrefix": {
+            "$ref": "#/properties/family/properties/id"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/properties/family/properties/id"
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                }
+              },
+              "required": [
+                "id",
+                "description"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 2,
+            "maxItems": 64
+          },
+          "template": {
+            "type": "object",
+            "properties": {
+              "schema": {
+                "type": "string",
+                "const": "game_dev.production_recipe.v1"
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "$ref": "#/properties/family/properties/template/properties/id"
+                    },
+                    "operation": {
+                      "type": "string",
+                      "enum": [
+                        "generate_asset_reference",
+                        "create_3d_asset",
+                        "texture_existing_asset",
+                        "download_asset",
+                        "get_asset_job",
+                        "select_reference",
+                        "normalize_mesh",
+                        "validate_game_asset",
+                        "build_asset_package",
+                        "prepare_collision_box",
+                        "decompose_collision_mesh",
+                        "validate_platform_asset",
+                        "prepare_texture_variant",
+                        "compress_texture_variant"
+                      ]
+                    },
+                    "dependsOn": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/properties/family/properties/template/properties/id"
+                      },
+                      "maxItems": 64,
+                      "default": []
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    },
+                    "files": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "maxItems": 128,
+                      "default": []
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "operation",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 128
+              },
+              "family": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "$ref": "#/properties/family/properties/template/properties/id"
+                  },
+                  "member": {
+                    "$ref": "#/properties/family/properties/template/properties/id"
+                  },
+                  "sample": {
+                    "type": "boolean"
+                  },
+                  "approvalDigest": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "member",
+                  "sample"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema",
+              "id",
+              "name",
+              "steps"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "schema",
+          "id",
+          "style",
+          "palette",
+          "scaleMeters",
+          "namingPrefix",
+          "members",
+          "template"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "family"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "plan_family_approval": {
+    "type": "object",
+    "properties": {
+      "familyId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "familyId"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "approve_family_sample": {
+    "type": "object",
+    "properties": {
+      "familyId": {
+        "type": "string"
+      },
+      "approvedDigest": {
+        "type": "string",
+        "minLength": 64,
+        "maxLength": 64
+      },
+      "reviewer": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      }
+    },
+    "required": [
+      "familyId",
+      "approvedDigest",
+      "reviewer"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "expand_asset_family": {
+    "type": "object",
+    "properties": {
+      "familyId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "familyId"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "plan_platform_preparation": {
+    "type": "object",
+    "properties": {
+      "recipe": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.platform_recipe.v1"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,60}$"
+          },
+          "modelPath": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "license": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9_-]{1,32}$"
+                },
+                "lodTriangles": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 10000000
+                  },
+                  "minItems": 1,
+                  "maxItems": 8
+                },
+                "maxMaterials": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 4096
+                },
+                "maxTextureSize": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 16384
+                },
+                "textureMode": {
+                  "type": "string",
+                  "enum": [
+                    "preserve",
+                    "resize",
+                    "compress"
+                  ],
+                  "default": "preserve"
+                },
+                "materialMode": {
+                  "type": "string",
+                  "enum": [
+                    "preserve",
+                    "opaque"
+                  ],
+                  "default": "preserve"
+                },
+                "collision": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "box",
+                    "convex"
+                  ],
+                  "default": "none"
+                }
+              },
+              "required": [
+                "id",
+                "lodTriangles",
+                "maxMaterials",
+                "maxTextureSize"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 16
+          }
+        },
+        "required": [
+          "schema",
+          "id",
+          "modelPath",
+          "name",
+          "license",
+          "variants"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "recipe"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "save_platform_preparation": {
+    "type": "object",
+    "properties": {
+      "recipe": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.platform_recipe.v1"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,60}$"
+          },
+          "modelPath": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "license": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9_-]{1,32}$"
+                },
+                "lodTriangles": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 10000000
+                  },
+                  "minItems": 1,
+                  "maxItems": 8
+                },
+                "maxMaterials": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 4096
+                },
+                "maxTextureSize": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 16384
+                },
+                "textureMode": {
+                  "type": "string",
+                  "enum": [
+                    "preserve",
+                    "resize",
+                    "compress"
+                  ],
+                  "default": "preserve"
+                },
+                "materialMode": {
+                  "type": "string",
+                  "enum": [
+                    "preserve",
+                    "opaque"
+                  ],
+                  "default": "preserve"
+                },
+                "collision": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "box",
+                    "convex"
+                  ],
+                  "default": "none"
+                }
+              },
+              "required": [
+                "id",
+                "lodTriangles",
+                "maxMaterials",
+                "maxTextureSize"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 16
+          }
+        },
+        "required": [
+          "schema",
+          "id",
+          "modelPath",
+          "name",
+          "license",
+          "variants"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "recipe"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "diagnose_texture_compression": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "compress_texture_variant": {
+    "type": "object",
+    "properties": {
+      "modelPath": {
+        "type": "string",
+        "minLength": 1
+      },
+      "colorCodec": {
+        "type": "string",
+        "enum": [
+          "etc1s",
+          "uastc"
+        ],
+        "default": "etc1s"
+      },
+      "quality": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 255,
+        "default": 128
+      },
+      "timeoutSeconds": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 300,
+        "default": 120
+      }
+    },
+    "required": [
+      "modelPath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "prepare_texture_variant": {
+    "type": "object",
+    "properties": {
+      "modelPath": {
+        "type": "string",
+        "minLength": 1
+      },
+      "maxTextureSize": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 8192
+      }
+    },
+    "required": [
+      "modelPath",
+      "maxTextureSize"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "prepare_collision_box": {
+    "type": "object",
+    "properties": {
+      "modelPath": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "modelPath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "validate_platform_asset": {
+    "type": "object",
+    "properties": {
+      "modelPath": {
+        "type": "string"
+      },
+      "maxTriangles": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
+      "maxMaterials": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
+      "maxTextureSize": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      }
+    },
+    "required": [
+      "modelPath",
+      "maxTriangles",
+      "maxMaterials",
+      "maxTextureSize"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "diagnose_collision_decomposition": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "decompose_collision_mesh": {
+    "type": "object",
+    "properties": {
+      "modelPath": {
+        "type": "string",
+        "minLength": 1
+      },
+      "threshold": {
+        "type": "number",
+        "minimum": 0.01,
+        "maximum": 0.2,
+        "default": 0.05
+      },
+      "maxParts": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 32,
+        "default": 16
+      },
+      "maxVerticesPerPart": {
+        "type": "integer",
+        "minimum": 8,
+        "maximum": 256,
+        "default": 64
+      },
+      "seed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647,
+        "default": 0
+      },
+      "memoryMB": {
+        "type": "integer",
+        "minimum": 512,
+        "maximum": 4096,
+        "default": 2048
+      },
+      "cpuSeconds": {
+        "type": "integer",
+        "minimum": 10,
+        "maximum": 600,
+        "default": 120
+      },
+      "timeoutSeconds": {
+        "type": "integer",
+        "minimum": 10,
+        "maximum": 600,
+        "default": 180
+      },
+      "sampleCount": {
+        "type": "integer",
+        "minimum": 64,
+        "maximum": 512,
+        "default": 256
+      },
+      "maxApproximationError": {
+        "type": "number",
+        "minimum": 0.001,
+        "maximum": 0.2,
+        "default": 0.05
+      }
+    },
+    "required": [
+      "modelPath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

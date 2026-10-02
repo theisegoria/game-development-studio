@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Reconcile notices from the existing lockfile and installed packages; never installs dependencies.
-import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { readFile, readdir, writeFile, unlink } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { URL, fileURLToPath } from 'node:url';
@@ -41,6 +41,13 @@ for (const profile of profiles) {
   const base = path.join(root, 'distribution', profile);
   const provenanceFile = path.join(base, 'THIRD_PARTY_PROVENANCE.json');
   const provenance = JSON.parse(await readFile(provenanceFile, 'utf8'));
+  // Remove only previously rostered npm notices replaced by this lockfile.
+  // Leaving them behind breaks the closed legal-asset roster after upgrades.
+  for (const asset of provenance.legalAssets) {
+    if (asset.path.startsWith('npm-') && path.basename(asset.path) === asset.path && !assets.has(asset.path)) {
+      await unlink(path.join(base, 'legal/third-party-licenses', asset.path));
+    }
+  }
   provenance.npmProductionPackages = records;
   provenance.legalAssets = [...provenance.legalAssets.filter((a) => !a.path.startsWith('npm-')), ...[...assets.values()].map(({ contents: _contents, ...record }) => record)].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
   for (const asset of assets.values()) await writeFile(path.join(base, 'legal/third-party-licenses', asset.path), asset.contents);

@@ -17,6 +17,7 @@ import { randomBytes } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { AssetJob } from '../domain/asset-job.js';
+import { assetJobSchema } from './asset-job-schema.js';
 import { AssetPipelineError, notFound } from '../util/errors.js';
 
 const JOB_FILE_SUFFIX = '.json';
@@ -43,6 +44,7 @@ export class JobStore {
 
   async save(job: AssetJob): Promise<void> {
     const target = this.fileFor(job.id);
+    this.validate(job, job.id);
     const tmp = `${target}.tmp-${randomBytes(8).toString('hex')}`;
     const payload = `${JSON.stringify(job, null, 2)}\n`;
 
@@ -89,23 +91,15 @@ export class JobStore {
    * far away from the actual cause.
    */
   private validate(parsed: unknown, id: string): AssetJob {
-    const job = parsed as Partial<AssetJob> | null;
-    if (!job || typeof job !== 'object') {
-      throw new AssetPipelineError('INVALID_STATE', `job ${id} is not an object`);
-    }
-    if (job.schemaVersion !== 1) {
-      throw new AssetPipelineError(
-        'INVALID_STATE',
-        `job ${id} has unsupported schemaVersion ${String(job.schemaVersion)} (this harness understands 1)`,
-        { details: { id, schemaVersion: job.schemaVersion } },
-      );
-    }
-    if (!Array.isArray(job.candidates) || !Array.isArray(job.files)) {
-      throw new AssetPipelineError('INVALID_STATE', `job ${id} is missing required arrays`, {
-        details: { id },
+    const result = assetJobSchema.safeParse(parsed);
+    if (!result.success) {
+      throw new AssetPipelineError('INVALID_STATE', `job ${id} is corrupt or has an unsupported schemaVersion`, {
+        details: { id, issues: result.error.issues },
       });
     }
-    return job as AssetJob;
+    if (result.data.id !== id) throw new AssetPipelineError('INVALID_STATE', `job ${id} has a mismatched identity`, { details: { id, storedId: result.data.id } });
+    // Validation must not rewrite provenance through defaults or transformations.
+    return parsed as AssetJob;
   }
 
   async get(id: string): Promise<AssetJob> {
@@ -144,6 +138,8 @@ export class JobStore {
     const jobs: AssetJob[] = [];
     for (const entry of entries) {
       if (!entry.endsWith(JOB_FILE_SUFFIX)) continue;
+      // The workspace ledger shares this directory but is not an asset job.
+      if (entry === 'spend-ledger.json') continue;
       if (entry.includes('.tmp-')) continue;
 
       let raw: string;
@@ -160,7 +156,7 @@ export class JobStore {
       }
 
       try {
-        jobs.push(this.validate(JSON.parse(raw), entry));
+        jobs.push(this.validate(JSON.parse(raw), entry.slice(0, -JOB_FILE_SUFFIX.length)));
       } catch (err) {
         // A corrupt or future-schema record is skipped rather than throwing,
         // so one bad file cannot hide every good one — but it is surfaced.
@@ -181,7 +177,10 @@ export class JobStore {
   /** Map a provider's task id back to our job. Provider ids are metadata, not identity. */
   async findByProviderTaskId(taskId: string): Promise<AssetJob | undefined> {
     const jobs = await this.list();
-    return jobs.find((job) => job.model3d?.providerTaskId === taskId);
+    const matches = jobs.filter((job) => job.model3d?.providerTaskId === taskId);
+    if (matches.length > 1) throw new AssetPipelineError('INVALID_STATE', 'Multiple asset jobs claim the same provider task; inspect the evidence before recovery', { details: { taskId, assetJobIds: matches.map((job) => job.id) } });
+    if (!matches.length && this.corrupt.length) throw new AssetPipelineError('INVALID_STATE', 'Provider task lookup is incomplete because asset jobs are corrupt; do not resubmit based on a missing result', { details: { taskId, corrupt: this.corrupt } });
+    return matches[0];
   }
 
   async delete(id: string): Promise<void> {

@@ -26,7 +26,7 @@ const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const sdkSource = path.join(repoRoot, 'probe', 'c', 'gdprobe.c');
 const exampleSource = path.join(repoRoot, 'probe', 'examples', 'metal', 'main.m');
 
-const onMacOS = process.platform === 'darwin';
+const onMacOS = process.platform === 'darwin' && process.env.GAME_DEV_TEST_GPU === '1';
 let root: string;
 let projectRoot: string;
 let compiled = false;

@@ -196,6 +196,8 @@ public struct CommandSpec: Sendable, Hashable, Identifiable {
     public let arguments: [ArgumentSpec]
     public let transport: CommandTransport
     public let authorities: Set<Authority>
+    /// A wrapper whose selected operation may need a separate, fresh spend grant.
+    public let conditionalSpend: Bool
     public let spend: SpendClass
     public let lane: ExclusionLane
     public let route: WorkspaceRoute
@@ -215,6 +217,7 @@ public struct CommandSpec: Sendable, Hashable, Identifiable {
         transport: CommandTransport = .result,
         authorities: Set<Authority> = [],
         spend: SpendClass = .free,
+        conditionalSpend: Bool = false,
         lane: ExclusionLane = .none,
         route: WorkspaceRoute,
         registryTool: String? = nil,
@@ -227,6 +230,7 @@ public struct CommandSpec: Sendable, Hashable, Identifiable {
         self.arguments = arguments
         self.transport = transport
         self.authorities = authorities
+        self.conditionalSpend = conditionalSpend
         self.spend = spend
         self.lane = lane
         self.route = route
@@ -242,5 +246,14 @@ public struct CommandSpec: Sendable, Hashable, Identifiable {
     public var expectedOperation: String {
         if let registryTool { return "tool.\(registryTool)" }
         return path.prefix(2).joined(separator: ".")
+    }
+}
+
+public extension CommandSpec {
+    /// Human acknowledgment text for a fresh invocation; never persisted as authority.
+    var confirmationLabel: String {
+        registryTool == "purge_workspace_retention"
+            ? "I understand deletion is permanent, have exported anything needed, and have stopped ALL other workspace and quarantine writers"
+            : "Confirm the current request and its workspace changes"
     }
 }

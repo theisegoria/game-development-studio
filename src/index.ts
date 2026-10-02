@@ -32,3 +32,16 @@ export * from './harness/goals.js';
 
 export * from './harness/discovery.js';
 export * from './optimization/session.js';
+export {
+  BLENDER_RECEIPT_SCHEMA, blenderReceiptSchema, parseBlenderReceipt,
+  type BlenderReceipt, type CompatibleBlenderReceipt,
+} from './domain/blender-receipt.js';
+export { recipeSchema, stepSchema, validateRecipe, RecipeStore, type Recipe, type RecipeDispatch } from './production/recipes.js';
+export { familySchema, FamilyStore } from './production/families.js';
+export { platformSchema, planPlatform, validatePlatformAsset, prepareCollisionBox } from './production/platform.js';
+export { prepareTextureVariant } from './production/textures.js';
+export { compressTextureVariant } from './production/compression.js';
+export { decompositionSchema, decomposeCollisionMesh, type DecompositionOptions } from './collision/decomposition.js';
+export { diagnoseCoacd, coacdEnvironmentSchema, type CoacdEnvironment } from './collision/process.js';
+export { retentionPlanSchema, type RetentionPlan } from './workspace/retention.js';
+export { verifyReleaseArtifact, planReleaseChange, type ReleaseEvidence, type ReleaseDistribution } from './installation/releases.js';

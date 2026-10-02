@@ -16,11 +16,11 @@
   },
   "bundledRuntime": {
     "gameDevCli": {
-      "version": "1.1.0",
+      "version": "1.3.1",
       "license": "MIT",
       "evidence": "The staged CLI package manifest and root package-lock entry.",
       "licenseAssets": [
-        "game-development-studio-1.1.0-MIT.txt"
+        "game-development-studio-1.3.1-MIT.txt"
       ]
     },
     "node": {
@@ -50,6 +50,19 @@
       "license": "MIT",
       "licenseAssets": [
         "npm-gltf-transform-core-4.4.2-MIT.txt"
+      ],
+      "licenseSources": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "@gltf-transform/extensions",
+      "installPath": "node_modules/@gltf-transform/extensions",
+      "lockedVersion": "4.4.2",
+      "lockIntegrity": "sha512-HJH1FM+edC5eNvl6xO0SOXJ/j/3oDoIpSu150OTdJaLBoM3TgCCGIfh4wyhgWAqZrkvgHKVGiZKxcKV5LkgPCQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-gltf-transform-extensions-4.4.2-LICENSE-md.txt"
       ],
       "licenseSources": [
         "LICENSE.md"
@@ -461,11 +474,11 @@
     {
       "name": "fast-uri",
       "installPath": "node_modules/fast-uri",
-      "lockedVersion": "3.1.7",
-      "lockIntegrity": "sha512-dOvZVzjdZdz7phd9v6jCbwxrBW3fK6n8Rc0CtdmM4bumzMnxywBYhuph6J819RRw/ku+rLbelwfMunktuzVVHg==",
+      "lockedVersion": "3.1.8",
+      "lockIntegrity": "sha512-GZMtZUTNRpOVIECoXwLNZS5xUGE+mVNbTB8h/7Rwh2TFWcBQiPzTgyZi05BF9UMZKkLJv8XBRJTlU7zg8+ZfMg==",
       "license": "BSD-3-Clause",
       "licenseAssets": [
-        "npm-fast-uri-3.1.7-LICENSE.txt"
+        "npm-fast-uri-3.1.8-LICENSE.txt"
       ],
       "licenseSources": [
         "LICENSE"
@@ -591,11 +604,11 @@
     {
       "name": "hono",
       "installPath": "node_modules/hono",
-      "lockedVersion": "4.13.5",
-      "lockIntegrity": "sha512-O6+/eCYRkzzzy0rPWwKLiGBR1nFuUPZynnwjxN1MBA62NNqbT0wQEzQyK2gSO5yDIDB336sXQleAhOHrzlYyKw==",
+      "lockedVersion": "4.13.12",
+      "lockIntegrity": "sha512-6E2QDAc9Ick9Sq77ZrGS/dk2WUYni91aufTw6LJKpV7w8kW5/GxVUc650FOADOmlwg3K+f7Pun6XlV+pYmW6gw==",
       "license": "MIT",
       "licenseAssets": [
-        "npm-hono-4.13.5-LICENSE.txt"
+        "npm-hono-4.13.12-LICENSE.txt"
       ],
       "licenseSources": [
         "LICENSE"
@@ -643,11 +656,11 @@
     {
       "name": "ip-address",
       "installPath": "node_modules/ip-address",
-      "lockedVersion": "10.7.0",
-      "lockIntegrity": "sha512-BGFsyJd5mpXp3rK6jIdADLNgpJUK1jnjzvYF8lK+VyDab9JAmqN0YOKDdP17HlgKb2+ehPgDc8EtnRLbGCAMhA==",
+      "lockedVersion": "10.7.3",
+      "lockIntegrity": "sha512-A1kdq/tSb5QjvKvAMgIoEvDBIgL7qaqVP/jkvSwYYRZ9iEzvPpopxp2wQfu3SuZRHtpHNxMn8Fs0bS+gf5Xmwg==",
       "license": "MIT",
       "licenseAssets": [
-        "npm-ip-address-10.7.0-LICENSE.txt"
+        "npm-ip-address-10.7.3-LICENSE.txt"
       ],
       "licenseSources": [
         "LICENSE"
@@ -742,6 +755,19 @@
       ],
       "licenseSources": [
         "LICENSE.md"
+      ]
+    },
+    {
+      "name": "ktx-parse",
+      "installPath": "node_modules/ktx-parse",
+      "lockedVersion": "1.1.0",
+      "lockIntegrity": "sha512-mKp3y+FaYgR7mXWAbyyzpa/r1zDWeaunH+INJO4fou3hb45XuNSwar+7llrRyvpMWafxSIi99RNFJ05MHedaJQ==",
+      "license": "MIT",
+      "licenseAssets": [
+        "npm-ktx-parse-1.1.0-LICENSE.txt"
+      ],
+      "licenseSources": [
+        "LICENSE"
       ]
     },
     {
@@ -1327,10 +1353,10 @@
   ],
   "legalAssets": [
     {
-      "path": "game-development-studio-1.1.0-MIT.txt",
+      "path": "game-development-studio-1.3.1-MIT.txt",
       "sha256": "915b4af615fcf20f331b7aa09822ea6dff49cc8e39c1ab5860ed5b91fe4aa79d",
       "bytes": 1066,
-      "source": "CLI package root LICENSE at version 1.1.0",
+      "source": "CLI package root LICENSE at version 1.3.1",
       "scope": "Bundled game-dev CLI"
     },
     {
@@ -1544,10 +1570,10 @@
       "scope": "Bundled CLI production package"
     },
     {
-      "path": "npm-fast-uri-3.1.7-LICENSE.txt",
+      "path": "npm-fast-uri-3.1.8-LICENSE.txt",
       "sha256": "b010b0dfdfdb23d7396e03b82cd4621fc9bb8f95d6b0aea70b9c24e12074c786",
       "bytes": 1813,
-      "source": "Locked npm package fast-uri@3.1.7/LICENSE",
+      "source": "Locked npm package fast-uri@3.1.8/LICENSE",
       "scope": "Bundled CLI production package"
     },
     {
@@ -1600,6 +1626,13 @@
       "scope": "Bundled CLI production package"
     },
     {
+      "path": "npm-gltf-transform-extensions-4.4.2-LICENSE-md.txt",
+      "sha256": "2c4f111d00dbf22b10d31a14813c5f5de6a828640f7311f26b9dda89b3fce165",
+      "bytes": 1078,
+      "source": "Locked npm package @gltf-transform/extensions@4.4.2/LICENSE.md",
+      "scope": "Bundled CLI production package"
+    },
+    {
       "path": "npm-gopd-1.2.0-LICENSE.txt",
       "sha256": "d90bf0a089da4cf43d644ed240a0b3825dcdb705e64e38371d56995a4cc9e4c5",
       "bytes": 1071,
@@ -1621,10 +1654,10 @@
       "scope": "Bundled CLI production package"
     },
     {
-      "path": "npm-hono-4.13.5-LICENSE.txt",
+      "path": "npm-hono-4.13.12-LICENSE.txt",
       "sha256": "a6ab98e5c77b9070c443eaff2ff81034a6f8cc05a7524d5098eb0f24defa0115",
       "bytes": 1101,
-      "source": "Locked npm package hono@4.13.5/LICENSE",
+      "source": "Locked npm package hono@4.13.12/LICENSE",
       "scope": "Bundled CLI production package"
     },
     {
@@ -1656,10 +1689,10 @@
       "scope": "Bundled CLI production package"
     },
     {
-      "path": "npm-ip-address-10.7.0-LICENSE.txt",
+      "path": "npm-ip-address-10.7.3-LICENSE.txt",
       "sha256": "f8d791359a50cbcac82c29cb7b0b1b889b28be76fdd35b8ee33f0f7c8704702a",
       "bytes": 1061,
-      "source": "Locked npm package ip-address@10.7.0/LICENSE",
+      "source": "Locked npm package ip-address@10.7.3/LICENSE",
       "scope": "Bundled CLI production package"
     },
     {
@@ -1709,6 +1742,13 @@
       "sha256": "bbe87b573c12bda5baf18742117330efa177e0886b3b0a278dacf8f236e1e129",
       "bytes": 2859,
       "source": "Locked npm package json-schema-typed@8.0.2/LICENSE.md",
+      "scope": "Bundled CLI production package"
+    },
+    {
+      "path": "npm-ktx-parse-1.1.0-LICENSE.txt",
+      "sha256": "79847431f9ecef9cf399085cb863452e71a6dab99738f4f0c1ea06c6484b5692",
+      "bytes": 1078,
+      "source": "Locked npm package ktx-parse@1.1.0/LICENSE",
       "scope": "Bundled CLI production package"
     },
     {

@@ -35,7 +35,8 @@ def main():
             {
                 "operation": "export_usd_preview",
                 "blenderVersion": bpy.app.version_string,
-                "input": source,
+                "schema": "org.gamedebug.blender_receipt.v1",
+        "input": source,
                 "output": output,
                 "bytes": os.path.getsize(output),
             },

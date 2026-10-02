@@ -13,6 +13,343 @@ extension CommandCatalog {
     /// publishes the rate; `estimated` means it does not, and the ceiling is a refusal
     /// guard rather than an invoice.
     static let toolCommands: [CommandSpec] = [
+        // MARK: - Spend and provider outcomes
+        tool(
+            "get_provider_history",
+            title: "Provider cost and quality history",
+            summary: "Compare estimates, reported charges, failures and reviewed quality; unknown invoice costs remain unknown.",
+            route: .spend
+        ),
+        tool(
+            "record_provider_outcome",
+            title: "Record a provider outcome",
+            summary: "Record reported charges and execution outcomes without inventing provider invoice costs.",
+            lane: .workspaceWrite,
+            route: .spend,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "rate_provider_result",
+            title: "Review provider quality",
+            summary: "Record a human quality assessment against the provider result.",
+            lane: .workspaceWrite,
+            route: .spend,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        // MARK: - Storage and job recovery
+        tool(
+            "diagnose_durable_jobs",
+            title: "Diagnose durable jobs",
+            summary: "Inspect corrupt, stale and interrupted records without resubmitting work.",
+            route: .runs
+        ),
+        tool(
+            "recover_durable_job",
+            title: "Recover a durable job",
+            summary: "Recover an interrupted local record with explicit evidence; never automatically repeat paid submissions.",
+            lane: .workspaceWrite,
+            route: .runs,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "quarantine_corrupt_job",
+            title: "Quarantine a corrupt job",
+            summary: "Preserve an unreadable job for inspection and explicitly remove it from the active index.",
+            lane: .workspaceWrite,
+            route: .runs,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "recover_storage_lock",
+            title: "Recover a storage lock",
+            summary: "Release a stale storage lock only after proving its recorded owner stopped.",
+            lane: .workspaceWrite,
+            route: .runs,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "inspect_workspace_storage",
+            title: "Measure workspace storage",
+            summary: "Measure original, derived and capture files with protected references.",
+            route: .setup
+        ),
+        tool(
+            "plan_workspace_retention",
+            title: "Plan workspace retention",
+            summary: "Preview measured cleanup candidates and protected files before changing anything.",
+            route: .setup
+        ),
+        tool(
+            "execute_workspace_retention",
+            title: "Apply a retention plan",
+            summary: "Confirm the current plan and move eligible files into reversible quarantine.",
+            lane: .workspaceWrite,
+            route: .setup,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "restore_workspace_retention",
+            title: "Restore retained files",
+            summary: "Restore files from a previous retention transaction.",
+            lane: .workspaceWrite,
+            route: .setup,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "list_workspace_retention",
+            title: "List retention transactions",
+            summary: "Inspect previous retention plans and reversible transactions.",
+            route: .setup
+        ),
+        tool(
+            "plan_workspace_purge",
+            title: "Plan permanent quarantine deletion",
+            summary: "Preview irreversible deletion of completed quarantine files; recheck protected references and digests. Deletes nothing.",
+            route: .setup
+        ),
+        tool(
+            "purge_workspace_retention",
+            title: "Permanently delete quarantined files",
+            summary: "IRREVERSIBLE: permanently delete the exact reviewed quarantine files. Deleted bytes cannot be restored; export anything needed first. ALL other workspace and quarantine writers must be stopped. Portable path checks are not a security boundary against hostile concurrent writers.",
+            lane: .workspaceWrite,
+            route: .setup,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "export_workspace_files",
+            title: "Export workspace files",
+            summary: "Copy verified workspace files to an explicitly chosen folder without replacing originals.",
+            lane: .workspaceWrite,
+            route: .library,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "plan_release_change",
+            title: "Plan an upgrade or rollback",
+            summary: "Inspect verified GitHub release artifacts and dependencies before choosing an upgrade or rollback.",
+            route: .setup
+        ),
+        // MARK: - Asset inspection and review
+        tool(
+            "create_asset_review",
+            title: "Create an asset review",
+            summary: "Prepare visual and measured evidence for candidate inspection; rendering shows its local process intent.",
+            lane: .workspaceWrite,
+            route: .library,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "decide_asset_review",
+            title: "Approve or reject a candidate",
+            summary: "Record a human decision bound to the current asset and review evidence.",
+            lane: .workspaceWrite,
+            route: .library,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "package_reviewed_asset",
+            title: "Package an approved asset",
+            summary: "Build a standalone package only from a current approved asset review.",
+            lane: .workspaceWrite,
+            route: .library,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        // MARK: - Visual regression review
+        tool(
+            "name_visual_baseline",
+            title: "Name a visual baseline",
+            summary: "Bind a named baseline to verified capture evidence.",
+            lane: .workspaceWrite,
+            route: .visual,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "compare_visual_matrix",
+            title: "Compare a scenario matrix",
+            summary: "Create sealed comparisons across named scenarios and baselines.",
+            lane: .workspaceWrite,
+            route: .visual,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "decide_visual_regression",
+            title: "Review an expected visual change",
+            summary: "Record an expected-change decision; pixel differences alone do not establish quality.",
+            lane: .workspaceWrite,
+            route: .visual,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "visual_regression_dashboard",
+            title: "Build the regression dashboard",
+            summary: "Write a dashboard of baseline history, scenario comparisons and human decisions.",
+            lane: .workspaceWrite,
+            route: .visual,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        // MARK: - Production recipes and families
+        tool(
+            "save_production_recipe",
+            title: "Save a production recipe",
+            summary: "Persist a versioned graph without executing steps or carrying forward approval.",
+            lane: .workspaceWrite,
+            route: .createBrief,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "plan_production_recipe",
+            title: "Plan the next production step",
+            summary: "Inspect input fingerprints, checkpoints and the exact arguments needing approval.",
+            route: .createBrief
+        ),
+        tool(
+            "run_production_step",
+            title: "Run one approved production step",
+            summary: "Execute one fingerprint-bound step; any paid operation still requires fresh, separate spend approval for this invocation.",
+            lane: .workspaceWrite,
+            route: .createBrief,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "recover_production_lock",
+            title: "Recover a production lock",
+            summary: "Recover a stopped recipe owner while keeping uncertain submissions blocked.",
+            lane: .workspaceWrite,
+            route: .runs,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "reconcile_production_step",
+            title: "Reconcile an uncertain step",
+            summary: "Record evidence that no submission occurred before allowing another attempt.",
+            lane: .workspaceWrite,
+            route: .runs,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "create_asset_family",
+            title: "Create an asset family",
+            summary: "Save shared style, scale, palette and naming, and create the first sample recipe.",
+            lane: .workspaceWrite,
+            route: .createBrief,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "plan_family_approval",
+            title: "Review the family sample",
+            summary: "Inspect current validated and packaged sample evidence before approving expansion.",
+            route: .createBrief
+        ),
+        tool(
+            "approve_family_sample",
+            title: "Approve the family sample",
+            summary: "Approve the current sample digest; this decision grants no provider spend authority.",
+            lane: .workspaceWrite,
+            route: .createBrief,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "expand_asset_family",
+            title: "Expand an approved family",
+            summary: "Create remaining recipes from the approved sample; does not call providers.",
+            lane: .workspaceWrite,
+            route: .createBrief,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        // MARK: - Standalone platform preparation
+        tool(
+            "plan_platform_preparation",
+            title: "Plan platform variants",
+            summary: "Plan LOD, texture, material, collision and budget steps, with unavailable capabilities explicit.",
+            route: .mesh
+        ),
+        tool(
+            "save_platform_preparation",
+            title: "Save platform preparation",
+            summary: "Save supported variant preparation as a resumable, individually approved recipe.",
+            lane: .workspaceWrite,
+            route: .mesh,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "prepare_texture_variant",
+            title: "Prepare a texture variant",
+            summary: "Resize embedded GLB textures locally with color-aware filtering and normal renormalization.",
+            lane: .workspaceWrite,
+            route: .mesh,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "diagnose_texture_compression",
+            title: "Diagnose texture compression",
+            summary: "Verify the configured Basis CPU encoder identity and report missing setup without starting a process.",
+            route: .setup
+        ),
+        tool(
+            "compress_texture_variant",
+            title: "Compress a texture variant",
+            summary: "Create embedded KTX2 textures with the pinned Basis CPU encoder and verify every mip by CPU transcoding. No provider cost.",
+            lane: .workspaceWrite,
+            route: .mesh,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "diagnose_collision_decomposition",
+            title: "Diagnose collision decomposition",
+            summary: "Inspect the configured CoACD CPU worker with a bounded metadata-only Python process; no decomposition, Blender or GPU work.",
+            route: .setup
+        ),
+        tool(
+            "decompose_collision_mesh",
+            title: "Decompose collision geometry",
+            summary: "Create validated standalone convex parts using the pinned CPU-only CoACD worker. No engine verification or provider cost.",
+            lane: .workspaceWrite,
+            route: .mesh,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "prepare_collision_box",
+            title: "Prepare a collision box",
+            summary: "Create a conservative standalone AABB proxy from measured geometry; no engine verification.",
+            lane: .workspaceWrite,
+            route: .mesh,
+            durable: true,
+            authorities: [.confirm]
+        ),
+        tool(
+            "validate_platform_asset",
+            title: "Validate platform budgets",
+            summary: "Measure triangle, material and texture budgets; unknown dimensions fail closed.",
+            route: .mesh
+        ),
+        // MARK: - Existing asset and harness operations
         tool("measure_run_stability", title: "Measure capture stability",
              summary: "Measure the noise floor across repeated captures.", lane: .workspaceWrite, route: .visual),
         tool(
@@ -388,6 +725,7 @@ extension CommandCatalog {
             transport: .events,
             authorities: spend.isPaid ? authorities.union([.approveSpend]) : authorities,
             spend: spend,
+            conditionalSpend: name == "run_production_step",
             lane: lane,
             route: route,
             registryTool: name,

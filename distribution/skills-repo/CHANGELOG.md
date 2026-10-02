@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.3.1
+
+- Aligns the canonical skills export with the native optional-dependency process
+  boundary repair in Studio 1.3.1. No additional authorization is granted.
+
+## 1.3.0
+
+- Adds routes for reviewed irreversible quarantine purge and optional CPU Basis
+  texture compression/CoACD convex decomposition, including setup and resource limits.
+- Documents distinct native, CLI and skills upgrade/rollback plans and the ad-hoc
+  non-notarized macOS archive. No engine integration or automatic spending.
+
+## 1.2.0
+
+- Documents standalone production recipes, reviewed asset families, asset review,
+  workspace retention, provider history and verified GitHub update planning.
+- Preserves fresh operation-level mutation/spend approvals and explicit evidence
+  limits. Skills remain declarative and contain no provider client or engine integration.
+
 ## 1.1.0
 
 - Adds verified Windows CLI release-tarball, checksum, installation and PATH guidance.

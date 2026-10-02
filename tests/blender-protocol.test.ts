@@ -132,3 +132,24 @@ describe('a failed Blender is never a success', () => {
     }
   }, 60_000);
 });
+
+describe('resource controls', () => {
+  it('rejects unsafe limits before starting any executable', async () => {
+    await expect(runBlenderScript('unused.py', {}, { timeoutMs: 900001, blenderPath: '/never-run' })).rejects.toThrow(/timeout/);
+    await expect(runBlenderScript('unused.py', {}, { timeoutMs: 100, threads: 0, blenderPath: '/never-run' })).rejects.toThrow(/threads/);
+  });
+  it('admits one child and releases the slot after completion', async () => {
+    const executable = await stub(`sleep 0.1\n${RECEIPT('"trianglesAfter":1')}`);
+    const first = run(executable);
+    await expect(run(executable)).rejects.toThrow(/already running/);
+    await expect(first).resolves.toMatchObject({ receipt: { trianglesAfter: 1 } });
+    await expect(run(executable)).resolves.toMatchObject({ exitCode: 0 });
+  });
+});
+
+it('refuses a versioned receipt for the wrong packaged operation', async () => {
+  const executable = await stub(RECEIPT('"schema":"org.gamedebug.blender_receipt.v1","operation":"export_usd_preview","blenderVersion":"4.5","input":"a","output":"b"'));
+  await expect(runBlenderScript(path.join(work, 'blender_normalize.py'), {}, {
+    timeoutMs: 30000, blenderPath: executable,
+  })).rejects.toThrow(/unparseable receipt/);
+});

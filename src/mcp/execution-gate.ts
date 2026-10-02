@@ -1,5 +1,6 @@
 import type { ToolResult } from '../tools/context.js';
 import type { ElicitApproval } from './spend-gate.js';
+import { ROADMAP_MUTATION_TOOLS } from '../commands/mutation-policy.js';
 
 /**
  * Tools that run code the harness did not write.
@@ -68,7 +69,8 @@ export class ExecutionGate {
   ): (args: A) => Promise<ToolResult> {
     const isExecution = EXECUTION_TOOLS.has(name);
     const isProjectWrite = PROJECT_WRITE_TOOLS.has(name);
-    if (!isExecution && !isProjectWrite) return handler;
+    const isRoadmapMutation = ROADMAP_MUTATION_TOOLS.has(name);
+    if (!isExecution && !isProjectWrite && !isRoadmapMutation) return handler;
 
     return async (args: A): Promise<ToolResult> => {
       if (!this.options.elicit || !(this.options.canElicit?.() ?? true)) {
@@ -77,7 +79,10 @@ export class ExecutionGate {
 
       const scenario = (args as { scenario?: unknown })?.scenario;
       const project = (args as { project?: unknown })?.project;
-      const message = isExecution
+      const message = isRoadmapMutation
+        ? (name === 'purge_workspace_retention' ? 'IRREVERSIBLE: permanently delete the listed quarantine files. This cannot be undone; export anything needed before confirming. ALL other workspace and quarantine writers must be stopped. Portable path checks are not a security boundary against hostile concurrent writers.\n\n' : '') + `Confirm ${name} with these exact inputs?\n\n${JSON.stringify(args)}\n\n` +
+          'This changes workspace state or records your review decision. It grants no standing authority for subsequent steps or provider charges.'
+        : isExecution
         ? `Run scenario "${String(scenario)}" from the project at ${String(project)}?\n\n` +
           'This starts an executable that the project declares, in a contained process, and ' +
           'seals whatever it produces into a run bundle.\n\n' +

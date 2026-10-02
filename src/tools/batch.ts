@@ -7,7 +7,10 @@
  * server, a Blender install, or a staged broken file.
  */
 
-import { promises as fs } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
+import { MeshCheckpoints } from '../storage/mesh-checkpoints.js';
+import { createReadStream, promises as fs } from 'node:fs';
 import { z } from 'zod';
 import type { ToolRegistrar } from '../commands/registry.js';
 import { inspectGltf } from '../inspection/gltf.js';
@@ -130,6 +133,7 @@ export function registerBatchTools(server: ToolRegistrar, ctx: ToolContext): voi
             'Omit to write beside each source; an empty string is rejected rather than silently ' +
             'meaning "beside the source".',
           ),
+        checkpointDir: z.string().min(1).optional().describe('Opt-in durable local checkpoints; GLB reuse requires matching source, policy, options, script and executable hashes, plus verified output.'),
         normalize: z
           .boolean()
           .default(true)
@@ -162,6 +166,27 @@ export function registerBatchTools(server: ToolRegistrar, ctx: ToolContext): voi
         ...(args.maxTriangles !== undefined ? { targetTriangles: args.maxTriangles } : {}),
       });
 
+      if (args.checkpointDir) {
+        const blender = findBlender();
+        // Hash executable bytes, never execute Blender merely to query its version.
+        const identity = createHash('sha256').update('mesh-batch-v1;threads=2;').update(await fs.readFile(packagedScript('blender_normalize.py')));
+        const extension = import.meta.url.endsWith('.ts') ? 'ts' : 'js';
+        for (const relative of [`./batch.${extension}`, `../domain/asset-policy.${extension}`, `../domain/mesh-batch.${extension}`, `../inspection/gltf.${extension}`, '../../package.json']) {
+          identity.update(await fs.readFile(fileURLToPath(new URL(relative, import.meta.url))));
+        }
+        let nativeExecutable = false;
+        if (blender) {
+          const handle = await fs.open(blender, 'r');
+          try {
+            const magic = Buffer.alloc(4); await handle.read(magic, 0, 4, 0);
+            nativeExecutable = ['7f454c46', 'cffaedfe', 'cefaedfe', 'feedfacf', 'feedface', 'cafebabe', 'bebafeca'].includes(magic.toString('hex')) || magic.subarray(0, 2).toString() === 'MZ';
+          } finally { await handle.close(); }
+          for await (const chunk of createReadStream(blender)) identity.update(chunk);
+        }
+        // A wrapper does not identify its downstream tool. Never authorize reuse from it.
+        if (nativeExecutable) deps.checkpoints = new MeshCheckpoints(args.checkpointDir, identity.digest('hex'));
+        else ctx.logger.warn('Batch checkpoint reuse disabled: Blender is absent or BLENDER_PATH is a non-native wrapper');
+      }
       const batch = await runMeshBatch(
         args.modelPaths,
         {

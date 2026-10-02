@@ -1,0 +1,22 @@
+import { afterEach, expect, it, vi } from 'vitest';
+import { promises as fs } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { registerWorkspaceTools } from '../src/tools/workspace.js';
+import { connectTools } from './helpers/tool-harness.js';
+let root: string;
+afterEach(async()=>{vi.unstubAllEnvs(); if(root)await fs.rm(root,{recursive:true,force:true});});
+it('registry exposes free diagnostics and denies each mutation without launch authority',async()=>{
+  vi.stubEnv('GAME_DEV_MCP_ALLOW_PROJECT_WRITE','');
+  root=await fs.mkdtemp(path.join(os.tmpdir(),'workspace-tools-'));
+  await fs.mkdir(path.join(root,'derived'));await fs.writeFile(path.join(root,'derived/a.glb'),'sample');
+  const tools=await connectTools(registerWorkspaceTools,root);
+  const inspection=await tools.call('inspect_workspace_storage',{}); expect(inspection.isError).toBe(false);
+  const cleanup=await tools.call('plan_workspace_retention',{});expect(cleanup.isError).toBe(false);
+  const denied=await tools.call('execute_workspace_retention',{plan:cleanup.payload});expect(denied.isError).toBe(true);expect(denied.text).toContain('requires authority');
+  const exporting=await tools.call('plan_workspace_retention',{action:'export'});expect(exporting.isError).toBe(false);
+  expect((await tools.call('export_workspace_files',{plan:exporting.payload,destination:root})).text).toContain('requires authority');
+  expect((await tools.call('restore_workspace_retention',{receiptId:'550e8400-e29b-41d4-a716-446655440000'})).text).toContain('requires authority');
+  expect(await fs.readFile(path.join(root,'derived/a.glb'),'utf8')).toBe('sample');
+  await tools.close();
+});
