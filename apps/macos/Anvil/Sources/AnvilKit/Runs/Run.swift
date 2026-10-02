@@ -42,7 +42,7 @@ public struct ApprovalGrant: Equatable, Sendable {
     public let ceilingCents: Int
     /// The estimate that was shown at the moment of approval, so the ledger records what
     /// the person was actually told rather than what the estimate later became.
-    public let presentedEstimateCents: Int
+    public let presentedEstimateCents: Int?
     public let presentedConfidence: CostConfidence
     public let presentedBasis: String
     public let grantedAt: Date
@@ -51,7 +51,7 @@ public struct ApprovalGrant: Equatable, Sendable {
     /// Not public: constructing a grant is what approval *means*.
     init(
         ceilingCents: Int,
-        presentedEstimateCents: Int,
+        presentedEstimateCents: Int?,
         presentedConfidence: CostConfidence,
         presentedBasis: String,
         authorities: Set<Authority>,
@@ -72,7 +72,7 @@ public struct ApprovalGrant: Equatable, Sendable {
 /// reflects what they were actually told rather than what the estimate later became.
 public struct ApprovalRecord: Equatable, Sendable, Codable {
     public let ceilingCents: Int
-    public let presentedEstimateCents: Int
+    public let presentedEstimateCents: Int?
     public let presentedConfidence: CostConfidence
     public let presentedBasis: String
     public let grantedAt: Date

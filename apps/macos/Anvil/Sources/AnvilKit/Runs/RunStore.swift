@@ -83,6 +83,7 @@ public final class RunStore {
         arguments: [String],
         outputDirectory: URL,
         credentials: [CredentialProvider: String] = [:],
+        standardInput: Data? = nil,
         grant: ApprovalGrant? = nil,
         timeout: Duration? = nil
     ) throws -> RunID {
@@ -111,6 +112,7 @@ public final class RunStore {
         let id = run.id
         let invocation = CLIInvocation(
             arguments: argv,
+            standardInput: standardInput,
             workingDirectory: nil,
             expectedOperation: spec.expectedOperation
         )
@@ -259,7 +261,7 @@ public enum ApprovalAuthorization {
     /// is precisely the thing the CLI's approval model exists to prevent.
     public static func grantFromHumanApproval(
         ceilingCents: Int,
-        presentedEstimateCents: Int,
+        presentedEstimateCents: Int?,
         presentedConfidence: CostConfidence,
         presentedBasis: String,
         authorities: Set<Authority>

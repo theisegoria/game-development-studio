@@ -196,6 +196,8 @@ public struct CommandSpec: Sendable, Hashable, Identifiable {
     public let arguments: [ArgumentSpec]
     public let transport: CommandTransport
     public let authorities: Set<Authority>
+    /// A wrapper whose selected operation may need a separate, fresh spend grant.
+    public let conditionalSpend: Bool
     public let spend: SpendClass
     public let lane: ExclusionLane
     public let route: WorkspaceRoute
@@ -215,6 +217,7 @@ public struct CommandSpec: Sendable, Hashable, Identifiable {
         transport: CommandTransport = .result,
         authorities: Set<Authority> = [],
         spend: SpendClass = .free,
+        conditionalSpend: Bool = false,
         lane: ExclusionLane = .none,
         route: WorkspaceRoute,
         registryTool: String? = nil,
@@ -227,6 +230,7 @@ public struct CommandSpec: Sendable, Hashable, Identifiable {
         self.arguments = arguments
         self.transport = transport
         self.authorities = authorities
+        self.conditionalSpend = conditionalSpend
         self.spend = spend
         self.lane = lane
         self.route = route
