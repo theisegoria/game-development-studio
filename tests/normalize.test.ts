@@ -806,10 +806,10 @@ describe.skipIf(!haveBlender)('splitting scale between node and vertices changes
   };
 
   it('produces the same geometry whether the scale is on the node or baked in', async () => {
-    const [nodeScaled, baked] = await Promise.all([
-      run('tiny_parts_node_scaled'),
-      run('tiny_parts_baked'),
-    ]);
+    // Real Blender runs are serialized to respect the service's one-child limit.
+    // Promise.all would reject early and leave its first child running into later tests.
+    const nodeScaled = await run('tiny_parts_node_scaled');
+    const baked = await run('tiny_parts_baked');
 
     // Precondition: the fixtures really do differ in the way this test claims.
     // Without this the equality below could pass by both being unscaled.
@@ -833,10 +833,8 @@ describe.skipIf(!haveBlender)('splitting scale between node and vertices changes
   it.each([0.0001, 0, 0.01])(
     'produces the same geometry at mergeDistance %s, either scale split',
     async (mergeDistance) => {
-      const [nodeScaled, baked] = await Promise.all([
-        run('tiny_parts_node_scaled', mergeDistance),
-        run('tiny_parts_baked', mergeDistance),
-      ]);
+      const nodeScaled = await run('tiny_parts_node_scaled', mergeDistance);
+      const baked = await run('tiny_parts_baked', mergeDistance);
 
       expect(nodeScaled.largestThresholdDivisor).toBeCloseTo(1000, 0);
       expect(baked.largestThresholdDivisor).toBeCloseTo(1, 5);
@@ -891,7 +889,8 @@ describe.skipIf(!haveBlender)('merging nothing still repairs degenerate faces', 
   };
 
   it('removes zero-area faces at mergeDistance 0, as it does at the default', async () => {
-    const [atDefault, atZero] = await Promise.all([run(0.0001), run(0)]);
+    const atDefault = await run(0.0001);
+    const atZero = await run(0);
 
     // 7 triangles in, 5 of them zero-area. Measured before the fix: 7 -> 2 at
     // the default and 7 -> 7 at zero, BOTH reporting objectsCleaned 1.
