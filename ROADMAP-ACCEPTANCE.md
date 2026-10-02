@@ -91,3 +91,10 @@ Anvil stripped the three explicit optional CPU dependency settings. The 1.3.0 ta
 remain unchanged and unpublished. A narrow process-boundary repair and regression
 test are being released as 1.3.1; no inherited spend/mutation grants are retained.
 The final broad mock suite at the 1.3.0 candidate was 916 passed, 30 skipped.
+
+1.3.1 correction is implemented: exactly the three dependency settings pass the
+native process boundary; inherited spend/mutation/provider authority stays stripped.
+All 109 native tests pass; independent boundary review found no remaining blocker.
+Disposable 1.3.1 package checks verify 479 files, 88 operations and canonical parity.
+Source PR #10 and canonical skills PR #7 carry this patch; source Action-pinning
+PR #7 and skills Action-pinning PR #4 remain unrelated and unmerged.

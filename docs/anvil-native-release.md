@@ -75,6 +75,8 @@ GAME_DEV_COACD_PYTHON='/absolute/chosen-tools/coacd/bin/python' \
 
 Launching from Finder does not inherit this terminal's settings. In Anvil's
 Production tools, run **Diagnose texture compression** and **Diagnose collision
-decomposition** first. These free diagnostics inspect configuration without
-starting the optional workers. Compression and decomposition still require a
-fresh mutation confirmation; missing dependencies remain explicitly unavailable.
+decomposition** first. Basis diagnostics inspect configuration and hash the encoder
+without starting it. Configured CoACD diagnostics start a bounded metadata-only
+Python child; they do not run decomposition, Blender or GPU work. Compression and
+decomposition still require a fresh mutation confirmation; missing dependencies
+remain explicitly unavailable.
