@@ -19,7 +19,7 @@ const recordSchema = z.object({ schema: z.literal('game_dev.recipe_record.v1'), 
 type RecordState = z.infer<typeof recordSchema>;
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  if (value && typeof value === 'object') return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`).join(',')}}`;
+  if (value && typeof value === 'object') return `{${Object.entries(value).filter(([, item]) => item !== undefined).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`).join(',')}}`;
   return JSON.stringify(value) ?? 'null';
 }
 export function digest(value: unknown): string { return createHash('sha256').update(canonical(value)).digest('hex'); }
@@ -32,13 +32,33 @@ export async function fileDigest(file: string): Promise<string> {
   }
   const hash = createHash('sha256');
   for await (const chunk of createReadStream(file)) hash.update(chunk);
-  if (path.extname(file).toLowerCase() === '.gltf') {
-    const json = JSON.parse(await fs.readFile(file, 'utf8')) as { buffers?: { uri?: string }[]; images?: { uri?: string }[] };
+  const ext = path.extname(file).toLowerCase();
+  let json: { buffers?: { uri?: string }[]; images?: { uri?: string }[] } | undefined;
+  if (ext === '.gltf') json = JSON.parse(await fs.readFile(file, 'utf8'));
+  if (ext === '.glb') {
+    const handle = await fs.open(file, 'r');
+    try {
+      const header = Buffer.alloc(20);
+      if ((await handle.read(header, 0, 20, 0)).bytesRead !== 20 || header.readUInt32LE(0) !== 0x46546c67 || header.readUInt32LE(4) !== 2 || header.readUInt32LE(16) !== 0x4e4f534a) throw invalidState('Invalid GLB header while fingerprinting recipe evidence.');
+      const length = header.readUInt32LE(12);
+      if (length > 64 * 1024 * 1024 || length + 20 > info.size) throw invalidState('Invalid or oversized GLB JSON chunk.');
+      const bytes = Buffer.alloc(length);
+      if ((await handle.read(bytes, 0, length, 20)).bytesRead !== length) throw invalidState('Incomplete GLB JSON chunk.');
+      json = JSON.parse(bytes.toString('utf8').trimEnd());
+    } finally { await handle.close(); }
+  }
+  if (json) {
     for (const item of [...(json.buffers ?? []), ...(json.images ?? [])]) if (item.uri && !item.uri.startsWith('data:')) {
       if (/^[a-z]+:/i.test(item.uri)) throw invalidState('Remote glTF dependencies cannot be verified for checkpoint reuse.');
       const resource = path.resolve(path.dirname(file), decodeURIComponent(item.uri));
       if (resource === path.resolve(file)) throw invalidState('Recursive glTF dependency');
-      for await (const chunk of createReadStream(resource)) hash.update(chunk);
+      // Resources are opaque bytes, not recursively interpreted glTF documents.
+      const resourceInfo = await fs.lstat(resource);
+      if (!resourceInfo.isFile() || resourceInfo.isSymbolicLink()) throw invalidState('External glTF resources must be regular files, never symlinks.');
+      if (await fs.realpath(resource) !== path.join(await fs.realpath(path.dirname(file)), path.relative(path.dirname(file), resource))) throw invalidState('External glTF resource traverses a symlink.');
+      const resourceHash = createHash('sha256');
+      for await (const chunk of createReadStream(resource)) resourceHash.update(chunk);
+      hash.update(digest({ uri: item.uri, sha256: resourceHash.digest('hex') }));
     }
   }
   return hash.digest('hex');
@@ -151,7 +171,7 @@ export class RecipeStore {
       try {
         const response = await dispatch(step.operation, step.arguments);
         const result = JSON.parse(resultText(response)) as Record<string, unknown>;
-        const rejected = response.isError || result.passed === false || (step.operation === 'get_asset_job' && !['ready', 'reference_ready'].includes(String(result.status ?? (result.job as Record<string, unknown> | undefined)?.status)));
+        const rejected = response.isError || result.passed === false || (result.validation as Record<string, unknown> | undefined)?.passed === false || (step.operation === 'get_asset_job' && !['ready', 'reference_ready'].includes(String(result.status ?? (result.job as Record<string, unknown> | undefined)?.status)));
         const artifacts: z.infer<typeof artifactSchema>[] = [];
         if (!rejected) {
           const paths = new Set<string>();

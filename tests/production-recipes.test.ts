@@ -1,8 +1,8 @@
-import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm, symlink } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { RecipeStore, validateRecipe, type Recipe } from '../src/production/recipes.js';
+import { RecipeStore, validateRecipe, fileDigest, type Recipe } from '../src/production/recipes.js';
 import { FamilyStore } from '../src/production/families.js';
 import { planPlatform, prepareCollisionBox, validatePlatformAsset } from '../src/production/platform.js';
 import { ok } from '../src/tools/context.js';
@@ -60,8 +60,8 @@ describe('production recipes', () => {
       dispatched.push(operation);
       if (operation === 'create_3d_asset') return ok({ assetJobId: 'existing_job', status: 'generating_3d', workspacePath: root });
       if (operation === 'get_asset_job') return ok({ assetJobId: 'existing_job', status: ++polls === 1 ? 'processing' : 'ready' });
-      if (operation === 'download_asset') { await writeFile(model, 'model'); return ok({ modelPath: model, workspacePath: root }); }
-      if (operation === 'normalize_mesh') { await writeFile(normalized, 'normalized'); return ok({ outputPath: normalized }); }
+      if (operation === 'download_asset') { await writeGameReadyGlb(model); return ok({ modelPath: model, workspacePath: root }); }
+      if (operation === 'normalize_mesh') { await writeGameReadyGlb(normalized); return ok({ outputPath: normalized }); }
       return ok({ passed: true });
     });
     for (const step of ['generate', 'wait', 'wait', 'download', 'normalize', 'validate', 'package']) {
@@ -99,6 +99,36 @@ describe('production recipes', () => {
     expect((await families.expand('family')).recipes).toHaveLength(1);
     expect((await families.expand('family')).recipes[0]?.name).toBe('prop_chair');
     await writeFile(file, 'changed'); await expect(families.expand('family')).rejects.toThrow(/Sample/);
+  });
+  it('refuses replacing a family sample with a different completed graph', async () => {
+    const { root, store } = await setup(); const file = path.join(root, 'asset.bin'); await writeFile(file, 'a');
+    const families = new FamilyStore(path.join(root, 'families'), store);
+    await families.create({ schema: 'game_dev.asset_family.v1', id: 'family', style: 'painted', palette: ['blue'], scaleMeters: 1, namingPrefix: 'prop', members: [{ id: 'sample', description: 'sample' }, { id: 'chair', description: 'chair' }], template: recipe(file) });
+    const sample = (await store.read('family_sample')).recipe;
+    sample.steps = [sample.steps[0]!]; await store.save(sample); await run(store, 'family_sample', 'validate');
+    await expect(families.planApproval('family')).rejects.toThrow(/template/);
+  });
+  it('does not complete a package checkpoint with nested failed validation', async () => {
+    const { root, store } = await setup(); const file = path.join(root, 'a'); await writeFile(file, 'a'); await store.save(recipe(file));
+    await run(store, 'test', 'validate');
+    const outcome = await run(store, 'test', 'package', vi.fn(async () => ok({ validation: { passed: false } })));
+    expect(outcome.state).toBe('failed'); expect((await store.plan('test')).steps[1]?.status).toBe('ready');
+  });
+  it('uses independently framed dependency hashes rather than concatenated resource bytes', async () => {
+    const { root } = await setup(); const model = path.join(root, 'mesh.gltf');
+    await writeFile(model, JSON.stringify({ asset: { version: '2.0' }, buffers: [{ uri: 'a.bin' }, { uri: 'b.bin' }] }));
+    await writeFile(path.join(root, 'a.bin'), 'AB'); await writeFile(path.join(root, 'b.bin'), 'C'); const before = await fileDigest(model);
+    await writeFile(path.join(root, 'a.bin'), 'A'); await writeFile(path.join(root, 'b.bin'), 'BC'); expect(await fileDigest(model)).not.toBe(before);
+  });
+  it('hashes external GLB resources and refuses symlink resources', async () => {
+    const { root } = await setup(); const model = path.join(root, 'external.glb'); const image = path.join(root, 'texture.bin');
+    const text = JSON.stringify({ asset: { version: '2.0' }, images: [{ uri: 'texture.bin' }] });
+    const json = Buffer.from(text.padEnd(Math.ceil(text.length / 4) * 4));
+    const header = Buffer.alloc(20); header.writeUInt32LE(0x46546c67, 0); header.writeUInt32LE(2, 4); header.writeUInt32LE(20 + json.length, 8); header.writeUInt32LE(json.length, 12); header.writeUInt32LE(0x4e4f534a, 16);
+    await writeFile(model, Buffer.concat([header, json])); await writeFile(image, 'a'); const before = await fileDigest(model);
+    await writeFile(image, 'b'); expect(await fileDigest(model)).not.toBe(before);
+    const other = path.join(root, 'other.bin'); await writeFile(other, 'c'); await rm(image); await symlink(other, image);
+    await expect(fileDigest(model)).rejects.toThrow(/symlink/);
   });
   it('plans executable standalone variants and creates measured collision geometry with no Blender', async () => {
     const { root } = await setup(); const model = await writeGameReadyGlb(path.join(root, 'source.glb'));
