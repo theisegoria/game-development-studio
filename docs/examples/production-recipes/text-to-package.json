@@ -1,0 +1,27 @@
+{
+  "recipe": {
+    "schema": "game_dev.production_recipe.v1", "id": "text_prop_v1", "name": "Text to standalone prop",
+    "steps": [
+      { "id": "generate", "operation": "create_3d_asset", "arguments": {
+        "textPrompt": "A simple painted blue wooden stool, isolated object",
+        "spec": { "name": "blue_stool", "description": "Simple painted blue wooden stool" },
+        "faceLimit": 5000
+      } },
+      { "id": "wait", "operation": "get_asset_job", "dependsOn": ["generate"], "arguments": {
+        "assetJobId": { "$step": "generate", "field": "assetJobId" }
+      } },
+      { "id": "download", "operation": "download_asset", "dependsOn": ["generate", "wait"], "arguments": {
+        "assetJobId": { "$step": "generate", "field": "assetJobId" }
+      } },
+      { "id": "normalize", "operation": "normalize_mesh", "dependsOn": ["download"], "arguments": {
+        "modelPath": { "$step": "download", "field": "modelPath" }, "targetTriangles": 5000
+      } },
+      { "id": "validate", "operation": "validate_game_asset", "dependsOn": ["normalize"], "arguments": {
+        "modelPath": { "$step": "normalize", "field": "outputPath" }, "maxTriangles": 5000
+      } },
+      { "id": "package", "operation": "build_asset_package", "dependsOn": ["normalize", "validate"], "arguments": {
+        "modelPath": { "$step": "normalize", "field": "outputPath" }, "name": "Blue stool", "license": "unknown"
+      } }
+    ]
+  }
+}

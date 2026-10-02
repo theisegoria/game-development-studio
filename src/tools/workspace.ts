@@ -1,0 +1,21 @@
+import { z } from 'zod';
+import type { ToolRegistrar } from '../commands/registry.js';
+import { guard, ok, type ToolContext } from './context.js';
+import { assertProjectWriteAuthority } from './project-writes.js';
+import { inspectWorkspace, planRetention, quarantineWorkspace, restoreWorkspace, exportWorkspace, listRetentionReceipts, retentionPlanSchema } from '../workspace/retention.js';
+import { fetchReleaseMetadata, planReleaseChange } from '../installation/releases.js';
+
+export function registerWorkspaceTools(registry: ToolRegistrar, ctx: ToolContext): void {
+  const root = ctx.config.outputDir, metadataRoots = [ctx.config.dataRoot];
+  const readOnly = { readOnlyHint: true, destructiveHint: false, openWorldHint: false };
+  registry.registerTool('inspect_workspace_storage', { description: 'Measure logical bytes by original/derived/capture/metadata/unknown, identify protected references and uncertain records. No writes or external processes.', inputSchema: {}, annotations: readOnly }, guard(ctx.logger, 'inspect_workspace_storage', async () => ok(await inspectWorkspace(root, metadataRoots))));
+  registry.registerTool('plan_workspace_retention', { description: 'Dry-run hash-bound plan for reversible quarantine or folder export. Originals, referenced records and unknown files are protected from quarantine.', inputSchema: { action: z.enum(['quarantine', 'export']).default('quarantine'), paths: z.array(z.string()).optional() }, annotations: readOnly }, guard(ctx.logger, 'plan_workspace_retention', async args => ok(await planRetention(root, { ...args, metadataRoots }))));
+  registry.registerTool('execute_workspace_retention', { description: 'Move an unchanged reviewed plan into reversible workspace quarantine. Requires project-write launch authority and per-call confirmation. Does not reclaim physical disk space.', inputSchema: { plan: retentionPlanSchema }, annotations: { destructiveHint: true, openWorldHint: false } }, guard(ctx.logger, 'execute_workspace_retention', async args => { assertProjectWriteAuthority(); return ok(await quarantineWorkspace(root, args.plan, metadataRoots)); }));
+  registry.registerTool('list_workspace_retention', { description: 'Inspect quarantine receipts, interrupted operations, and corruption without modifying files.', inputSchema: {}, annotations: readOnly }, guard(ctx.logger, 'list_workspace_retention', async () => ok({ receipts: await listRetentionReceipts(root) })));
+  registry.registerTool('restore_workspace_retention', { description: 'Restore verified quarantine bytes without overwriting existing files. Requires project-write launch authority and per-call confirmation.', inputSchema: { receiptId: z.string().uuid() }, annotations: { destructiveHint: false, openWorldHint: false } }, guard(ctx.logger, 'restore_workspace_retention', async args => { assertProjectWriteAuthority(); return ok(await restoreWorkspace(root, args.receiptId)); }));
+  registry.registerTool('export_workspace_files', { description: 'Copy a reviewed export plan to a new verified bundle in an existing user-chosen folder. Keeps all source files; requires project-write authority and per-call confirmation.', inputSchema: { plan: retentionPlanSchema, destination: z.string().min(1) }, annotations: { destructiveHint: false, openWorldHint: false } }, guard(ctx.logger, 'export_workspace_files', async args => { assertProjectWriteAuthority(); return ok(await exportWorkspace(root, args.plan, args.destination, metadataRoots)); }));
+  registry.registerTool('plan_release_change', { description: 'Verify downloaded GitHub release artifacts and retained rollback bytes. Optionally verify against the fixed public GitHub API. Produces an upgrade/rollback plan; installs nothing.', inputSchema: { installedVersion: z.string(), targetVersion: z.string(), artifact: z.string(), checksums: z.string(), rollbackArtifact: z.string(), rollbackChecksums: z.string(), verifyGitHub: z.boolean().default(false) }, annotations: { ...readOnly, openWorldHint: true } }, guard(ctx.logger, 'plan_release_change', async args => {
+    const releases = args.verifyGitHub ? { targetRelease: await fetchReleaseMetadata(args.targetVersion), rollbackRelease: await fetchReleaseMetadata(args.installedVersion) } : {};
+    return ok(await planReleaseChange({ ...args, ...releases }));
+  }));
+}

@@ -39,6 +39,9 @@ import { compareRunPerformance, summarizeRunPerformance } from './harness/perfor
 import { createOptimizationGoal, evaluateOptimizationGoal } from './harness/goals.js';
 import { installSkillBundle, listSkillBundle } from './skills/bundle.js';
 import { installProcessSignalHandlers } from './util/process-lifecycle.js';
+import { authorizedDispatcher, operationRefusal } from './commands/authorized-dispatch.js';
+import { ROADMAP_MUTATION_TOOLS } from './commands/mutation-policy.js';
+import { withSpendApproval } from './util/spend-approval.js';
 
 const HELP = `Game Development Studio local harness
 
@@ -390,6 +393,19 @@ async function dispatch(
   signal?: AbortSignal,
 ): Promise<DispatchResult> {
   const [family, action] = parsed.positionals;
+  let recipeOperationUsed = false;
+  runtime.context.dispatchOperation = authorizedDispatcher(runtime.registry, async (name, _args, readOnly) => {
+    if (recipeOperationUsed) return operationRefusal(name, 'A recipe invocation authorizes only one operation. Plan and invoke the next step separately.');
+    recipeOperationUsed = true;
+    if (!readOnly && !booleanFlag(parsed, 'confirm')) {
+      return operationRefusal(name, 'This recipe step requires --confirm for this invocation.');
+    }
+    if (isSpendingTool(name)) {
+      const refusal = approvalRequired(name, parsed);
+      if (refusal) return { isError: true, content: [{ type: 'text', text: JSON.stringify(refusal.data) }] };
+    }
+    return undefined;
+  });
 
   if (family === 'capabilities') {
     return { operation: 'capabilities', data: capabilities(runtime) };
@@ -608,6 +624,12 @@ async function dispatch(
 
   if (family === 'tool' && action === 'call') {
     const name = requirePositional(parsed, 2, 'local command name');
+    if (ROADMAP_MUTATION_TOOLS.has(name) && !booleanFlag(parsed, 'confirm')) {
+      return { operation: `approval.${name}`, isError: true, data: {
+        error: 'APPROVAL_REQUIRED', tool: name,
+        message: 'This operation records a review or changes workspace state. Review its inputs and invoke with --confirm.',
+      } };
+    }
     if (isSpendingTool(name)) {
       const approval = approvalRequired(name, parsed);
       if (approval) return approval;
@@ -655,6 +677,7 @@ async function dispatch(
       data: {
         schema: 'game_dev.job_list.v1',
         durable,
+        skippedDurableRecords: runtime.durableJobs.lastListingSkipped(),
         assets: assetResult.data,
       },
     };
@@ -1426,7 +1449,9 @@ export async function main(
         : undefined,
     );
     events.emit('started', { version: GAME_DEV_VERSION });
-    const result = await dispatch(runtime, parsed, events, signal);
+    const result = await (booleanFlag(parsed, 'approve-spend') && spendLimitCents !== undefined
+      ? withSpendApproval('cli flags', () => dispatch(runtime!, parsed, events!, signal))
+      : dispatch(runtime, parsed, events, signal));
     signal?.throwIfAborted();
     outputResult(result.operation, result, jsonLines, events);
     if (durable) {

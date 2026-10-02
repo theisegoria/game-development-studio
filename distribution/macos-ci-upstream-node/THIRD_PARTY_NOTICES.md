@@ -3,7 +3,7 @@
 This profile is for local CI validation bundles, not a published app release.
 It does not replace the default Homebrew release profile.
 
-The bundle includes `game-dev` CLI 1.1.0 (MIT), upstream Node.js 25.2.1 for
+The bundle includes `game-dev` CLI 1.2.0 (MIT), upstream Node.js 25.2.1 for
 macOS ARM64, and the 98 lockfile-pinned production npm package paths below.
 The upstream executable links only macOS system libraries: this profile declares
 zero non-system dylibs. Node's statically included third-party components are
@@ -43,7 +43,7 @@ covered by its complete distributed LICENSE, not by the Homebrew dylib roster.
 | `node_modules/express` | 5.2.1 | MIT |
 | `node_modules/express-rate-limit` | 8.7.0 | MIT |
 | `node_modules/fast-deep-equal` | 3.1.3 | MIT |
-| `node_modules/fast-uri` | 3.1.7 | BSD-3-Clause |
+| `node_modules/fast-uri` | 3.1.8 | BSD-3-Clause |
 | `node_modules/finalhandler` | 2.1.1 | MIT |
 | `node_modules/forwarded` | 0.2.0 | MIT |
 | `node_modules/fresh` | 2.0.0 | MIT |
@@ -53,11 +53,11 @@ covered by its complete distributed LICENSE, not by the Homebrew dylib roster.
 | `node_modules/gopd` | 1.2.0 | MIT |
 | `node_modules/has-symbols` | 1.1.0 | MIT |
 | `node_modules/hasown` | 2.0.4 | MIT |
-| `node_modules/hono` | 4.13.5 | MIT |
+| `node_modules/hono` | 4.13.12 | MIT |
 | `node_modules/http-errors` | 2.0.1 | MIT |
 | `node_modules/iconv-lite` | 0.7.3 | MIT |
 | `node_modules/inherits` | 2.0.4 | ISC |
-| `node_modules/ip-address` | 10.7.0 | MIT |
+| `node_modules/ip-address` | 10.7.3 | MIT |
 | `node_modules/ipaddr.js` | 1.9.1 | MIT |
 | `node_modules/is-promise` | 4.0.0 | MIT |
 | `node_modules/isexe` | 2.0.0 | ISC |

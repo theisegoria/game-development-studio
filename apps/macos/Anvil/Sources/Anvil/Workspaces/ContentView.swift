@@ -5,6 +5,7 @@ struct ContentView: View {
     @Environment(AnvilModel.self) private var model
     @State private var route: WorkspaceRoute = .overview
     @State private var selectedRun: RunID?
+    @State private var showsProductionTools = false
 
     var body: some View {
         NavigationSplitView {
@@ -19,6 +20,10 @@ struct ContentView: View {
         }
         .navigationSplitViewStyle(.balanced)
         .task { await model.start() }
+        .toolbar {
+            ToolbarItem { Button("Production tools", systemImage: "wrench.and.screwdriver") { showsProductionTools = true } }
+        }
+        .sheet(isPresented: $showsProductionTools) { RoadmapToolsWorkspace() }
     }
 
     @ViewBuilder

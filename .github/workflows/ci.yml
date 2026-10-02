@@ -101,7 +101,7 @@ jobs:
       - name: Drive the Metal example on the runner's GPU
         if: runner.os == 'macOS'
         run: |
-          npx vitest run tests/probe-metal.test.ts --no-file-parallelism --reporter=default --reporter=json --outputFile=/tmp/metal.json
+          GAME_DEV_TEST_GPU=1 npx vitest run tests/probe-metal.test.ts --no-file-parallelism --reporter=default --reporter=json --outputFile=/tmp/metal.json
           node -e "
             const r = require('/tmp/metal.json');
             const passed = r.numPassedTests, skipped = r.numPendingTests;
@@ -189,11 +189,11 @@ jobs:
           --python-expr "import bpy, numpy; bpy.ops.import_scene.gltf; print('glTF importer and numpy are available')"
 
       - name: Run the Blender-backed tests
-        run: npx vitest run tests/normalize.test.ts
+        run: GAME_DEV_TEST_BLENDER=1 npx vitest run tests/normalize.test.ts
 
       - name: Prove the Blender-gated tests actually ran
         run: |
-          npx vitest run tests/normalize.test.ts --reporter=json --outputFile=blender-results.json
+          GAME_DEV_TEST_BLENDER=1 npx vitest run tests/normalize.test.ts --reporter=json --outputFile=blender-results.json
           node .github/scripts/assert-blender-tests-ran.mjs blender-results.json
 
   macos-app:

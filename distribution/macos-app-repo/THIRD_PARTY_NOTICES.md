@@ -17,7 +17,7 @@ The app is a native macOS application built with Apple's Swift and SwiftUI
 toolchain and links Apple system frameworks supplied by macOS. It also carries
 a closed local runtime. That runtime includes:
 
-- `game-dev` CLI 1.1.0, licensed under MIT;
+- `game-dev` CLI 1.2.0, licensed under MIT;
 - Node.js 25.2.1, including Node's complete distributed `LICENSE` notice;
 - the 98 lockfile-pinned production npm package paths below; and
 - the 18 non-system dynamic libraries below.
@@ -59,7 +59,7 @@ not by the broader semver ranges in `package.json`:
 | `node_modules/express` | 5.2.1 | MIT |
 | `node_modules/express-rate-limit` | 8.7.0 | MIT |
 | `node_modules/fast-deep-equal` | 3.1.3 | MIT |
-| `node_modules/fast-uri` | 3.1.7 | BSD-3-Clause |
+| `node_modules/fast-uri` | 3.1.8 | BSD-3-Clause |
 | `node_modules/finalhandler` | 2.1.1 | MIT |
 | `node_modules/forwarded` | 0.2.0 | MIT |
 | `node_modules/fresh` | 2.0.0 | MIT |
@@ -69,11 +69,11 @@ not by the broader semver ranges in `package.json`:
 | `node_modules/gopd` | 1.2.0 | MIT |
 | `node_modules/has-symbols` | 1.1.0 | MIT |
 | `node_modules/hasown` | 2.0.4 | MIT |
-| `node_modules/hono` | 4.13.5 | MIT |
+| `node_modules/hono` | 4.13.12 | MIT |
 | `node_modules/http-errors` | 2.0.1 | MIT |
 | `node_modules/iconv-lite` | 0.7.3 | MIT |
 | `node_modules/inherits` | 2.0.4 | ISC |
-| `node_modules/ip-address` | 10.7.0 | MIT |
+| `node_modules/ip-address` | 10.7.3 | MIT |
 | `node_modules/ipaddr.js` | 1.9.1 | MIT |
 | `node_modules/is-promise` | 4.0.0 | MIT |
 | `node_modules/isexe` | 2.0.0 | ISC |

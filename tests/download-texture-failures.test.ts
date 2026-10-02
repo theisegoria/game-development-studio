@@ -89,11 +89,11 @@ afterEach(async () => {
 async function readyJob(): Promise<string> {
   const store = await JobStore.open(path.join(work, '.jobs'));
   const job = createAssetJob({
-    spec: { name: 'broken-crate', prompt: 'a crate' } as never,
+    spec: { name: 'broken-crate', description: 'a crate' },
     slug: 'broken-crate',
   });
   job.status = 'ready';
-  job.model3d = { modelUrl: `${baseUrl}/model.glb` } as never;
+  job.model3d = { provider: 'fixture', taskType: 'text_to_model', parameters: {}, requestedAt: new Date().toISOString(), modelUrl: `${baseUrl}/model.glb` };
   await store.save(job);
   return job.id;
 }

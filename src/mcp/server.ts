@@ -23,6 +23,7 @@ import { SpendGate, type SpendMode } from './spend-gate.js';
 import { ExecutionGate } from './execution-gate.js';
 import { registerEvidenceResources } from './resources.js';
 import { registerSkillPrompts } from './prompts.js';
+import { operationRefusal } from '../commands/authorized-dispatch.js';
 
 export interface McpServerOptions {
   profile?: ToolProfile;
@@ -84,7 +85,20 @@ export async function createMcpServer(
     undefined,
     new ExecutionGate({ canElicit, elicit }),
   );
-  registerAssetCommands(registrar, runtime.context);
+  const recipeContext = {
+    ...runtime.context,
+    dispatchOperation: async (name: string, args: Record<string, unknown>) => {
+      const capability = runtime.registry.capabilities().find(item => item.name === name);
+      if (!capability) return operationRefusal(name, 'The requested operation is unavailable.');
+      if (!capability.readOnly) {
+        if (!canElicit() || !await elicit(`Execute recipe operation ${name} with these resolved inputs?\n\n${JSON.stringify(args)}\n\nThis approves this operation only.`).catch(() => false)) {
+          return operationRefusal(name, 'This recipe operation was not confirmed.');
+        }
+      }
+      return gate.wrap(name, () => runtime.registry.call(name, args))(args);
+    },
+  };
+  registerAssetCommands(registrar, recipeContext);
 
   // Tools are the verbs. Resources let a model browse sealed evidence by URI
   // and prompts give every client the workflow guidance the skills already

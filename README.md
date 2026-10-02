@@ -405,3 +405,30 @@ See [Contributing](CONTRIBUTING.md), [Security](SECURITY.md),
 MIT © 2026 Benjamin Michael Haire. Third-party providers, generated content,
 source assets, and vendored assets remain subject to their own terms and
 licenses.
+
+
+## Standalone production workflows (1.2)
+
+All new operations are discoverable through `game-dev capabilities --json` and
+usable through `game-dev tool call NAME --input JSON --json` or the same MCP name.
+Mutations and recorded human decisions require `--confirm` per CLI invocation;
+MCP requires human elicitation. Recipe provider steps additionally require fresh
+spend approval and a ceiling. An approval fingerprint is an input binding, never
+standing permission.
+
+- [Accounting and recovery](docs/accounting-recovery.md): concurrent reservations,
+  corrupt/stale job diagnostics, provider cost/outcome/quality history.
+- [Blender reliability](docs/BLENDER-RELIABILITY.md): typed receipts, checkpointed
+  batches, explicit test opt-in, process intent and bounded resource use.
+- [Asset review](docs/ASSET_REVIEW.md): local CPU candidate views, reviewed packages,
+  named baselines, scenario matrices and expected-change history.
+- [Workspace retention and updates](docs/workspace-retention-updates.md): measured
+  storage, protected evidence, reversible quarantine, folder exports and verified
+  GitHub upgrade/rollback plans.
+- [Production recipes](docs/PRODUCTION_RECIPES.md): checkpointed workflow graphs,
+  approved sample families, standalone platform variants, LODs and collision proxies.
+
+These workflows do not integrate a game engine. CPU previews are static inspection,
+not final rendering or quality certification. Unsupported conversions remain explicit.
+Local fast tests use `npm test`; real Blender and GPU lanes require the opt-in
+switches documented above and run in CI for release validation.

@@ -12,6 +12,8 @@
  * which numbers are real.
  */
 
+import { ROADMAP_FREE_TOOLS } from '../commands/mutation-policy.js';
+
 export type CostConfidence = 'documented' | 'estimated';
 
 export interface CostEstimate {
@@ -79,6 +81,8 @@ const TOOL_COSTS: Record<string, CostEstimate> = {
 
 /** Tools that can never cost money. Used to keep the two lists from drifting. */
 export const FREE_TOOLS: ReadonlySet<string> = new Set([
+  // Recipe orchestration is local; its selected leaf operation crosses a fresh spend gate.
+  ...ROADMAP_FREE_TOOLS,
   'preview_asset_prompt',
   'select_reference',
   'get_asset_job',
@@ -89,6 +93,13 @@ export const FREE_TOOLS: ReadonlySet<string> = new Set([
   'normalize_mesh',
   'validate_game_asset',
   'get_spend_report',
+  'get_provider_history',
+  'rate_provider_result',
+  'record_provider_outcome',
+  'diagnose_durable_jobs',
+  'recover_durable_job',
+  'recover_storage_lock',
+  'quarantine_corrupt_job',
   'batch_prepare_meshes',
   // Harness analysis: local arithmetic over sealed evidence. Free in the sense
   // this set means -- no provider is contacted -- even though
@@ -178,6 +189,10 @@ export interface SpendEntry {
   reportedCents?: number;
   assetJobId?: string;
   at: string;
+  releasedAt?: string;
+  outcome?: 'pending' | 'succeeded' | 'failed' | 'unknown';
+  approval?: { source: string; at: string; reference?: string; userApprovalVerified?: boolean };
+  quality?: { rating: number; note: string; at: string };
 }
 
 export interface SpendSummary {
@@ -196,7 +211,7 @@ export function summarize(entries: readonly SpendEntry[], limitCents?: number): 
   let containsEstimates = false;
 
   for (const entry of entries) {
-    spent += entry.estimatedCents;
+    spent += Math.max(entry.estimatedCents, entry.reportedCents ?? 0);
     if (entry.confidence === 'estimated') containsEstimates = true;
     const bucket = byTool.get(entry.tool) ?? {
       calls: 0,

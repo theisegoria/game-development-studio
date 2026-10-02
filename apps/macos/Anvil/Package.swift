@@ -22,7 +22,8 @@ let package = Package(
         // Deliberately free of SwiftUI so it can be tested without a UI host.
         .target(
             name: "AnvilKit",
-            path: "Sources/AnvilKit"
+            path: "Sources/AnvilKit",
+            resources: [.process("Resources")]
         ),
         .executableTarget(
             name: "Anvil",
