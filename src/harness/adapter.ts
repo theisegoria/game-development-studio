@@ -5,6 +5,7 @@ import { canonicalJson } from '../packages/format.js';
 import { sha256 } from '../storage/filesystem.js';
 import { invalidInput, invalidState, notFound } from '../util/errors.js';
 import { redact } from '../util/logging.js';
+import { boundedFileSHA256 } from '../util/file-identity.js';
 import {
   adapterManifestSchema,
   relativePathSchema,
@@ -32,6 +33,10 @@ export interface ScenarioRunPlan {
   title: string;
   projectRoot: string;
   executable: string;
+  executableSHA256?: string;
+  runtime?: 'node';
+  runtimeExecutable?: string;
+  runtimeSHA256?: string;
   arguments: string[];
   workingDirectory: string;
   timeoutSeconds: number;
@@ -237,7 +242,10 @@ export async function planScenarioRun(options: {
     throw invalidInput('scenario executable resolves outside the project root', { executable });
   }
   const executableStats = await fs.stat(executable);
-  if ((executableStats.mode & 0o111) === 0) {
+  if (scenario.command.runtime === 'node' && !/\.(?:mjs|cjs|js)$/i.test(executable)) {
+    throw invalidInput('Node runtime requires a project-contained JavaScript file', { executable });
+  }
+  if (scenario.command.runtime !== 'node' && (executableStats.mode & 0o111) === 0) {
     throw invalidInput('scenario executable is not executable', { executable });
   }
 
@@ -282,6 +290,12 @@ export async function planScenarioRun(options: {
     title: scenario.title,
     projectRoot: options.adapter.projectRoot,
     executable,
+    ...(scenario.command.runtime === 'node' ? {
+      runtime: 'node' as const,
+      executableSHA256: await boundedFileSHA256(executable, 16 * 1024 * 1024),
+      runtimeExecutable: await fs.realpath(process.execPath),
+      runtimeSHA256: await boundedFileSHA256(await fs.realpath(process.execPath)),
+    } : {}),
     arguments: args,
     workingDirectory,
     timeoutSeconds: scenario.timeoutSeconds,
@@ -294,7 +308,7 @@ export async function planScenarioRun(options: {
     environment: { ...scenario.environment },
     requiredAuthorizations,
     evidenceCeiling:
-      'This plan proves only resolved local configuration. It executes nothing and proves no build, GPU, pixel, performance, signing, or human-review result.',
+      'This plan proves resolved local configuration and, for explicit Node scripts, source/runtime freshness digests. It executes nothing. Rechecking portable paths/hashes before launch does not isolate hostile concurrent writers or bind imported modules. It proves no build, GPU, pixel, performance, signing, or human-review result.',
   };
 }
 

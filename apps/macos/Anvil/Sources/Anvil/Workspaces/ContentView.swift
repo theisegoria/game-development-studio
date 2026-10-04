@@ -21,7 +21,10 @@ struct ContentView: View {
         .navigationSplitViewStyle(.balanced)
         .task { await model.start() }
         .toolbar {
-            ToolbarItem { Button("Production tools", systemImage: "wrench.and.screwdriver") { showsProductionTools = true } }
+            ToolbarItem {
+                Button("Production workflows", systemImage: "wrench.and.screwdriver") { showsProductionTools = true }
+                    .keyboardShortcut("p", modifiers: [.command, .shift])
+            }
         }
         .sheet(isPresented: $showsProductionTools) { RoadmapToolsWorkspace() }
     }
@@ -31,6 +34,8 @@ struct ContentView: View {
         switch route {
         case .overview:
             HealthWorkspace()
+        case .setup:
+            OptionalToolsSettings()
         case .runs:
             RunsWorkspace(
                 runs: model.runs.runs,

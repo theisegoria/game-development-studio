@@ -96,3 +96,27 @@ Setup and limits are documented in the source repository's
 and [convex decomposition guide](https://github.com/theisegoria/game-development-studio/blob/main/docs/coacd.md).
 Real CPU tests run in explicit remote CI lanes; mocked local tests are not native
 execution evidence. These standalone workflows require no game-engine integration.
+
+## Guided source checkpoint
+
+Public 1.3.1 remains the release baseline. Discover installed capabilities before
+using unreleased `list_production_templates`, `plan_production_template`,
+`save_production_template` or `set_production_review`. Prefer the native typed
+forms or `workflow` CLI commands, with raw JSON available for advanced requests.
+Graphs show completed, ready, blocked, invalidated and uncertain states with
+reasons and actual output evidence. Authorize the reviewed next step using its
+current fingerprint; selecting a candidate binds the completed review evidence
+digest and grants no later execution authority.
+
+The checkpoint also exposes workflow-aware `run_doctor`, persistent optional-tool
+selection and local redacted support reports. Inspection does not launch the
+selected executable. Missing Blender/Basis/CoACD blocks only workflows that need
+it. Support reports must be reviewed by the user before sharing and are never
+uploaded automatically.
+
+Optional CPU appearance and reproducible clip/time reviews bind settings,
+renderer version, source hashes and dashboard/preview bytes. Their UV, material,
+skinning and morph evidence has explicit resource/unsupported-feature limits.
+Compare sealed before/after previews through the existing snapshot/regression
+tools under matching settings. A fresh input or setting needs fresh review;
+engine correctness and artistic approval remain separate human/engine checks.

@@ -11,5 +11,9 @@ struct AnvilApp: App {
                 .frame(minWidth: 900, minHeight: 600)
         }
         .defaultSize(width: 1_280, height: 860)
+        Settings {
+            OptionalToolsSettings().environment(model)
+                .frame(width: 700, height: 540)
+        }
     }
 }

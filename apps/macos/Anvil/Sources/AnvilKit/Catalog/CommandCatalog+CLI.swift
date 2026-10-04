@@ -23,6 +23,8 @@ extension CommandCatalog {
             path: ["doctor"],
             title: "Doctor",
             summary: "Check the local toolchain: platform, Node, workspace, credentials, Blender and skills.",
+            arguments: [.flag("workflow", "Workflow", kind: .choice(["generic-capture", "asset-inspect", "asset-package", "blender-normalize", "texture-compression", "collision-decomposition", "metal-capture", "all"])),
+                        .flag("expected-version", "Expected installed version")],
             route: .overview
         ),
         CommandSpec(
@@ -65,6 +67,69 @@ extension CommandCatalog {
         ),
 
         // MARK: - Generic tool escape hatch
+
+        CommandSpec(
+            id: "support.report", path: ["support", "report"],
+            title: "Preview or save a redacted support report", summary: "Review allowlisted diagnostics locally. Saving needs confirmation and a new file.",
+            arguments: [.flag("workflow", "Workflow"), .flag("expected-version", "Expected installed version"),
+                        .flag("output", "New report file", kind: .path)], route: .setup
+        ),
+        CommandSpec(
+            id: "workflow.templates", path: ["workflow", "templates"],
+            title: "List guided tasks", summary: "Inspect shipped production templates without executing steps.", route: .createBrief
+        ),
+        CommandSpec(
+            id: "workflow.create", path: ["workflow", "create"],
+            title: "Preview or save a guided recipe", summary: "Expand a template request; save only after confirmation.",
+            arguments: [.positional("template-id", "Template"), .positional("model", "Source model", kind: .path, required: false),
+                        .flag("name", "Name"), .flag("license", "License"), .flag("recipe-id", "Recipe ID"),
+                        .flag("request", "Task values", kind: .jsonRequest)],
+            lane: .workspaceWrite, route: .createBrief
+        ),
+        CommandSpec(
+            id: "workflow.plan", path: ["workflow", "plan"],
+            title: "Inspect a saved recipe", summary: "Inspect verified checkpoints and next-step fingerprints.",
+            arguments: [.positional("recipe-id", "Recipe ID")], route: .createBrief
+        ),
+        CommandSpec(
+            id: "workflow.step", path: ["workflow", "step"],
+            title: "Run one reviewed recipe step", summary: "Execute one step with current fingerprint and fresh transport authority.",
+            arguments: [.positional("recipe-id", "Recipe ID"), .positional("step-id", "Step ID"), .flag("fingerprint", "Current fingerprint", required: true)],
+            authorities: [.confirm], conditionalSpend: true, lane: .workspaceWrite, route: .createBrief, createsDurableJob: true
+        ),
+        CommandSpec(
+            id: "workflow.review", path: ["workflow", "review"],
+            title: "Bind a reviewed candidate selection", summary: "Record reviewer attribution and reason against actual current review evidence.",
+            arguments: [.positional("recipe-id", "Recipe ID"), .positional("candidate-id", "Candidate ID"),
+                        .flag("fingerprint", "Review fingerprint", required: true), .flag("reviewer", "Reviewer", required: true),
+                        .flag("reason", "Review reason", required: true)],
+            authorities: [.confirm], lane: .workspaceWrite, route: .createBrief, createsDurableJob: true
+        ),
+        CommandSpec(
+            id: "workflow.recover", path: ["workflow", "recover"],
+            title: "Recover a stopped recipe lock", summary: "Release a proven stopped owner while preserving uncertainty.",
+            arguments: [.positional("recipe-id", "Recipe ID")], authorities: [.confirm],
+            lane: .workspaceWrite, route: .runs, createsDurableJob: true
+        ),
+
+        CommandSpec(
+            id: "tool.list", path: ["tool", "list"],
+            title: "Inspect optional tool selections", summary: "Verify saved executable file identities without launching tools.", route: .setup
+        ),
+        CommandSpec(
+            id: "tool.configure", path: ["tool", "configure"],
+            title: "Configure an optional tool", summary: "Validate and save an absolute optional tool executable path and file identity.",
+            arguments: [.positional("tool", "Tool", kind: .choice(["blender", "basisu", "coacd-python"])),
+                        .flag("executable", "Executable path", kind: .path, required: true),
+                        .flag("sha256", "Expected SHA-256")],
+            authorities: [.confirm], lane: .workspaceWrite, route: .setup
+        ),
+        CommandSpec(
+            id: "tool.clear", path: ["tool", "clear"],
+            title: "Clear an optional tool selection", summary: "Remove the selected saved tool path from the per-user configuration.",
+            arguments: [.positional("tool", "Tool", kind: .choice(["blender", "basisu", "coacd-python"]))],
+            authorities: [.confirm], lane: .workspaceWrite, route: .setup
+        ),
 
         CommandSpec(
             id: "tool.call",

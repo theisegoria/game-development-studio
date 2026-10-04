@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased roadmap checkpoint
+
+- Repairs release-driven install/quickstart guidance and adds a compiler-free
+  installed-artifact capture gate, including explicit Node sample execution,
+  workflow diagnostics and locally reviewed redacted support reports.
+- Adds typed production templates, evidence-bound candidate selection, recipe
+  graph reasons and guided Anvil forms with advanced JSON retained.
+- Adds persistent verified optional-tool paths and bounded CPU appearance,
+  UV and reproducible pose review. Source/settings/rendered bytes remain bound
+  to fresh human review; previews do not establish target-engine correctness.
+- Prepares platform first-run CI and manual distribution checks. These changes
+  are local source checkpoints; public 1.3.1 remains the installation baseline.
+
 ## 1.3.1
 
 - Preserves explicitly configured optional CPU dependency paths and encoder hash

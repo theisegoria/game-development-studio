@@ -66,12 +66,21 @@ const EXPECTED_TOOLS = [
   'animate_asset',
   'retopologize_asset',
   'batch_prepare_meshes',
+  'list_production_templates',
+  'plan_production_template',
+  'save_production_template',
+  'set_production_review',
+  'list_optional_tools',
+  'configure_optional_tool',
+  'clear_optional_tool',
+  'preview_support_report',
+  'write_support_report',
 ];
 
 const EXPECTED_FAMILIES = [
   'capabilities', 'doctor', 'credentials', 'adapter', 'provider', 'job', 'catalog',
   'asset', 'vendor', 'package', 'scenario', 'capture', 'visual',
-  'performance', 'skill', 'migrate', 'launch', 'tool',
+  'performance', 'skill', 'migrate', 'launch', 'tool', 'workflow', 'support',
 ];
 
 const EXPECTED_SKILLS = [

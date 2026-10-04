@@ -71,13 +71,15 @@ game project.
 
 The CLI source is public at
 [game-development-studio](https://github.com/theisegoria/game-development-studio).
-The [CLI 1.1.0 GitHub release](https://github.com/theisegoria/game-development-studio/releases/tag/v1.1.0)
+The [CLI 1.3.1 GitHub release](https://github.com/theisegoria/game-development-studio/releases/tag/v1.3.1)
 provides a compiled Node.js package (`.tgz`) and SHA-256 manifest. It requires
 Node.js 22.5+ and is not a standalone Windows installer. The public npm registry
 package remains unpublished. This plugin's ZIP installs skills only.
 
-Follow the [Windows installation and PATH guide](https://github.com/theisegoria/game-development-studio/blob/v1.1.0/docs/windows-install.md)
-for release-tarball verification, PowerShell commands, and source-build fallback.
+Follow the [canonical installation guide](https://github.com/theisegoria/game-development-studio/blob/main/docs/install.md)
+for release-tarball verification, PowerShell and POSIX commands, PATH checks,
+manual updates, and rollback. Then follow the [free first capture](https://github.com/theisegoria/game-development-studio/blob/main/docs/quickstart.md)
+using the bundled generic sample adapter, without a C compiler or provider account.
 The manifest verifies the downloaded package bytes; no Windows code-signing
 certificate or EXE/MSI is supplied. Installing the plugin alone cannot add the
 CLI to PATH.

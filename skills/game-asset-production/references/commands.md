@@ -128,3 +128,48 @@ evidence rather than silently retried.
 See the source [production guide](https://github.com/theisegoria/game-development-studio/blob/main/docs/PRODUCTION_RECIPES.md),
 [Basis setup](https://github.com/theisegoria/game-development-studio/blob/main/docs/TEXTURE_COMPRESSION.md),
 and [CoACD setup](https://github.com/theisegoria/game-development-studio/blob/main/docs/coacd.md).
+
+## Guided source checkpoint (capability discovery required)
+
+These additions are an unreleased source checkpoint. Public 1.3.1 remains the
+release baseline; use them only when installed capabilities expose the named
+tools and schemas. The shared templates are `inspect-validate-package`,
+`review-select-package` and `platform-variants`.
+
+```text
+game-dev workflow templates --json
+game-dev workflow create inspect-validate-package model.glb --name NAME --license SPDX --recipe-id RECIPE --json
+game-dev workflow create inspect-validate-package model.glb --name NAME --license SPDX --recipe-id RECIPE --confirm --json
+game-dev workflow plan RECIPE --json
+game-dev workflow step RECIPE STEP --fingerprint CURRENT_STEP_FINGERPRINT --confirm --json
+game-dev workflow review RECIPE CANDIDATE --fingerprint CURRENT_REVIEWED_FINGERPRINT --reviewer NAME --reason REASON --confirm --json
+game-dev tool list --json
+game-dev tool configure basisu --executable ABSOLUTE_PATH --confirm --json
+game-dev doctor --workflow asset-package --json
+game-dev support report --json
+game-dev support report --output NEW_LOCAL_REPORT.json --confirm --json
+```
+
+The first `workflow create` is a plan. Inspect/package and review/package
+templates accept self-contained GLB; platform requests retain explicit variant
+settings through the native form or advanced `--request`. Choose the returned
+candidate ID after reviewing actual outputs. Candidate selection uses the
+completed review's `reviewedFingerprint`; execution uses the next step's
+`fingerprint`. Changes to source, settings or rendered evidence require a fresh
+review. Repeated invocations cannot reuse stale approval or silently resubmit
+uncertain work. Inspect existing job evidence and the recipe's recovery reason.
+
+`list_optional_tools`, `configure_optional_tool` and `clear_optional_tool` share
+the CLI/native persistent configuration. Configuration hashes a selected regular
+executable without launching it; subsequent operations fail closed after drift.
+Selecting a path is not installing a tool or approving a later process launch.
+`preview_support_report` and `write_support_report` emit an allowlisted local
+report. Review it before sharing; neither command transmits it.
+
+`create_asset_review` optionally accepts settings for controlled CPU appearance,
+resolution/exposure, explicit review LOD and clip/time selection. It reports its
+size/work envelope and unsupported features rather than silently truncating.
+Normals, roughness, metallic, alpha, UV overlap/density, skinning and morph
+inspection are bounded technical evidence. This renderer is not a target engine
+and its preview is not artistic approval. Use existing sealed snapshot comparison
+and regression tools for before/after outputs under the same review settings.

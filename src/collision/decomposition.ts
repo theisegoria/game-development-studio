@@ -7,6 +7,8 @@ import { invalidInput, invalidState } from '../util/errors.js';
 import { atomicJson, withTransaction } from '../storage/transaction.js';
 import { extractCollisionTriangles, validateConvexHull, measureApproximation, meshBounds, type TriangleMesh } from './geometry.js';
 import { coacdEnvironmentSchema, coacdScript, diagnoseCoacd, runCoacdPython, type CoacdRunner } from './process.js';
+import { coacdEnvironmentIdentitySHA256 } from './identity.js';
+import { inspectToolSelection, type ToolSelection } from '../installation/tool-config.js';
 
 export const decompositionSchema = z.object({
   modelPath:z.string().min(1), threshold:z.number().min(0.01).max(0.2).default(0.05),
@@ -21,6 +23,11 @@ const point=z.tuple([z.number().finite(),z.number().finite(),z.number().finite()
 const triangle=z.tuple([z.number().int().nonnegative(),z.number().int().nonnegative(),z.number().int().nonnegative()]);
 const resultSchema=z.object({schema:z.literal('game_dev.coacd_result.v1'),environment:coacdEnvironmentSchema,limits:z.object({memory:z.string().min(1),cpu:z.string().min(1),cpuAffinity:z.string().min(1),memoryEnforcement:z.enum(['address-space-rlimit','windows-job-object','sampled-rss-watchdog']),memorySampleIntervalMs:z.number().int().positive().nullable(),memoryOvershootPossible:z.boolean()}).strict(),parts:z.array(z.object({vertices:z.array(point).min(4).max(256),faces:z.array(triangle).min(4).max(508)}).strict()).min(1).max(32)}).strict();
 const sha256=(bytes:Uint8Array|string)=>createHash('sha256').update(bytes).digest('hex');
+async function assertCoacdSelectionUnchanged(env:NodeJS.ProcessEnv|undefined,selection:ToolSelection,identity:string):Promise<void> {
+  const current=inspectToolSelection('coacd-python',env);
+  if(!current.available||!current.identity||JSON.stringify(current.identity)!==JSON.stringify(selection)) throw invalidState('Selected CoACD Python executable changed during collision decomposition.');
+  if(await coacdEnvironmentIdentitySHA256(current.identity)!==identity) throw invalidState('Selected CoACD venv configuration or package bytes changed during collision decomposition.');
+}
 async function regularBytes(file:string,limit:number):Promise<Buffer> {const stat=await fs.lstat(file);if(!stat.isFile()||stat.isSymbolicLink()||stat.size>limit) throw invalidInput('Collision file must be a regular file within its byte budget');const bytes=await fs.readFile(file);if(bytes.length>limit) throw invalidInput('Collision file grew beyond its byte budget');return bytes;}
 async function durablePart(file:string,bytes:string|Uint8Array):Promise<void> {const handle=await fs.open(file,'wx',0o600);try{await handle.writeFile(bytes);await handle.sync();}finally{await handle.close();}}
 async function hullGlb(mesh:TriangleMesh):Promise<Uint8Array> {
@@ -42,19 +49,30 @@ export async function decomposeCollisionMesh(input:DecompositionOptions,outputRo
   const options={threshold:args.threshold,maxParts:args.maxParts,maxVerticesPerPart:args.maxVerticesPerPart,seed:args.seed,memoryMB:args.memoryMB,cpuSeconds:args.cpuSeconds,timeoutSeconds:args.timeoutSeconds};
   // Bound the independent O(samples * triangles) validator as well as the native operation.
   if(args.sampleCount*(geometry.faces.length+args.maxParts*args.maxVerticesPerPart*2)*4>50_000_000) throw invalidInput('Requested collision validation exceeds 50 million triangle probes; reduce input triangles, samples or hull budgets');
+  const selected=inspectToolSelection('coacd-python',settings.env);
+  if(!selected.available||!selected.identity) throw invalidState(`CPU convex decomposition unavailable: ${selected.code}`);
+  const selection=selected.identity;
+  // Bind configuration and every contained package byte before the diagnostic Python process starts.
+  const selectedVenvSHA256=await coacdEnvironmentIdentitySHA256(selection);
   await fs.mkdir(outputRoot,{recursive:true});
   const canonicalRoot=await fs.realpath(outputRoot);
   return withTransaction(path.join(canonicalRoot,'.coacd-worker'),async()=>{
     const stage=await fs.mkdtemp(path.join(canonicalRoot,'.coacd-'));
     try {
+      await assertCoacdSelectionUnchanged(settings.env,selection,selectedVenvSHA256);
       const diagnostic=await diagnoseCoacd({env:settings.env,runner:settings.runner,cwd:stage});
       if(!diagnostic.available) throw invalidState(`CPU convex decomposition unavailable: ${diagnostic.reason}`,{setup:'docs/coacd.md'});
+      if(JSON.stringify(diagnostic.selection)!==JSON.stringify(selection)) throw invalidState('CoACD Python selection changed between static identity and diagnosis.');
+      await assertCoacdSelectionUnchanged(settings.env,selection,selectedVenvSHA256);
       const wrapperSHA256=sha256(await regularBytes(coacdScript,1024*1024));
       const sourceMesh={schema:'game_dev.collision_triangles.v1',...geometry};
       const interchangePath=path.join(stage,'source.mesh.json');await atomicJson(interchangePath,sourceMesh);
       const interchangeSHA256=sha256(await fs.readFile(interchangePath));
       const nativePath=path.join(stage,'native-result.json');
-      const log=await (settings.runner??runCoacdPython)({python:diagnostic.python,script:coacdScript,args:['--input',interchangePath,'--output',nativePath,'--options',JSON.stringify(options)],cwd:stage,timeoutMs:args.timeoutSeconds*1000});
+      await assertCoacdSelectionUnchanged(settings.env,selection,selectedVenvSHA256);
+      const log=await (settings.runner??runCoacdPython)({python:diagnostic.python,selection:diagnostic.selection,script:coacdScript,args:['--input',interchangePath,'--output',nativePath,'--options',JSON.stringify(options)],cwd:stage,timeoutMs:args.timeoutSeconds*1000});
+      // Reject output from a worker if any selected venv byte changed while it was running.
+      await assertCoacdSelectionUnchanged(settings.env,selection,selectedVenvSHA256);
       const result=resultSchema.parse(JSON.parse((await regularBytes(nativePath,16*1024*1024)).toString('utf8')));
       if(JSON.stringify(result.environment)!==JSON.stringify(diagnostic.environment)) throw invalidState('CoACD tool environment changed between diagnosis and decomposition');
       if(result.parts.length>args.maxParts) throw invalidState('CoACD exceeded the requested part count');
@@ -73,7 +91,7 @@ export async function decomposeCollisionMesh(input:DecompositionOptions,outputRo
       const approximation=measureApproximation(geometry,publishedHulls,args.sampleCount);
       if(approximation.normalizedMaxDistance>args.maxApproximationError) throw invalidState('Convex collision parts exceed the sampled approximation-error budget',{approximation,limit:args.maxApproximationError});
       const validation={...approximation,maxAllowedNormalizedDistance:args.maxApproximationError,passed:true};
-      const manifest={schema:'game_dev.collision_decomposition.v1',kind:'separate_convex_parts',source:{sha256:sourceSHA256,interchangeSHA256,vertices:geometry.vertices.length,triangles:geometry.faces.length,bounds:meshBounds(geometry),sceneTransformsApplied:true,units:'source GLB scene units; glTF convention meters'},options:{...options,timeoutSeconds:args.timeoutSeconds,sampleCount:args.sampleCount,maxApproximationError:args.maxApproximationError},tool:{...result.environment,wrapperSHA256},limits:result.limits,parts,validation,engineVerified:false,limitations:['Sampled solid-union error is not an exact geometric bound or engine acceptance proof.','No animations, skins, morphs, non-triangle modes, glTF extensions or external resources.','Keep convex parts separate; joining them and convexifying the aggregate fills openings.','Fixed seed is recorded; cross-platform byte identity is not guaranteed.']};
+      const manifest={schema:'game_dev.collision_decomposition.v1',kind:'separate_convex_parts',source:{sha256:sourceSHA256,interchangeSHA256,vertices:geometry.vertices.length,triangles:geometry.faces.length,bounds:meshBounds(geometry),sceneTransformsApplied:true,units:'source GLB scene units; glTF convention meters'},options:{...options,timeoutSeconds:args.timeoutSeconds,sampleCount:args.sampleCount,maxApproximationError:args.maxApproximationError},tool:{...result.environment,wrapperSHA256,selectedVenvSHA256},limits:result.limits,parts,validation,engineVerified:false,limitations:['Static CoACD venv identity covers pyvenv.cfg and contained site-packages bytes; base interpreter and standard library provenance are not included.','The worker remains an explicitly trusted installed venv; static identity is not a hostile-runtime sandbox.','Sampled solid-union error is not an exact geometric bound or engine acceptance proof.','No animations, skins, morphs, non-triangle modes, glTF extensions or external resources.','Keep convex parts separate; joining them and convexifying the aggregate fills openings.','Fixed seed is recorded; cross-platform byte identity is not guaranteed.']};
       await atomicJson(path.join(stage,'manifest.json'),manifest);
       const manifestSHA256=sha256(await fs.readFile(path.join(stage,'manifest.json')));
       const receipt={schema:'game_dev.collision_receipt.v1',operation:'decompose_collision_mesh',status:'completed',sourceSHA256,manifestSHA256,processIntent:'isolated CPU-only CoACD; no Blender/GPU/provider',cpuOnly:true,engineVerified:false,tool:manifest.tool,limits:result.limits,outputs:parts.flatMap(part=>part.files),validation,stderrTail:log.stderr.slice(-8192)};

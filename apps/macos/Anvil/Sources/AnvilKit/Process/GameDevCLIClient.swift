@@ -631,6 +631,10 @@ public struct GameDevCLIClient: GameDevCLIClientProtocol, Sendable {
         "GAME_DEV_BASISU_PATH",
         "GAME_DEV_BASISU_SHA256",
         "GAME_DEV_COACD_PYTHON",
+        "GAME_DEV_COACD_PYTHON_SHA256",
+        "GAME_DEV_TOOL_CONFIG_PATH",
+        "BLENDER_PATH",
+        "GAME_DEV_BLENDER_SHA256",
     ]
 
     private static func sanitizedEnvironment(_ environment: [String: String]) -> [String: String] {
@@ -644,6 +648,19 @@ public struct GameDevCLIClient: GameDevCLIClientProtocol, Sendable {
         if credentials.values.contains(where: { !$0.isEmpty }) { return true }
         guard let family = arguments.first?.lowercased() else { return false }
         switch family {
+        case "tool":
+            let action = arguments.dropFirst().first
+            if action == "configure" || action == "clear" { return true }
+            if action == "call" {
+                // Unknown operations fail closed. The catalog is the native authority metadata.
+                guard arguments.count > 2, let spec = CommandCatalog.byRegistryTool[arguments[2]] else { return true }
+                return !spec.authorities.isEmpty || spec.conditionalSpend || spec.spend.isPaid
+                    || arguments.contains("--confirm") || arguments.contains("--approve-spend")
+            }
+            return false
+        case "workflow":
+            return !["templates", "preview", "plan"].contains(arguments.dropFirst().first ?? "")
+                || arguments.contains("--confirm") || arguments.contains("--approve-spend")
         case "provider", "scenario":
             return family == "provider" || arguments.dropFirst().first == "run"
         case "package":
@@ -651,7 +668,7 @@ public struct GameDevCLIClient: GameDevCLIClientProtocol, Sendable {
         case "asset":
             return arguments.dropFirst().first == "normalize"
                 || arguments.dropFirst().first == "preview-usdz"
-        case "catalog", "adapter", "vendor", "launch", "migrate", "performance", "skill":
+        case "catalog", "adapter", "vendor", "launch", "migrate", "performance", "skill", "support":
             return arguments.contains("--confirm")
         default:
             return false
