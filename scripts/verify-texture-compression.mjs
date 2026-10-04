@@ -32,7 +32,17 @@ async function main() {
   if (identity.sourceCommit !== '9bebe16726b3a61c8c213eeee3b7cffb462ef34e' || identity.opencl !== false || !identity.path || !identity.sha256) throw new Error('Not the pinned CPU build manifest.');
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'basis-cpu-check-')); const report = path.join(root, 'tests.json');
   try {
-    const result = spawnSync(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', 'tests/texture-compression-cpu.test.ts', '--no-file-parallelism', '--reporter=json', `--outputFile=${report}`], { stdio: 'inherit', timeout: 10 * 60_000, env: { ...process.env, GAME_DEV_TEST_BASIS_CPU: '1', GAME_DEV_BASISU_PATH: identity.path, GAME_DEV_BASISU_SHA256: identity.sha256 } });
+    const result = spawnSync(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', 'tests/texture-compression-cpu.test.ts', '--no-file-parallelism', '--reporter=default', '--reporter=json', `--outputFile.json=${report}`], { stdio: 'inherit', timeout: 10 * 60_000, env: { ...process.env, GAME_DEV_TEST_BASIS_CPU: '1', GAME_DEV_BASISU_PATH: identity.path, GAME_DEV_BASISU_SHA256: identity.sha256 } });
+    // Keep the real assertions even when decoding fails before image artifacts exist.
+    // Without the default reporter and saved JSON, cleanup concealed the only diagnosis.
+    if (process.env.GDS_BASIS_REVIEW_EVIDENCE) {
+      const stats = await fs.lstat(report).catch(error => { if (error.code === 'ENOENT') return undefined; throw error; });
+      if (stats) {
+        if (!stats.isFile() || stats.isSymbolicLink() || stats.size > 8 * 1024 * 1024) throw new Error('CPU test report is not a bounded regular JSON file.');
+        await fs.mkdir(process.env.GDS_BASIS_REVIEW_EVIDENCE, { recursive: true });
+        await fs.copyFile(report, path.join(process.env.GDS_BASIS_REVIEW_EVIDENCE, 'tests.json'));
+      }
+    }
     if (result.error || result.status !== 0) throw result.error ?? new Error(`CPU tests exited ${result.status}`);
     const tests = JSON.parse(await fs.readFile(report, 'utf8'));
     assertRealBasisReport(tests);
