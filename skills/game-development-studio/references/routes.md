@@ -1,5 +1,7 @@
 # Workflow routes
 
+Guided forms, renderer 2.2, Basis appearance decoding and sampled playback are roadmap-source features, not published v1.3.1 capabilities. Inspect the installed CLI/MCP schemas before constructing requests; use the matching roadmap source checkpoint for these additions until a release is approved.
+
 ## Asset request to project admission
 
 1. Produce or locate source bytes with `$game-asset-production`.
@@ -120,3 +122,17 @@ skinning and morph evidence has explicit resource/unsupported-feature limits.
 Compare sealed before/after previews through the existing snapshot/regression
 tools under matching settings. A fresh input or setting needs fresh review;
 engine correctness and artistic approval remain separate human/engine checks.
+
+Direct Basis KTX2 appearance is an explicit appearance-only opt-in using the
+existing verified CPU executable. Planning is process-free; the sealed source
+receipt records decoder identity, texture/pixel hashes and actual subprocess
+counts. Reviewed packaging keeps the original compressed GLB bytes. A decoder
+change requires fresh review, and plain/compressed comparisons require matching
+settings, decode profile and an explicit shared frame.
+
+Sampled animation playback is an explicit 2–16-frame appearance sequence at
+128 pixels, prepared once and bound to source/settings/timestamps. Offline
+scrubbing starts no process. It currently uses PNG/JPEG sources without Basis;
+other combinations and exceeded sequence budgets refuse execution. Existing
+regression dashboards add side-by-side/opacity controls over verified pixels,
+without changing numerical verdicts or automatically promoting baselines.

@@ -153,6 +153,65 @@ struct ProductionWorkflowTests {
         #expect(throws: (any Error).self) { try value.request(animationSources: [source]) }
     }
 
+    @Test("Basis texture decoding is appearance-only and shared framing is explicit, bounded review input")
+    func appearanceDecodingAndSharedFraming() throws {
+        var value = draft(.review)
+        value.candidatePaths = "/tmp/before and after.glb"
+        #expect(!value.decodeBasisTextures)
+        #expect(!value.sharedFramingEnabled)
+        let defaultSettings = try value.request()["request"]?["reviewSettings"]
+        #expect(defaultSettings?["decodeBasisTextures"] == nil)
+        #expect(defaultSettings?["framing"] == nil)
+
+        value.reviewMode = "appearance"
+        let appearanceDefault = try value.request()["request"]?["reviewSettings"]
+        #expect(appearanceDefault?["decodeBasisTextures"] == .bool(false))
+        value.decodeBasisTextures = true
+        value.sharedFramingEnabled = true
+        value.framingCenterX = -1e12
+        value.framingCenterY = 1e12
+        value.framingCenterZ = 12.5
+        value.framingExtent = 2e12
+        let appearanceRequest = try value.request()
+        let settings = appearanceRequest["request"]?["reviewSettings"]
+        #expect(settings?["decodeBasisTextures"] == .bool(true))
+        #expect(settings?["framing"]?["center"] == .array([.number(-1e12), .number(1e12), .number(12.5)]))
+        #expect(settings?["framing"]?["extent"] == .number(2e12))
+        #expect(appearanceRequest["request"]?["normalize"] == nil)
+
+        var geometry = value
+        geometry.reviewMode = "geometry"
+        let geometrySettings = try geometry.request()["request"]?["reviewSettings"]
+        #expect(geometrySettings?["decodeBasisTextures"] == nil)
+        #expect(geometrySettings?["framing"] == settings?["framing"])
+
+        var decoderChanged = value
+        decoderChanged.decodeBasisTextures = false
+        #expect(decoderChanged != value)
+        var framingChanged = value
+        framingChanged.framingCenterZ = 13
+        #expect(framingChanged != value)
+
+        let invalidCenters: [[Double]] = [
+            [.nan, 0, 0], [0, .infinity, 0], [0, 0, -1_000_000_000_001], [1_000_000_000_001, 0, 0],
+        ]
+        for center in invalidCenters {
+            var invalid = value
+            invalid.framingCenterX = center[0]
+            invalid.framingCenterY = center[1]
+            invalid.framingCenterZ = center[2]
+            #expect(throws: (any Error).self) { try invalid.request() }
+        }
+        for invalidExtent in [Double.nan, .infinity, 0.000009, 2_000_000_000_001] {
+            var invalid = value
+            invalid.framingExtent = invalidExtent
+            #expect(throws: (any Error).self) { try invalid.request() }
+        }
+        var lowerExtent = value
+        lowerExtent.framingExtent = 0.00001
+        #expect(try lowerExtent.request()["request"]?["reviewSettings"]?["framing"]?["extent"] == .number(0.00001))
+    }
+
     @Test("Timeline intersects supported indexes and clamps time to the shortest actual clip")
     func animationTimelineBounds() throws {
         let first = try ProductionAnimationSourceInfo(animationInfo(path: "/tmp/first.glb", clips: [
@@ -176,6 +235,34 @@ struct ProductionWorkflowTests {
         #expect(try value.request(animationSources: [first, second])["request"]?["reviewSettings"]?["pose"]?["timeSeconds"] == .number(1.25))
         value.clipTimeSeconds = 1.251
         #expect(throws: (any Error).self) { try value.request(animationSources: [first, second]) }
+    }
+
+    @Test("Sampled playback uses actual shared clip bounds and invalidates the draft")
+    func sampledPlaybackRequest() throws {
+        let first = try ProductionAnimationSourceInfo(animationInfo(path: "/tmp/first.glb", clips: [animationClip(0, name: "Walk", duration: 2)]), requestedPath: "/tmp/first.glb")
+        let second = try ProductionAnimationSourceInfo(animationInfo(path: "/tmp/second.glb", clips: [animationClip(0, name: "Walk", duration: 1)]), requestedPath: "/tmp/second.glb")
+        var value = draft(.review)
+        value.candidatePaths = "/tmp/first.glb\n/tmp/second.glb"
+        value.sampleAnimation = true; value.sampleAnimationPlayback = true; value.clipIndex = 0
+        value.reviewMode = "appearance"; value.reviewResolution = 128; value.clipTimeSeconds = 0.25; value.clipEndSeconds = 1
+        let settings = try value.request(animationSources: [first, second])["request"]?["reviewSettings"]
+        #expect(settings?["timeline"]?["startSeconds"] == .number(0.25))
+        #expect(settings?["timeline"]?["endSeconds"] == .number(1))
+        #expect(settings?["timeline"]?["frameCount"] == .number(8))
+        #expect(settings?["pose"] == nil)
+        var changed = value; changed.clipEndSeconds = 0.75; #expect(changed != value)
+        changed = value; changed.playbackFrameCount = 4; #expect(changed != value)
+        changed = value; changed.sampleAnimationPlayback = false; #expect(changed != value)
+        for end in [Double.nan, .infinity, 0.25, 1.01] {
+            changed = value; changed.clipEndSeconds = end
+            #expect(throws: (any Error).self) { try changed.request(animationSources: [first, second]) }
+        }
+        changed = value; changed.reviewResolution = 256
+        #expect(throws: (any Error).self) { try changed.request(animationSources: [first, second]) }
+        changed = value; changed.decodeBasisTextures = true
+        #expect(throws: (any Error).self) { try changed.request(animationSources: [first, second]) }
+        changed = value; changed.playbackFrameCount = 17
+        #expect(throws: (any Error).self) { try changed.request(animationSources: [first, second]) }
     }
 
     @Test("Different clip names require a source-bound acknowledgement")
@@ -419,7 +506,7 @@ struct ProductionWorkflowTests {
         #expect(idle.modelPath == idleURL.path)
         #expect(idle.sourceSHA256.count == 64)
         #expect(idle.renderer.id == "gds-cpu-review")
-        #expect(idle.renderer.version == "2.1.0")
+        #expect(idle.renderer.version == "2.2.0")
         #expect(idle.renderer.lighting == "neutral-studio-v1")
         #expect(idle.clips.first?.interpolations == ["CUBICSPLINE"])
         #expect(idle.clips.first?.supported == true)

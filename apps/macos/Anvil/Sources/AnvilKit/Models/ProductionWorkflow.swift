@@ -31,8 +31,17 @@ public struct ProductionWorkflowDraft: Equatable, Sendable {
     public var reviewMode = "geometry"
     public var reviewResolution = 256
     public var reviewExposure = 1.0
+    public var decodeBasisTextures = false
     public var reviewLod = ""
+    public var sharedFramingEnabled = false
+    public var framingCenterX = 0.0
+    public var framingCenterY = 0.0
+    public var framingCenterZ = 0.0
+    public var framingExtent = 1.0
     public var sampleAnimation = false
+    public var sampleAnimationPlayback = false
+    public var clipEndSeconds = 1.0
+    public var playbackFrameCount = 8
     public var clipIndex = -1
     public var clipTimeSeconds = 0.0
     public var confirmedAnimationClipMapping: String?
@@ -77,6 +86,20 @@ public struct ProductionWorkflowDraft: Equatable, Sendable {
                 throw invalid("Review settings require a supported mode/resolution, exposure 0.25–4 and a valid review LOD label.")
             }
             var settings: [String: JSONValue] = ["mode": .string(reviewMode), "resolution": .number(Double(reviewResolution)), "exposure": .number(reviewExposure)]
+            if reviewMode == "appearance" {
+                settings["decodeBasisTextures"] = .bool(decodeBasisTextures)
+            }
+            if sharedFramingEnabled {
+                let center = [framingCenterX, framingCenterY, framingCenterZ]
+                guard center.allSatisfy({ $0.isFinite && (-1e12...1e12).contains($0) }),
+                      framingExtent.isFinite, (0.00001...2e12).contains(framingExtent) else {
+                    throw invalid("Shared framing centers must be finite and within ±1e12; extent must be finite and between 0.00001 and 2e12.")
+                }
+                settings["framing"] = .object([
+                    "center": .array(center.map(JSONValue.number)),
+                    "extent": .number(framingExtent),
+                ])
+            }
             if !reviewLod.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { settings["reviewLod"] = .string(reviewLod) }
             if sampleAnimation {
                 let timeline = try ProductionAnimationTimeline(sources: animationSources, matching: paths)
@@ -90,7 +113,17 @@ public struct ProductionWorkflowDraft: Equatable, Sendable {
                 guard clipTimeSeconds.isFinite, timeline.contains(timeSeconds: clipTimeSeconds, for: clipIndex) else {
                     throw invalid("The sample time must be between zero and the selected clip's shortest inspected duration.")
                 }
-                settings["pose"] = .object(["clipIndex": .number(Double(clipIndex)), "timeSeconds": .number(clipTimeSeconds)])
+                if sampleAnimationPlayback {
+                    guard reviewMode == "appearance", reviewResolution == 128, !decodeBasisTextures,
+                          (2...16).contains(playbackFrameCount), clipEndSeconds.isFinite,
+                          clipEndSeconds > clipTimeSeconds, timeline.contains(timeSeconds: clipEndSeconds, for: clipIndex) else {
+                        throw invalid("Sampled playback requires appearance at 128 pixels, 2–16 frames, an increasing time range within every selected clip, and PNG/JPEG textures without Basis decoding.")
+                    }
+                    settings["timeline"] = .object(["clipIndex": .number(Double(clipIndex)), "startSeconds": .number(clipTimeSeconds),
+                                                    "endSeconds": .number(clipEndSeconds), "frameCount": .number(Double(playbackFrameCount))])
+                } else {
+                    settings["pose"] = .object(["clipIndex": .number(Double(clipIndex)), "timeSeconds": .number(clipTimeSeconds)])
+                }
             }
             request["reviewSettings"] = .object(settings)
         } else {

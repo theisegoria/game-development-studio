@@ -1,5 +1,7 @@
 # Production recipes, asset families, and standalone platform variants
 
+The guided forms and renderer 2.2 review settings described here are roadmap-branch additions, not published v1.3.1 features. Follow the release-driven [quickstart](quickstart.md) for installation and use the installed schemas as the request authority. These additions require the roadmap source checkpoint until a release is separately approved.
+
 These tools are available through `game-dev tool call NAME --request FILE --json` and the same MCP tool names. They persist under `<outputDir>/.production`. No engine integration is performed. Recipes execute **one step per invocation**, with fresh transport approval for each mutation and paid call. A saved fingerprint or family review is never spend authority.
 
 ## Guided workflows
@@ -43,7 +45,9 @@ The plan response contains `recipe`, `template`, `requiredTools` and `executes:f
 
 Create a `review-select-package` workflow with `modelPath` or `candidates:[{name,modelPath},...]`. Execute only `review` first. The new plan exposes the saved dashboard path, candidate IDs, snapshot paths and current `reviewedFingerprint` under `nextStep`. The `select` step stays blocked until the reviewer inspects that saved evidence and explicitly chooses an actual candidate.
 
-Optional `reviewSettings` use the same schema as `create_asset_review`: `mode` (`geometry` or `appearance`), `resolution` (128 or 256), `exposure`, optional `pose:{clipIndex,timeSeconds}`, and an explicit `reviewLod` label. Settings, renderer version and controlled-lighting identity bind the current checkpoint. Changed settings require fresh evidence and selection; appearance output remains a bounded CPU review with documented limitations.
+Optional `reviewSettings` use the same schema as `create_asset_review`: `mode` (`geometry` or `appearance`), `resolution` (128 or 256), `exposure`, optional `pose:{clipIndex,timeSeconds}`, shared `framing:{center,extent}`, explicit appearance-only `decodeBasisTextures` (default false), and a `reviewLod` label. Settings, renderer version and controlled-lighting identity bind the current checkpoint. Opted-in Basis review also fingerprints the current verified executable without launching it during planning; missing or changed configuration blocks the current step or invalidates its approval. Changed settings require fresh evidence and selection; appearance output remains a bounded CPU review with documented limitations.
+
+Alternatively, `timeline:{clipIndex,startSeconds,endSeconds,frameCount}` prepares a bounded sequence of 2–16 appearance samples at 128 pixels. It cannot be combined with `pose` or Basis decoding. Native forms validate the range against all inspected sources; offline playback/scrubbing selects the sealed samples without rerunning a tool. See [asset review](ASSET_REVIEW.md) for cumulative resource limits and renderer approximations.
 
 Prepare `selection.json` from those returned values:
 

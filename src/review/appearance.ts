@@ -86,7 +86,8 @@ function validateTangents(face: ReviewFace): void {
 }
 
 /** Eight orthographic CPU GGX views with a fixed key, fill, and ambient term. */
-export function renderAppearance(faces: ReviewFace[], center: number[], extent: number, settings: ReviewSettings): { images: string[]; sampleChecks: number } {
+export function renderAppearance(faces: ReviewFace[], center: number[], extent: number, settings: ReviewSettings, rasterSampleBudget: number = REVIEW_LIMITS.rasterSamples): { images: string[]; sampleChecks: number } {
+  if(!Number.isSafeInteger(rasterSampleBudget) || rasterSampleBudget<0 || rasterSampleBudget>REVIEW_LIMITS.rasterSamples) throw new Error('Invalid bounded appearance raster budget');
   for (const face of faces) validateTangents(face);
   const size = settings.resolution, scale = size * 0.7 / Math.max(extent, 0.00001);
   const images: string[] = []; let sampleChecks = 0, blendFragmentsUsed = 0;
@@ -104,7 +105,7 @@ export function renderAppearance(faces: ReviewFace[], center: number[], extent: 
       const { face, points: p, normals, tangents: authoredTangents } = item, material = face.material;
       const signed = edge(p[0]!, p[1]!, p[2]!); if (Math.abs(signed) < 1e-8 || (!material.doubleSided && signed > 0)) continue;
       const b = bounds(p, size), checks = Math.max(0, b.x1 - b.x0 + 1) * Math.max(0, b.y1 - b.y0 + 1);
-      sampleChecks += checks; if (sampleChecks > REVIEW_LIMITS.rasterSamples) throw new Error('Appearance raster budget exceeded; use a smaller review LOD or 128px resolution');
+      sampleChecks += checks; if (sampleChecks > rasterSampleBudget) throw new Error('Appearance raster budget exceeded; use a smaller review LOD, fewer animation samples or 128px resolution');
       let uvTangent: V3 | undefined, uvBitangent: V3 | undefined;
       if (material.normal && !authoredTangents) {
         if (face.uv.length !== 3 || face.uv.some(uv => uv.length < 2 || !Number.isFinite(uv[0]) || !Number.isFinite(uv[1]))) throw new Error('Normal mapping without authored tangents requires three finite TEXCOORD_0 coordinates');

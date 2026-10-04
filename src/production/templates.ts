@@ -64,6 +64,7 @@ export function planProductionTemplate(templateId: unknown, request: unknown) {
     ] });
   } else {
     const spec = reviewPackageRequestSchema.parse(request);
+    if(spec.reviewSettings?.decodeBasisTextures) requiredTools=['Basis Universal 2.50 CPU'];
     const candidates = spec.candidates ?? [{ name: spec.name, modelPath: spec.modelPath! }];
     if (candidates.some(candidate => path.extname(candidate.modelPath).toLowerCase() !== '.glb')) throw invalidInput('Review snapshots require a self-contained GLB.');
     recipe = validateRecipe({ schema: 'game_dev.production_recipe.v1', id: spec.recipeId, name: spec.name, steps: [

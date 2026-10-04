@@ -42,13 +42,41 @@ struct ProductionWorkflowForm: View {
                 }
                 if draft.reviewMode == "appearance" {
                     TextField("Exposure (0.25–4)", value: $draft.reviewExposure, format: .number)
+                    Toggle("Decode Basis textures", isOn: $draft.decodeBasisTextures)
+                        .accessibilityHint("Requests the verified optional Basis CPU subprocess only when an appearance review step is reviewed and executed. Checking this toggle does not start a process.")
+                    Text("The verified optional Basis CPU subprocess runs only at reviewed execution. Checking this toggle does not start a process.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
                 TextField("Review LOD label (optional)", text: $draft.reviewLod)
                     .help("Name the supplied asset's review LOD. This label does not generate a LOD.")
+                Toggle("Use one shared review frame", isOn: $draft.sharedFramingEnabled)
+                    .help("Enter one center and extent to compare before and after normalization, compression, or LOD changes. Framing does not normalize or otherwise change the asset.")
+                    .accessibilityHint("Uses explicit framing values for comparable reviews. It does not modify the asset.")
+                if draft.sharedFramingEnabled {
+                    HStack {
+                        TextField("Center X", value: $draft.framingCenterX, format: .number)
+                            .accessibilityLabel("Shared framing center X")
+                        TextField("Center Y", value: $draft.framingCenterY, format: .number)
+                            .accessibilityLabel("Shared framing center Y")
+                        TextField("Center Z", value: $draft.framingCenterZ, format: .number)
+                            .accessibilityLabel("Shared framing center Z")
+                    }
+                    TextField("Shared frame extent", value: $draft.framingExtent, format: .number)
+                        .accessibilityHint("Must be between 0.00001 and 2 trillion. Center values must each be between minus and plus 1 trillion.")
+                    Text("This fixes the review camera frame across candidates; it does not normalize their geometry or change the supplied assets.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 DisclosureGroup("Animation sample") {
                     Toggle("Sample a clip at a fixed time", isOn: $draft.sampleAnimation)
                     if draft.sampleAnimation {
                         animationControls
+                        Toggle("Prepare sampled animation playback", isOn: $draft.sampleAnimationPlayback)
+                        if draft.sampleAnimationPlayback {
+                            TextField("Playback end time (seconds)", value: $draft.clipEndSeconds, format: .number)
+                            Stepper("Playback frames: \(draft.playbackFrameCount)", value: $draft.playbackFrameCount, in: 2...16)
+                            Text("Use appearance at 128 pixels and PNG/JPEG textures. The current playhead is the start time. Explicit review execution prepares 2–16 sealed samples for offline playback and scrubbing; moving these controls does not render anything.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                         Text("Inspection reads clip metadata from the supplied GLBs. Moving the playhead changes the next review request; it never renders or runs a recipe step by itself.")
                             .font(.caption).foregroundStyle(.secondary)
                     }

@@ -19,8 +19,15 @@ import { REVIEW_RENDERER, reviewSettingsSchema } from '../review/settings.js';
 
 /** Caller supplies dispatch through its current authorization boundary; never raw registry.call. */
 export function registerProductionTools(server: ToolRegistrar, ctx: ToolContext, dispatch?: RecipeDispatch): void {
-  const recipes = new RecipeStore(path.join(ctx.config.outputDir, '.production', 'recipes'), `${GAME_DEV_VERSION}:production-v1`, async operation => {
-    if (operation === 'create_asset_review') return { renderer: REVIEW_RENDERER, defaultSettings: reviewSettingsSchema.parse({}) };
+  const recipes = new RecipeStore(path.join(ctx.config.outputDir, '.production', 'recipes'), `${GAME_DEV_VERSION}:production-v1`, async (operation,args) => {
+    if (operation === 'create_asset_review') {
+      const settings=reviewSettingsSchema.parse(args.settings??{});
+      if(!settings.decodeBasisTextures) return { renderer: REVIEW_RENDERER, defaultSettings: reviewSettingsSchema.parse({}) };
+      // Read-only diagnosis hashes configured bytes; planning never invokes the decoder.
+      const diagnostic=await diagnoseTextureCompression();
+      if(!diagnostic.available) throw invalidState('Opted-in compressed appearance review requires verified Basis configuration; run diagnose_texture_compression.');
+      return {renderer:REVIEW_RENDERER,defaultSettings:reviewSettingsSchema.parse({}),diagnostic};
+    }
     const configured = toolOperationIdentity(operation);
     if (configured && !configured.available) throw invalidState(`Required ${configured.tool} is unavailable (${configured.code}); inspect optional-tool configuration before authorizing this step.`);
     if (operation === 'compress_texture_variant') {

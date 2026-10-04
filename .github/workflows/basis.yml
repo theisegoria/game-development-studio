@@ -7,7 +7,10 @@ on:
       - 'src/production/**'
       - 'src/inspection/**'
       - 'src/packages/**'
+      - 'src/review/**'
+      - 'src/harness/**'
       - 'tests/texture-compression*'
+      - 'tests/appearance-review.test.ts'
       - 'scripts/*basis*'
       - 'scripts/verify-texture-compression.mjs'
       - '.github/workflows/basis.yml'
@@ -31,5 +34,14 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Build pinned encoder without OpenCL
         run: node scripts/build-basis-cpu.mjs "${{ runner.temp }}/gds-basis-cpu"
-      - name: Encode, transcode, inspect and package synthetic textures on CPU
+      - name: Encode, transcode, inspect, review and compare synthetic textures on CPU
+        env:
+          GDS_BASIS_REVIEW_EVIDENCE: ${{ runner.temp }}/gds-basis-review-evidence
         run: node scripts/verify-texture-compression.mjs "${{ runner.temp }}/gds-basis-cpu/basis-cpu.json"
+      - name: Preserve actual decoded appearance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: basis-review-${{ matrix.os }}
+          path: ${{ runner.temp }}/gds-basis-review-evidence
+          if-no-files-found: warn

@@ -10,13 +10,13 @@ The discovered `game-asset-mcp` local checkout is older (`29715a5`) and dirty. N
 
 | Area | Concrete checkpoint | State |
 | --- | --- | --- |
-| P0 first run | Canonical verified release install; executable compiler-free generic sample; release drift gate; PowerShell/POSIX and CI matrix | Linux/macOS passed; Windows verifier fixes awaiting hosted rerun |
+| P0 first run | Canonical verified release install; executable compiler-free generic sample; release drift gate; PowerShell/POSIX and CI matrix | All six source first-run and four exact public update/rollback lanes passed at `b6c69b3` |
 | P0 diagnostics | Workflow-aware required/optional checks; local redacted support report; pre-install issue forms | Implemented |
 | P1 production | Typed recipe templates, bindings from actual results, graph reasons, next-step review and existing recovery semantics | Implemented |
 | P1 native UX | Guided Anvil forms, advanced JSON, recipe status, persistent explicit optional tool paths | Built and CPU-tested; interaction pending |
 | P2 review | Bounded controlled-light appearance preview, UV evidence, reproducible pose selection and snapshot comparison | Implemented bounded checkpoint |
 | P3 distribution | Tarball remains baseline; exact artifact/install/update/rollback checks and channel readiness | Local artifact gates passed; publication pending |
-| Shared gates | Canonical skill export parity, immutable Actions pins, license roster, artifact-byte checks, independent review | Local gates and hosted optional/native lanes passed; install rerun pending |
+| Shared gates | Canonical skill export parity, immutable Actions pins, license roster, artifact-byte checks, independent review | Third slice source/CPU checks and independent review passed; fresh hosted and exact artifact checks pending |
 
 ## Evidence ledger
 
@@ -61,7 +61,7 @@ An isolated Node 25.2.1/macOS arm64 process measured the 226,200-byte, 10,000-tr
 
 ### Pending or gated evidence
 
-- Current-source Linux/macOS free-route execution passed on Node 22/24 at `9984cc8`. The absolute System32 lookup and install-only 180-second bound resolved the earlier Windows failures. Both Windows lanes now reach PATH discovery, which returns the intended shim using a long `runneradmin` path while the expected temporary path contains its `RUNNER~1` alias. The verifier resolves both paths before comparing their identities and retains first-match/stale-install rejection; hosted Windows reruns are required.
+- Current-source first-run passed on all six Windows/Linux/macOS Node 22/24 lanes at `b6c69b3`. The absolute System32 lookup, install-only 180-second bound and filesystem canonicalization resolved the earlier Windows failures while retaining first-match/stale-install rejection. New implementation heads need their own CI acceptance.
 - Exact public 1.2.0/1.3.1 Linux/macOS install, upgrade, rollback and reinstall passed on all four Node 22/24 lanes at `9984cc8`. The fixed metadata API request uses the runner's read-only token; downloads remain anonymous and npm/CLI children receive no GitHub token. API digest, size, exact URL and manifest checks precede every release installation.
 - Native keyboard/accessibility/light-dark/repeated-click/cancel/relaunch interaction: requires authorized app-window launch.
 - Hosted Blender and Metal tests passed at `4f22383`, together with all four real CoACD runners, all three Basis runners, Windows install/fsync, native CPU tests and ad-hoc archive verification. These are runner evidence, not local/target-engine or signed-launch acceptance. Local execution remains disallowed.
@@ -69,7 +69,7 @@ An isolated Node 25.2.1/macOS arm64 process measured the 226,200-byte, 10,000-tr
 - npm publication: requires publisher access plus explicit publication approval; no credentials will be created.
 - Developer ID signing/notarization and normal clean-Mac launch: require account access and explicit authorization. Gatekeeper bypass is not acceptance.
 - Additional bundled Windows runtime: decision requires measured setup friction; not justified by the closed historical Windows question alone.
-- Continuous playback rendering, IBL/shadows, direct compressed KTX2 appearance and fuller comparison UX remain implementation follow-ups, distinct from launch/publication permission gates. Compressed assets currently need a separately prepared decoded core-glTF review source.
+- The third slice implements direct compressed KTX2 appearance, bounded sampled playback and fuller comparison controls below. Real-time interpolated playback, IBL/shadows and combined Basis+timeline decoding remain deliberate renderer limits; none is silently claimed by sampled CPU review.
 
 ### Second checkpoint implementation and hosted acceptance
 
@@ -80,6 +80,18 @@ The next source slice adds CUBICSPLINE and validated animation metadata shared b
 The final envelope fixture is a 4,801,020-byte GLB with 50,000 triangles / 150,000 vertex instances. An isolated static preview took 487 ms with +376,995,840 bytes RSS; a selected-pose pass took 992 ms with +423,215,104 bytes RSS. Auxiliary SVGs were about 3.87 MB. The earlier temporary 100,000-triangle experiment is retained as rejected-cap research, not current support. Resource measurements are host/asset specific; neither RSS deltas nor accepted source size imply a universal peak.
 
 The existing CI workflow now separates current-source six-platform/Node installs from exact public 1.3.1/1.2.0 Linux/macOS install, update, rollback and reinstall. Both tarballs and manifests must match GitHub release API digests, sizes and URLs before execution. Published Windows 1.3.1 sample capture remains unsupported and explicitly documented; the source Windows fix is its own hosted gate.
+
+### Final second-checkpoint CI acceptance
+
+Core `b6c69b3de371c381b687895ebe8ca21140d00f2c` and skills `db21af41676144a04543c9f9fa415a325fb49a66` are the tested branch heads. All six automatic core PR workflows succeeded: [main CI](https://github.com/theisegoria/game-development-studio/actions/runs/37180425860), [Windows install](https://github.com/theisegoria/game-development-studio/actions/runs/37180425852), [archive](https://github.com/theisegoria/game-development-studio/actions/runs/37180425890), [Basis](https://github.com/theisegoria/game-development-studio/actions/runs/37180425905), [Windows fsync](https://github.com/theisegoria/game-development-studio/actions/runs/37180425842) and [CoACD](https://github.com/theisegoria/game-development-studio/actions/runs/37180425892). [Skills validation](https://github.com/theisegoria/game-development-studio-skills/actions/runs/37179218408) also succeeded. Source first-run passed on Windows/Linux/macOS × Node 22/24; exact public install/update/rollback/reinstall passed on all four Linux/macOS Node lanes. Each Node 22/24 suite passed 1,011 tests with 31 explicit skips; native CPU tests passed 124 tests in 11 suites. Hosted Blender, Metal/SDK/software/lavapipe, runtime staging, archive, Basis 3/3 and CoACD 4/4 lanes passed. No local app, Blender or GPU launch occurred.
+
+### Third review slice plan and current evidence
+
+Continue the remaining software work within source/CPU/CI authorization: direct Basis KTX2 appearance; bounded sampled animation playback; shared framing and fuller before/after controls over existing sealed regressions. Keep rendering approximations explicit. Real app interaction and unfamiliar-user usability remain separate unmet evidence gates, and publication/signing remain blocked on access plus authorization.
+
+Direct Basis review uses explicit opt-in, bounded original-source decoding and sealed decoder/source/pixel receipts. Recipe planning hashes configured bytes without a launch, and approval/package checks require a current matching decoder identity. Native shared framing and the opt-in form are implemented. Sampled playback prepares 2–16 fixed-frame PNG/JPEG appearance poses, binds actual timestamps and all time/angle pixels to existing sealed captures, and exposes offline scrub/play controls. Sequence limits and the unsupported Basis combination fail explicitly. Verified regression images gain side-by-side/opacity overlays; controls do not change metrics or promote baselines.
+
+Initial focused validation passed 52 CPU/fault-injection tests plus 22 playback/comparison tests; two real codec cases were intentionally skipped locally. Independent review findings were fixed, including passing the remaining cumulative raster budget into each animation sample before its pixel loop; the final read-only review reported no unresolved actionable findings. The complete final CPU/mock suite passed **107 files / 1,046 tests**, with **30 explicitly skipped** optional/GPU cases. Native Foundation-only build/tests passed **126 tests in 11 suites**. The preliminary native schema/version expectation failures were corrected and are retained as failed historical logs, not passing evidence. Typecheck, lint, production build, 51 runtime schema snapshots, install-doc drift, canonical skill export and the companion 36-file ZIP validator passed. The source-packed disposable install verified **98 CLI operations / 98 MCP tools**, five installed skills and clean stdout. Real hosted ETC1S/UASTC decode/compare/package tests and exact final-checkpoint byte verification remain required before accepting this slice. No real optional decoder, Blender, GPU or app window ran locally. These additions are source checkpoint features, not a published v1.3.1 release.
 
 ## Integration procedure
 

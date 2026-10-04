@@ -1,11 +1,17 @@
-import { NodeIO } from '@gltf-transform/core';
+import { GLB_BUFFER, NodeIO, type JSONDocument } from '@gltf-transform/core';
+import { KHRTextureBasisu } from '@gltf-transform/extensions';
 import { CollectingLogger } from '../inspection/gltf.js';
+import { validateKtxDeclarations } from '../production/ktx2.js';
 import { REVIEW_LIMITS } from './settings.js';
 
 /** Bounds source allocations before NodeIO; no file, process or network access. */
-export async function readReviewDocument(bytes: Uint8Array, mode: 'geometry' | 'appearance' = 'geometry') {
+export async function readReviewDocument(
+  bytes: Uint8Array,
+  mode: 'geometry' | 'appearance' = 'geometry',
+  options: { decodeBasisTextures?: boolean } = {},
+) {
   if (bytes.byteLength > REVIEW_LIMITS.sourceBytes) throw new Error('Review GLB size limit is 64 MB');
-  const log = new CollectingLogger(), io = new NodeIO().setLogger(log), json = await io.binaryToJSON(bytes);
+  const log = new CollectingLogger(), io = new NodeIO().registerExtensions([KHRTextureBasisu]).setLogger(log), json = await io.binaryToJSON(bytes);
   // Bound allocations and graph traversal before NodeIO expands sparse accessors.
   const rawNodes = json.json.nodes ?? [];
   if (rawNodes.length > 10_000 || (json.json.meshes?.length??0)>10_000 || (json.json.materials?.length??0)>1024 || (json.json.skins?.length??0)>256 || (json.json.textures?.length??0)>1024 || (json.json.images?.length??0)>1024 || (json.json.samplers?.length??0)>1024 || (json.json.cameras?.length??0)>256 || (json.json.bufferViews?.length??0)>8192 || (json.json.buffers?.length??0)>256 || (json.json.accessors?.length??0)>4096 || (json.json.scenes?.length??0)>128) throw new Error('Review scene object budget exceeded');
@@ -86,8 +92,20 @@ export async function readReviewDocument(bytes: Uint8Array, mode: 'geometry' | '
     }
   }
   const used = json.json.extensionsUsed ?? [], required = json.json.extensionsRequired ?? [];
-  if (required.length) throw new Error(`Unsupported required review extensions: ${required.join(', ')}`);
-  if (mode === 'appearance' && used.length) throw new Error(`Appearance review does not support extensions: ${used.join(', ')}; prepare a core glTF review LOD explicitly`);
+  const ktxCount = validateKtxDeclarations(json);
+  const basisExtension = 'KHR_texture_basisu';
+  const unsupportedRequired = required.filter(name => name !== basisExtension);
+  if (unsupportedRequired.length) throw new Error(`Unsupported required review extensions: ${unsupportedRequired.join(', ')}`);
+  if (required.includes(basisExtension) && !used.includes(basisExtension)) throw new Error('KHR_texture_basisu is required but missing from extensionsUsed');
+  if (mode === 'appearance') {
+    const allowed = options.decodeBasisTextures ? new Set([basisExtension]) : new Set<string>();
+    const unsupported = used.filter(name => !allowed.has(name));
+    if (unsupported.length) {
+      const hint = options.decodeBasisTextures ? 'only KHR_texture_basisu can be decoded for CPU review' : 'set decodeBasisTextures:true to opt into pinned CPU Basis decoding';
+      throw new Error(`Appearance review does not support extensions: ${unsupported.join(', ')}; ${hint}`);
+    }
+    if (ktxCount && !options.decodeBasisTextures) throw new Error('Compressed appearance review requires decodeBasisTextures:true');
+  }
   const doc = await io.readJSON(json), root = doc.getRoot();
   if (root.listNodes().length > 10_000 || root.listMeshes().length > 10_000 || root.listMaterials().length > 1024) throw new Error('Review scene object budget exceeded');
   // NodeIO creates accessors in JSON index order, including unreferenced ones.
@@ -107,6 +125,26 @@ export async function readReviewDocument(bytes: Uint8Array, mode: 'geometry' | '
     }
   }
   const warnings = [...log.messages];
-  if (used.length) warnings.push(`Geometry-only preview ignores unsupported extensions: ${used.join(', ')}`);
-  return { doc, warnings };
+  const geometryIgnored = used.filter(name => name !== basisExtension);
+  if (geometryIgnored.length) warnings.push(`Geometry-only preview ignores unsupported extensions: ${geometryIgnored.join(', ')}`);
+  return { doc, warnings, json };
+}
+
+/** Return the original, already preflighted embedded image bytes by raw glTF image index. */
+export function readRawReviewImage(json: JSONDocument, imageIndex: number): Uint8Array {
+  const image = json.json.images?.[imageIndex];
+  if (!image) throw new Error('Compressed review source image index is missing');
+  if (typeof image.uri === 'string') {
+    const resource = json.resources[image.uri];
+    if (resource) return resource;
+    throw new Error('CPU review does not load external image resources');
+  }
+  const view = image.bufferView === undefined ? undefined : json.json.bufferViews?.[image.bufferView];
+  const buffer = view && json.json.buffers?.[view.buffer];
+  const data = buffer && json.resources[buffer.uri ?? GLB_BUFFER];
+  if (!view || !data || !Number.isSafeInteger(view.byteOffset ?? 0) || (view.byteOffset ?? 0) < 0 ||
+      !Number.isSafeInteger(view.byteLength) || view.byteLength < 0 || (view.byteOffset ?? 0) + view.byteLength > data.length) {
+    throw new Error('Invalid embedded compressed review image buffer view');
+  }
+  return data.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength);
 }

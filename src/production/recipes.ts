@@ -131,7 +131,7 @@ function resolve(value: unknown, record: RecordState): unknown {
 /** Paid dispatch must cross the transport's current per-operation authorization boundary. */
 export type RecipeDispatch = (operation: string, args: Record<string, unknown>) => Promise<ToolResult>;
 export class RecipeStore {
-  constructor(readonly root: string, readonly toolVersion: string, readonly operationIdentity?: (operation: string) => Promise<unknown>) {}
+  constructor(readonly root: string, readonly toolVersion: string, readonly operationIdentity?: (operation: string, args: Record<string,unknown>) => Promise<unknown>) {}
   private target(recipeId: string): string { return path.join(this.root, `${id.parse(recipeId)}.json`); }
   private async locked<T>(recipeId: string, body: () => Promise<T>): Promise<T> {
     await fs.mkdir(this.root, { recursive: true });
@@ -191,7 +191,7 @@ export class RecipeStore {
           };
           collectInputs(args);
           for (const file of argumentFiles) if (!files.some(entry => entry.file === file)) files.push({ file, digest: await fileDigest(file) });
-          fingerprint = digest({ step, args, files, toolVersion: this.toolVersion, operationIdentity: await this.operationIdentity?.(step.operation), dependencies: step.dependsOn.map(dep => record.checkpoints[dep]?.fingerprint) });
+          fingerprint = digest({ step, args, files, toolVersion: this.toolVersion, operationIdentity: await this.operationIdentity?.(step.operation,args), dependencies: step.dependsOn.map(dep => record.checkpoints[dep]?.fingerprint) });
           if (step.operation === 'decide_asset_review') {
             const reviewInput = z.object({ sessionId: z.string().uuid(), candidateId: z.string().uuid(), decision: z.enum(['approve', 'reject']), reviewer: z.string().trim().min(1).max(200), reason: z.string().trim().min(1).max(4000) }).safeParse(args);
             const bindingCurrent = !step.reviewBinding || steps.find(s => s.id === step.reviewBinding?.stepId)?.reviewedFingerprint === step.reviewBinding.fingerprint;

@@ -12,6 +12,8 @@ game-dev credentials status --json
 
 `capabilities.data.localOperations` is the installed command/schema authority. Do not infer request fields from an older example.
 
+Guided forms and renderer 2.2 settings (including Basis appearance decoding and sampled playback) require the roadmap source checkpoint. They are not published v1.3.1 features; inspect the installed schemas before using them.
+
 ## Provider jobs
 
 Provider execution requires `game-dev` 1.0.2 or newer. The account holder must
@@ -174,6 +176,14 @@ inspection are bounded technical evidence. This renderer is not a target engine
 and its preview is not artistic approval. Use existing sealed snapshot comparison
 and regression tools for before/after outputs under the same review settings.
 
+Direct KTX2 appearance requires `mode:"appearance",decodeBasisTextures:true`
+and a configured, hash-verified Basis 2.50 CPU executable. Planning stays
+process-free; authorized execution decodes into bounded temporary DDS pixels
+and records actual process counts plus executable/source/pixel hashes. Originals
+remain unchanged and reviewed packaging uses the compressed snapshot bytes.
+Use the same opt-in and explicit shared frame for PNG/compressed comparisons.
+Changed decoder configuration or bytes requires fresh evidence and approval.
+
 `inspect_review_animation` reads clip metadata without rendering, launching a
 process or creating records. Metadata binds exact source bytes and renderer.
 LINEAR, STEP and CUBICSPLINE samples use the asset's default-pose frame; clipped
@@ -182,4 +192,10 @@ normalized, compressed-review or LOD sources whose bounds differ. Matching
 settings alone do not establish a matching camera. New source/settings/time
 requires fresh review; native clip-name mapping acknowledgment is also bound
 to source hashes and renderer identity. A timeline slider selects a reproducible
-sample for explicit execution, not live playback rendering.
+sample for explicit execution. Optional `timeline` prepares 2–16 sealed still
+samples at 128 pixels for offline appearance playback/scrubbing; it requires an
+increasing supported clip range, no separate `pose`, and PNG/JPEG sources without
+Basis decoding. Offline playback shows existing samples and starts no process.
+Sequence budgets can require fewer frames or an explicit smaller review LOD.
+The existing regression dashboard offers verified side-by-side/opacity overlays;
+view controls never change comparison metrics, verdicts or baselines.

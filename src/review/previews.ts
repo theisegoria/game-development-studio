@@ -1,11 +1,14 @@
-import { readReviewDocument } from './document.js';
+import { readReviewDocument, readRawReviewImage } from './document.js';
 import { type Skin, type Texture, type TextureInfo } from '@gltf-transform/core';
 import { readImageSize } from '../inspection/gltf.js';
-import { decodeImage, encodePNG } from '../inspection/image.js';
+import { decodeImage, encodePNG, type RasterImage } from '../inspection/image.js';
 import { reviewSettingsSchema, REVIEW_LIMITS, REVIEW_RENDERER, type ReviewSettingsInput } from './settings.js';
 import { applyReviewPose, type ClipInfo } from './pose.js';
 import { cross, sub, unit, measureUv, renderAppearance, type ReviewFace, type ReviewMaterial, type ReviewTexture, type UvEvidence, type V3 } from './appearance.js';
 import { buildGeometryViews, type GeometryViewSampling } from './geometry-views.js';
+import { inspectKtx2 } from '../production/ktx2.js';
+import { requireBasis } from '../production/basis.js';
+import { assertBasisReviewIdentity, decodeBasisKtxTextures, type BasisReviewDecodeDeps, type BasisReviewEvidence } from './basis-textures.js';
 
 export const escapeHtml = (s: string): string => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 const DEFAULT_VERTEX_COLOR: number[] = [1, 1, 1, 1];
@@ -16,6 +19,7 @@ export interface CpuPreviews {
   warnings: string[]; uvEvidence: UvEvidence; clips: ClipInfo[]; selectedTimeSeconds?: number;
   envelope: { sourceBytes: number; triangles: number; vertexInstances: number; appearanceTrianglesRendered: number; decodedTexturePixels: number; rasterSampleChecks: number; boundsTrianglesScanned: number; clippingPointChecks: number; uvMetricsTriangles: number; auxiliarySvgBytes: number; appearanceImageStringBytes: number; auxiliaryGeometry: GeometryViewSampling; durationMs: number; geometryPasses: number; limits: typeof REVIEW_LIMITS };
   renderer: typeof REVIEW_RENDERER;
+  basisDecode?: BasisReviewEvidence;
 }
 const svg = (body: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img"><rect width="400" height="400" fill="#152031"/>${body}</svg>`;
 const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
@@ -34,22 +38,121 @@ function normalTransform(m: number[], n: number[]): V3 {
   return unit([0, 1, 2].map(k => (x[k]! * n[0]! + y[k]! * n[1]! + z[k]! * n[2]!) / det));
 }
 
-/** Bounded CPU review. No process, network, GPU or external resource loading. */
-export async function previewGlb(bytes: Uint8Array, input: ReviewSettingsInput = {}): Promise<CpuPreviews> {
+/** Bounded CPU review. Opt-in Basis texture decoding is the only process-backed path. */
+export async function previewGlb(bytes: Uint8Array, input: ReviewSettingsInput = {}, basisDeps: BasisReviewDecodeDeps = {}, budget: {rasterSamples?:number} = {}): Promise<CpuPreviews> {
   const started = performance.now(), settings = reviewSettingsSchema.parse(input);
-  const { doc, warnings } = await readReviewDocument(bytes, settings.mode), root = doc.getRoot();
+  const rasterSampleBudget=budget.rasterSamples??REVIEW_LIMITS.rasterSamples;
+  if(!Number.isSafeInteger(rasterSampleBudget) || rasterSampleBudget<0 || rasterSampleBudget>REVIEW_LIMITS.rasterSamples)throw new Error('Invalid bounded appearance raster budget');
+  if (settings.timeline) throw new Error('Use previewReviewGlb for sampled animation playback; previewGlb renders one still frame.');
+  const { doc, warnings, json } = await readReviewDocument(bytes, settings.mode, { decodeBasisTextures: settings.decodeBasisTextures }), root = doc.getRoot();
+  const basisIdentity = settings.decodeBasisTextures ? basisDeps.identity ?? await requireBasis() : undefined;
+  if (basisIdentity) await assertBasisReviewIdentity(basisIdentity);
   warnings.push('CPU preview is review evidence, not target-engine correctness or artistic approval. Fixed orthographic lighting; nearest texture sampling; no IBL, shadows or refraction. BLEND is depth-sorted per pixel within a fixed fragment budget; exactly equal-depth intersections remain approximate.');
+  if (settings.mode === 'appearance' && root.listMaterials().length > REVIEW_LIMITS.materials) throw new Error('Appearance review supports at most 32 materials');
+  if (settings.mode === 'appearance') {
+    for (const material of root.listMaterials()) {
+      const textureInfos = [material.getBaseColorTextureInfo(), material.getMetallicRoughnessTextureInfo(), material.getNormalTextureInfo(), material.getEmissiveTextureInfo(), material.getOcclusionTextureInfo()];
+      if (textureInfos.some(info => info && info.getTexCoord() !== 0)) throw new Error('Appearance texture mapping supports TEXCOORD_0 only');
+    }
+  }
   let texturePixels = 0, textureBytes = 0;
   const textureCache = new Map<Texture, ReviewTexture>();
+  const decodedBasisImages = new Map<Texture, RasterImage>();
+  let basisDecode: BasisReviewEvidence | undefined;
+  const basisInfoByImage = new Map<number, ReturnType<typeof inspectKtx2>>();
+  const basisOwnersByImage = new Map<number, Texture[]>();
+  if (settings.decodeBasisTextures) {
+    const textureKinds = new Map<Texture, Set<'srgb' | 'linear' | 'normal'>>();
+    const bind = (texture: Texture | null, kind: 'srgb' | 'linear' | 'normal') => {
+      if (!texture) return;
+      const uses = textureKinds.get(texture) ?? new Set<'srgb' | 'linear' | 'normal'>();
+      uses.add(kind); textureKinds.set(texture, uses);
+    };
+    for (const material of root.listMaterials()) {
+      bind(material.getBaseColorTexture(), 'srgb'); bind(material.getEmissiveTexture(), 'srgb');
+      bind(material.getMetallicRoughnessTexture(), 'linear'); bind(material.getOcclusionTexture(), 'linear');
+      bind(material.getNormalTexture(), 'normal');
+    }
+    const rawTextureDefs = json.json.textures ?? [];
+    const rawImageDefs = json.json.images ?? [];
+    const documentTextures = root.listTextures();
+    // glTF Transform models Texture properties 1:1 with Image properties. A
+    // glTF file may have any number of texture definitions referencing an
+    // image (including aliases with different samplers), so texture indices
+    // must never be used as image/Texture indices here.
+    if (documentTextures.length !== rawImageDefs.length) throw new Error('Basis review could not safely map raw glTF image indices to NodeIO textures');
+    const sameBytes = (left: Uint8Array | null, right: Uint8Array): boolean => {
+      if (!left || left.byteLength !== right.byteLength) return false;
+      for (let i = 0; i < right.byteLength; i += 1) if (left[i] !== right[i]) return false;
+      return true;
+    };
+    for (const textureDef of rawTextureDefs) {
+      const extension = (textureDef.extensions as Record<string, unknown> | undefined)?.KHR_texture_basisu as { source?: unknown } | undefined;
+      if (!extension) continue;
+      const imageIndex = extension.source;
+      if (!Number.isInteger(imageIndex) || (imageIndex as number) < 0) throw new Error('Invalid KHR_texture_basisu source index during review mapping');
+      const rawImage = readRawReviewImage(json, imageIndex as number);
+      const texture = documentTextures[imageIndex as number];
+      if (!texture || texture.getMimeType() !== 'image/ktx2' || !sameBytes(texture.getImage(), rawImage)) {
+        throw new Error('NodeIO image order or KTX2 image bytes differ from the raw glTF source index');
+      }
+      const owners = basisOwnersByImage.get(imageIndex as number) ?? [];
+      if (!owners.includes(texture)) owners.push(texture);
+      basisOwnersByImage.set(imageIndex as number, owners);
+    }
+    const basisInputs: Array<{ imageIndex: number; bytes: Uint8Array }> = [];
+    for (const [imageIndex, imageDef] of rawImageDefs.entries()) {
+      if (imageDef.mimeType !== 'image/ktx2') continue;
+      const imageBytes = readRawReviewImage(json, imageIndex);
+      const info = inspectKtx2(imageBytes);
+      basisInfoByImage.set(imageIndex, info);
+      basisInputs.push({ imageIndex, bytes: imageBytes });
+      const owners = basisOwnersByImage.get(imageIndex) ?? [];
+      if (!owners.length) throw new Error('KTX2 review image is not bound to a material texture');
+      const usages = new Set<'srgb' | 'linear' | 'normal'>();
+      for (const owner of owners) for (const use of textureKinds.get(owner) ?? []) usages.add(use);
+      if (!usages.size) throw new Error('KTX2 review image is not used by a supported material texture slot');
+      const requiresSrgb = usages.has('srgb'), requiresLinear = usages.has('linear') || usages.has('normal');
+      if (requiresSrgb && requiresLinear) throw new Error('Compressed texture must have one consistent material color-space use');
+      const expectedTransfer = requiresSrgb ? 'srgb' : 'linear';
+      if (info.transfer !== expectedTransfer) throw new Error('Compressed texture material usage disagrees with its color transfer metadata');
+      if (usages.has('normal') && info.codec !== 'uastc') throw new Error('Compressed normal maps require the supported UASTC profile');
+    }
+    // Enforce the renderer's aggregate budget before any optional Basis process is launched.
+    let preflightPixels = 0, preflightBytes = 0;
+    const visitedTextures = new Set<Texture>();
+    for (const material of root.listMaterials()) {
+      for (const texture of [material.getBaseColorTexture(), material.getMetallicRoughnessTexture(), material.getNormalTexture(), material.getEmissiveTexture(), material.getOcclusionTexture()]) {
+        if (!texture || visitedTextures.has(texture)) continue;
+        visitedTextures.add(texture);
+        const textureBytes = texture.getImage();
+        if (!textureBytes) throw new Error('Review texture has no embedded image bytes');
+        const imageIndex = [...basisOwnersByImage.entries()].find(([, owners]) => owners.includes(texture))?.[0];
+        const basisInfo = imageIndex === undefined ? undefined : basisInfoByImage.get(imageIndex);
+        const size = basisInfo ? { width: basisInfo.width, height: basisInfo.height } : readImageSize(textureBytes);
+        if (!size || size.width * size.height > REVIEW_LIMITS.texturePixels) throw new Error('Review texture is unsupported or exceeds the 4 million pixel limit; use embedded PNG/JPEG review textures');
+        preflightPixels += size.width * size.height; preflightBytes += textureBytes.byteLength;
+        if (preflightPixels > REVIEW_LIMITS.decodedTexturePixels || preflightBytes > REVIEW_LIMITS.textureBytes) throw new Error('Review total texture budget exceeded; use a smaller review LOD');
+      }
+    }
+    const decoded = await decodeBasisKtxTextures(basisInputs, { ...basisDeps, identity: basisIdentity! });
+    basisDecode = decoded.evidence;
+    for (const [imageIndex, owners] of basisOwnersByImage) {
+      const pixels = decoded.images.get(imageIndex);
+      if (!pixels) throw new Error('Basis decoder omitted a declared KTX2 source image');
+      for (const owner of owners) decodedBasisImages.set(owner, pixels);
+    }
+  }
   function texture(t: Texture | null, info: TextureInfo | null): ReviewTexture | undefined {
     if (!t) return undefined;
     if (info && info.getTexCoord() !== 0) throw new Error('Appearance texture mapping supports TEXCOORD_0 only');
     let result = textureCache.get(t);
     if (!result) {
-      const imageBytes = t.getImage(), size = imageBytes && readImageSize(imageBytes);
+      const imageBytes = t.getImage(), predecoded = decodedBasisImages.get(t);
+      const size = predecoded ? { width: predecoded.width, height: predecoded.height } : imageBytes && readImageSize(imageBytes);
       if (!imageBytes || !size || size.width * size.height > REVIEW_LIMITS.texturePixels) throw new Error('Review texture is unsupported or exceeds the 4 million pixel limit; use embedded PNG/JPEG review textures');
       if (texturePixels + size.width * size.height > REVIEW_LIMITS.decodedTexturePixels || textureBytes + imageBytes.byteLength > REVIEW_LIMITS.textureBytes) throw new Error('Review total texture budget exceeded; use a smaller review LOD');
-      const image = decodeImage(imageBytes);
+      const image = predecoded ?? decodeImage(imageBytes);
       if(image.width!==size.width||image.height!==size.height)throw new Error('Decoded review texture dimensions differ from preflight');
       texturePixels += image.width * image.height; textureBytes += imageBytes.byteLength;
       result = { image, wrapS: info?.getWrapS() ?? 10497, wrapT: info?.getWrapT() ?? 10497 }; textureCache.set(t, result);
@@ -69,7 +172,7 @@ export async function previewGlb(bytes: Uint8Array, input: ReviewSettingsInput =
     if (!Number.isFinite(normalScale) || normalScale < 0 || normalScale > 10) throw new Error('Invalid material normalScale (review range 0–10)');
     const emissive = m.getEmissiveFactor(); emissive.forEach(v => unitFactor(v, 'emissiveFactor'));
     const entry: ReviewMaterial = { color, metallic, roughness, alphaMode, alphaCutoff, normalScale, emissive, doubleSided: m.getDoubleSided(), occlusionStrength: unitFactor(m.getOcclusionStrength(), 'occlusionStrength') };
-    const baseBytes=m.getBaseColorTexture()?.getImage();const baseSize=baseBytes&&readImageSize(baseBytes);
+    const baseTexture=m.getBaseColorTexture(),baseBytes=baseTexture?.getImage(),basePredecoded=baseTexture&&decodedBasisImages.get(baseTexture);const baseSize=basePredecoded?{width:basePredecoded.width,height:basePredecoded.height}:baseBytes&&readImageSize(baseBytes);
     if(baseSize && (m.getBaseColorTextureInfo()?.getTexCoord()??0)===0)entry.densityTextureSize=baseSize;
     if (settings.mode === 'appearance') {
       entry.base = texture(m.getBaseColorTexture(), m.getBaseColorTextureInfo()); entry.packed = texture(m.getMetallicRoughnessTexture(), m.getMetallicRoughnessTextureInfo());
@@ -77,7 +180,6 @@ export async function previewGlb(bytes: Uint8Array, input: ReviewSettingsInput =
     }
     return [m, { material: entry, index }] as const;
   }));
-  if (settings.mode === 'appearance' && root.listMaterials().length > REVIEW_LIMITS.materials) throw new Error('Appearance review supports at most 32 materials');
   const selectedScene = root.getDefaultScene() ?? root.listScenes()[0];
   if (!selectedScene) throw new Error('Review requires a scene');
   const scene = selectedScene;
@@ -226,10 +328,12 @@ export async function previewGlb(bytes: Uint8Array, input: ReviewSettingsInput =
     }
     return { name: m.getName(), color: m.getBaseColorFactor().join(', '), metallic: m.getMetallicFactor(), roughness: m.getRoughnessFactor(), ...(swatch ? { texture: swatch } : {}) };
   });
-  const appearance = settings.mode === 'appearance' ? renderAppearance(faces, center, extent, settings) : { images: [], sampleChecks: 0 };
+  const appearance = settings.mode === 'appearance' ? renderAppearance(faces, center, extent, settings, rasterSampleBudget) : { images: [], sampleChecks: 0 };
   if (settings.mode === 'appearance') warnings.push('Authored tangent frames are used when present; missing frames use per-triangle UV-derived tangents and can differ from MikkTSpace seams.');
+  if (basisDecode?.textures.length) warnings.push('Compressed KTX2 maps were decoded by the pinned Basis CPU profile for this preview; the reviewed source and package bytes remain the original compressed GLB.');
   const uvEvidence = measureUv(faces);
   const auxiliarySvgBytes = Buffer.byteLength([...turns, ...wireframes, uv].join(''), 'utf8');
   const appearanceImageStringBytes = appearance.images.reduce((total, image) => total + Buffer.byteLength(image, 'utf8'), 0);
-  return { turns, wireframes, uv, materials, appearance: appearance.images, warnings, uvEvidence, framing, ...pose, renderer: REVIEW_RENDERER, envelope: { sourceBytes: bytes.byteLength, triangles: faces.length, vertexInstances, appearanceTrianglesRendered: appearance.images.length ? faces.length : 0, decodedTexturePixels: texturePixels, rasterSampleChecks: appearance.sampleChecks, boundsTrianglesScanned: referenceTriangleCount + faces.length, clippingPointChecks, uvMetricsTriangles: faces.length, auxiliarySvgBytes, appearanceImageStringBytes, auxiliaryGeometry: geometryViews.sampling, durationMs: Math.round(performance.now() - started), geometryPasses: settings.pose ? 2 : 1, limits: REVIEW_LIMITS } };
+  if (basisIdentity) await assertBasisReviewIdentity(basisIdentity);
+  return { turns, wireframes, uv, materials, appearance: appearance.images, warnings, uvEvidence, framing, ...pose, renderer: REVIEW_RENDERER, ...(basisDecode ? { basisDecode } : {}), envelope: { sourceBytes: bytes.byteLength, triangles: faces.length, vertexInstances, appearanceTrianglesRendered: appearance.images.length ? faces.length : 0, decodedTexturePixels: texturePixels, rasterSampleChecks: appearance.sampleChecks, boundsTrianglesScanned: referenceTriangleCount + faces.length, clippingPointChecks, uvMetricsTriangles: faces.length, auxiliarySvgBytes, appearanceImageStringBytes, auxiliaryGeometry: geometryViews.sampling, durationMs: Math.round(performance.now() - started), geometryPasses: settings.pose ? 2 : 1, limits: REVIEW_LIMITS } };
 }
