@@ -21,4 +21,5 @@ export const ROADMAP_FREE_TOOLS: ReadonlySet<string> = new Set([
   'list_production_templates', 'plan_production_template',
   'list_optional_tools',
   'preview_support_report',
+  'inspect_review_animation',
 ]);

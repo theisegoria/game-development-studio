@@ -110,12 +110,12 @@ test('reproducible clip evaluation applies rotation, morph weights and linear bl
   expect(skinHalf.turns[0]).not.toBe(skinStart.turns[0]);expect(skinHalf.warnings.join(' ')).toContain('linear blend skinning');
 });
 
-test('unsupported interpolation/extensions and resource amplification fail explicitly',async()=>{
+test('cubic interpolation is supported; unsupported extensions and resource amplification fail explicitly',async()=>{
   const f=plane(),input=f.doc.createAccessor().setBuffer(f.buffer).setType('SCALAR').setArray(new Float32Array([0,1]));
   const output=f.doc.createAccessor().setBuffer(f.buffer).setType('VEC3').setArray(new Float32Array(18));
   const cubicSampler=f.doc.createAnimationSampler().setInput(input).setOutput(output).setInterpolation('CUBICSPLINE');f.doc.createAnimation('cubic').addSampler(cubicSampler).addChannel(f.doc.createAnimationChannel().setTargetNode(f.node).setTargetPath('translation').setSampler(cubicSampler));
-  const glb=await bytes(f.doc);expect((await previewGlb(glb)).clips[0]?.supported).toBe(false);
-  await expect(previewGlb(glb,{pose:{clipIndex:0,timeSeconds:0.5}})).rejects.toThrow('CUBICSPLINE');
+  const glb=await bytes(f.doc);expect((await previewGlb(glb)).clips[0]?.supported).toBe(true);
+  expect((await previewGlb(glb,{pose:{clipIndex:0,timeSeconds:0.5}})).selectedTimeSeconds).toBe(0.5);
   const amplified=plane(),sharedInput=amplified.doc.createAccessor().setBuffer(amplified.buffer).setType('SCALAR').setArray(new Float32Array(Array.from({length:60_000},(_,i)=>i)));
   const sharedOutput=amplified.doc.createAccessor().setBuffer(amplified.buffer).setType('VEC3').setArray(new Float32Array(180_000));
   const sharedSampler=amplified.doc.createAnimationSampler().setInput(sharedInput).setOutput(sharedOutput);
@@ -191,5 +191,5 @@ test('measured envelope renders a 10,000 triangle review LOD and stops raster am
   if(process.env.GDS_REVIEW_EVIDENCE){const directory=process.env.GDS_REVIEW_EVIDENCE;await fs.mkdir(directory,{recursive:true});await fs.writeFile(path.join(directory,'review-envelope.glb'),source);await fs.writeFile(path.join(directory,'appearance.png'),Buffer.from(preview.appearance[0]!.split(',')[1]!,'base64'));await fs.writeFile(path.join(directory,'benchmark.json'),JSON.stringify({renderer:preview.renderer,settings:{mode:'appearance',resolution:128},sourceBytes:source.byteLength,durationMs,rssBefore,rssAfter:process.memoryUsage().rss,envelope:preview.envelope,uv:preview.uvEvidence},null,2));}
   const overdraw=plane();overdraw.primitive.getIndices()!.setArray(new Uint16Array(Array.from({length:10_000},()=>[0,1,3]).flat()));
   await expect(appearance(overdraw.doc)).rejects.toThrow('raster budget');
-  const tooMany=plane(101,50);await expect(previewGlb(await bytes(tooMany.doc))).rejects.toThrow('10,000 triangles');
+  const tooMany=plane(252,200);await expect(previewGlb(await bytes(tooMany.doc))).rejects.toThrow('triangle limit is 50,000');
 },30_000);

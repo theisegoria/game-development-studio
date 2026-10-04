@@ -66,3 +66,15 @@ it('binds exact tarball and manifest bytes to public release metadata and reject
   expect(() => verifyChecksum(bytes, name, manifest.toString('utf8'), { ...release, assets: release.assets.slice(0, 1) }, manifest)).toThrow('missing');
   expect(() => verifyChecksum(bytes, name, manifest.toString('utf8'), { ...release, assets: [{ ...release.assets[0], digest: `sha256:${'0'.repeat(64)}` }, release.assets[1]] }, manifest)).toThrow('digest');
 });
+
+it('preserves cmd.exe quoting for a Windows shim installed under a path with spaces', async () => {
+  const { assertWindowsPathLookup, windowsShimInvocation } = await import(verifier);
+  const installedShim = 'C:\\Users\\runner\\AppData\\Local\\Temp\\game dev first run\\cli prefix\\game-dev.cmd';
+  expect(windowsShimInvocation('C:\\Windows\\System32\\cmd.exe', 'C:\\Users\\runner\\AppData\\Local\\Temp\\game dev first run\\cli prefix\\game-dev.cmd')).toEqual({
+    command: 'C:\\Windows\\System32\\cmd.exe',
+    args: ['/d', '/s', '/c', `""${installedShim}" --version"`],
+    options: { windowsVerbatimArguments: true },
+  });
+  expect(assertWindowsPathLookup(`${installedShim}\r\nC:\\Users\\runner\\AppData\\Local\\Temp\\old cli bin\\game-dev.cmd\r\n`, installedShim)).toBe(installedShim);
+  expect(() => assertWindowsPathLookup(`C:\\Users\\runner\\AppData\\Local\\Temp\\old cli bin\\game-dev.cmd\r\n${installedShim}\r\n`, installedShim)).toThrow('Windows PATH selected');
+});

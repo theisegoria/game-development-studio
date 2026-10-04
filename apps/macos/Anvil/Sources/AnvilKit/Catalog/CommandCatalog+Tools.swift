@@ -152,6 +152,8 @@ extension CommandCatalog {
             route: .setup
         ),
         // MARK: - Asset inspection and review
+        tool("inspect_review_animation", title: "Inspect animation review clips",
+             summary: "Read bounded clip durations and source identity without rendering or writing.", route: .library),
         tool(
             "create_asset_review",
             title: "Create an asset review",

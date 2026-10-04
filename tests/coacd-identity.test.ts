@@ -92,13 +92,19 @@ describe('bounded static CoACD venv identity', () => {
   it('allows only the exact contained setuptools distutils startup hook', async () => {
     const root = await scratch();
     const { executable, packages } = await makeVenv(root);
-    const hook = "import os; var = 'SETUPTOOLS_USE_DISTUTILS'; enabled = os.environ.get(var, 'local') == 'local'; enabled and __import__('_distutils_hack').add_shim()\n";
-    await fs.writeFile(path.join(packages, 'distutils-precedence.pth'), hook);
+    const pthFile = path.join(packages, 'distutils-precedence.pth');
+    // CPython 3.11.14's ensurepip setuptools wheel payload (including its trailing space).
+    const hook = "import os; var = 'SETUPTOOLS_USE_DISTUTILS'; enabled = os.environ.get(var, 'local') == 'local'; enabled and __import__('_distutils_hack').add_shim(); \n";
+    await fs.writeFile(pthFile, hook);
     const module = path.join(packages, '_distutils_hack', '__init__.py');
     await fs.mkdir(path.dirname(module), { recursive: true });
     await fs.writeFile(module, 'def add_shim(): pass\n');
     await expect(coacdEnvironmentIdentitySHA256({ executablePath: executable })).resolves.toMatch(/^[0-9a-f]{64}$/);
-    await fs.writeFile(path.join(packages, 'distutils-precedence.pth'), 'import os; os.system("untrusted")\n');
+    await fs.writeFile(pthFile, hook.replace(/\n/g, '\r\n'));
+    await expect(coacdEnvironmentIdentitySHA256({ executablePath: executable })).resolves.toMatch(/^[0-9a-f]{64}$/);
+    await fs.writeFile(pthFile, hook.replace('add_shim();', 'ensure_shim();'));
+    await expect(coacdEnvironmentIdentitySHA256({ executablePath: executable })).rejects.toThrow(/exact setuptools/);
+    await fs.writeFile(pthFile, 'import os; os.system("untrusted")\n');
     await expect(coacdEnvironmentIdentitySHA256({ executablePath: executable })).rejects.toThrow(/exact setuptools/);
   });
 

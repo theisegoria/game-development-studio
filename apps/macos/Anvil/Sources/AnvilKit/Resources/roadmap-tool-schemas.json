@@ -121,6 +121,21 @@
     "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
+  "inspect_review_animation": {
+    "type": "object",
+    "properties": {
+      "modelPath": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096
+      }
+    },
+    "required": [
+      "modelPath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
   "create_asset_review": {
     "type": "object",
     "properties": {
@@ -189,6 +204,43 @@
             "required": [
               "clipIndex",
               "timeSeconds"
+            ],
+            "additionalProperties": false
+          },
+          "framing": {
+            "type": "object",
+            "properties": {
+              "center": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": [
+                  {
+                    "type": "number",
+                    "minimum": -1000000000000,
+                    "maximum": 1000000000000
+                  },
+                  {
+                    "type": "number",
+                    "minimum": -1000000000000,
+                    "maximum": 1000000000000
+                  },
+                  {
+                    "type": "number",
+                    "minimum": -1000000000000,
+                    "maximum": 1000000000000
+                  }
+                ]
+              },
+              "extent": {
+                "type": "number",
+                "minimum": 0.00001,
+                "maximum": 2000000000000
+              }
+            },
+            "required": [
+              "center",
+              "extent"
             ],
             "additionalProperties": false
           },
@@ -970,6 +1022,43 @@
                     ],
                     "additionalProperties": false
                   },
+                  "framing": {
+                    "type": "object",
+                    "properties": {
+                      "center": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": [
+                          {
+                            "type": "number",
+                            "minimum": -1000000000000,
+                            "maximum": 1000000000000
+                          },
+                          {
+                            "type": "number",
+                            "minimum": -1000000000000,
+                            "maximum": 1000000000000
+                          },
+                          {
+                            "type": "number",
+                            "minimum": -1000000000000,
+                            "maximum": 1000000000000
+                          }
+                        ]
+                      },
+                      "extent": {
+                        "type": "number",
+                        "minimum": 0.00001,
+                        "maximum": 2000000000000
+                      }
+                    },
+                    "required": [
+                      "center",
+                      "extent"
+                    ],
+                    "additionalProperties": false
+                  },
                   "reviewLod": {
                     "type": "string",
                     "minLength": 1,
@@ -1257,6 +1346,43 @@
                     "required": [
                       "clipIndex",
                       "timeSeconds"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "framing": {
+                    "type": "object",
+                    "properties": {
+                      "center": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": [
+                          {
+                            "type": "number",
+                            "minimum": -1000000000000,
+                            "maximum": 1000000000000
+                          },
+                          {
+                            "type": "number",
+                            "minimum": -1000000000000,
+                            "maximum": 1000000000000
+                          },
+                          {
+                            "type": "number",
+                            "minimum": -1000000000000,
+                            "maximum": 1000000000000
+                          }
+                        ]
+                      },
+                      "extent": {
+                        "type": "number",
+                        "minimum": 0.00001,
+                        "maximum": 2000000000000
+                      }
+                    },
+                    "required": [
+                      "center",
+                      "extent"
                     ],
                     "additionalProperties": false
                   },

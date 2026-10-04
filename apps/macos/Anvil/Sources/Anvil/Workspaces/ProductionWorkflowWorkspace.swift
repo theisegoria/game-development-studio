@@ -9,6 +9,7 @@ struct ProductionWorkflowWorkspace: View {
     @State private var plan: ProductionPlan?
     @State private var preview: JSONValue?
     @State private var previewRequest: JSONValue?
+    @State private var previewAnimationSources: [ProductionAnimationSourceInfo]?
     @State private var reviewedStep: ProductionStep?
     @State private var reviewedRequest: RoadmapToolRequest?
     @State private var confirmed = false
@@ -20,6 +21,7 @@ struct ProductionWorkflowWorkspace: View {
     @State private var runRecipeID: String?
     @State private var readTask: Task<Void, Never>?
     @State private var readIdentity = UUID()
+    @State private var animationSources: [ProductionAnimationSourceInfo] = []
     @State private var message: String?
     @State private var selectedCandidateID = ""
     @State private var reviewer = ""
@@ -31,6 +33,18 @@ struct ProductionWorkflowWorkspace: View {
         model.hasRuntime && ["plan_production_template", "save_production_template", "plan_production_recipe", "run_production_step", "set_production_review"]
             .allSatisfy { RoadmapToolSchemas.all[$0] != nil }
     }
+    private var animationInspectionAvailable: Bool {
+        model.hasRuntime && workflowAvailable && RoadmapToolSchemas.all["inspect_review_animation"] != nil
+    }
+    private var animationSampleRequestReady: Bool {
+        guard draft.template == .review, draft.sampleAnimation else { return true }
+        guard let paths = try? draft.candidateModelPaths(),
+              let timeline = try? ProductionAnimationTimeline(sources: animationSources, matching: paths),
+              let clip = timeline.clip(at: draft.clipIndex),
+              timeline.contains(timeSeconds: draft.clipTimeSeconds, for: clip.index) else { return false }
+        guard let confirmation = timeline.nameMappingConfirmationKey(at: clip.index) else { return true }
+        return draft.confirmedAnimationClipMapping == confirmation
+    }
 
     var body: some View {
         ScrollView {
@@ -41,9 +55,17 @@ struct ProductionWorkflowWorkspace: View {
                     Text("The matching workflow schemas or bundled runtime are unavailable. Install a verified Anvil package containing its runtime and request resources.")
                         .font(.callout).foregroundStyle(.orange)
                 }
-                ProductionWorkflowForm(draft: $draft).disabled(busy)
+                ProductionWorkflowForm(
+                    draft: $draft,
+                    animationSources: animationSources,
+                    animationInspectionAvailable: animationInspectionAvailable,
+                    inspectingAnimation: readBusy,
+                    onInspectAnimation: inspectAnimationMetadata
+                ).disabled(busy)
                 HStack {
-                    Button("Preview workflow") { previewWorkflow() }.disabled(busy || !workflowAvailable)
+                    Button("Preview workflow") { previewWorkflow() }
+                        .disabled(busy || !workflowAvailable || !animationSampleRequestReady || draft.template == .review && draft.sampleAnimation && !animationInspectionAvailable)
+                        .help("Inspect candidate clips, choose a shared clip and sample time, and confirm any differing clip names before previewing.")
                     if previewRequest != nil {
                         Button("Save this recipe") { saveRecipe() }.disabled(busy || !workflowAvailable)
                     }
@@ -108,8 +130,16 @@ struct ProductionWorkflowWorkspace: View {
             }
             .padding(8)
         }
-        .onChange(of: draft) { _, _ in preview = nil; previewRequest = nil; clearApproval() }
-        .onChange(of: model.outputDirectory) { _, _ in cancelInspection(); plan = nil; preview = nil; previewRequest = nil }
+        .onChange(of: draft) { oldDraft, newDraft in
+            preview = nil; previewRequest = nil; previewAnimationSources = nil; clearApproval()
+            if oldDraft.template == .review || newDraft.template == .review {
+                plan = nil; selectedCandidateID = ""; selectionReason = ""
+            }
+        }
+        .onChange(of: draft.candidatePaths) { _, _ in animationSources = [] }
+        .onChange(of: model.outputDirectory) { _, _ in
+            cancelInspection(); plan = nil; preview = nil; previewRequest = nil; previewAnimationSources = nil
+        }
         .onChange(of: recoveryID) { _, id in
             clearApproval()
             if plan?.recipeID != id { plan = nil }
@@ -207,15 +237,53 @@ struct ProductionWorkflowWorkspace: View {
             catch { if !Task.isCancelled && readIdentity == identity { message = error.localizedDescription } }
         }
     }
-    private func previewWorkflow() {
+
+    private func inspectAnimationMetadata() {
+        guard animationInspectionAvailable else { return }
         do {
-            let request = try draft.request()
+            let paths = try draft.candidateModelPaths()
             read { identity in
-                let result = try await model.inspectProductionTool("plan_production_template", request: request)
-                guard !Task.isCancelled, readIdentity == identity, (try? draft.request()) == request else { return }
-                preview = result; previewRequest = request
+                let sources = try await inspectAnimationSources(paths, identity: identity)
+                guard !Task.isCancelled, readIdentity == identity,
+                      (try? draft.candidateModelPaths()) == paths else { return }
+                _ = try ProductionAnimationTimeline(sources: sources, matching: paths)
+                animationSources = sources
+                preview = nil; previewRequest = nil; previewAnimationSources = nil
+                plan = nil; selectedCandidateID = ""; clearApproval()
+                message = "Read clip metadata for \(sources.count) candidate(s). No preview was rendered."
             }
-        } catch { clearApproval(); message = error.localizedDescription }
+        } catch { message = error.localizedDescription }
+    }
+
+    private func inspectAnimationSources(_ paths: [String], identity: UUID) async throws -> [ProductionAnimationSourceInfo] {
+        var sources: [ProductionAnimationSourceInfo] = []
+        sources.reserveCapacity(paths.count)
+        for path in paths {
+            guard !Task.isCancelled, readIdentity == identity else { throw CancellationError() }
+            let result = try await model.inspectProductionTool("inspect_review_animation", request: .object(["modelPath": .string(path)]))
+            guard !Task.isCancelled, readIdentity == identity else { throw CancellationError() }
+            sources.append(try draft.applyAnimationInfo(result, requestedPath: path))
+        }
+        return sources
+    }
+
+    private func previewWorkflow() {
+        let needsAnimationInspection = draft.template == .review && draft.sampleAnimation
+        guard !needsAnimationInspection || animationInspectionAvailable else { return }
+        preview = nil; previewRequest = nil; previewAnimationSources = nil
+        plan = nil; selectedCandidateID = ""; selectionReason = ""; clearApproval()
+        read { identity in
+            let paths = draft.template == .review && draft.sampleAnimation ? try draft.candidateModelPaths() : []
+            let freshSources = paths.isEmpty ? [] : try await inspectAnimationSources(paths, identity: identity)
+            guard !Task.isCancelled, readIdentity == identity else { return }
+            if !freshSources.isEmpty { animationSources = freshSources }
+            let request = try draft.request(animationSources: freshSources)
+            let result = try await model.inspectProductionTool("plan_production_template", request: request)
+            guard !Task.isCancelled, readIdentity == identity,
+                  (try? draft.request(animationSources: freshSources)) == request else { return }
+            preview = result; previewRequest = request
+            previewAnimationSources = paths.isEmpty ? nil : freshSources
+        }
     }
     private func refreshPlan(_ recipeID: String) {
         guard ProductionWorkflowDraft.identifier(recipeID) else { return }
@@ -245,10 +313,35 @@ struct ProductionWorkflowWorkspace: View {
         }
     }
     private func saveRecipe() {
-        guard !busy, workflowAvailable, let request = previewRequest, (try? draft.request()) == request else { return }
-        beginMutation("save_production_template", request: request, recipeID: draft.recipeID,
-                      basis: "Save the displayed recipe without executing steps.")
-        previewRequest = nil
+        guard !busy, workflowAvailable, let request = previewRequest,
+              (try? draft.request(animationSources: animationSources)) == request else { return }
+        let recipeID = draft.recipeID
+        if draft.template == .review && draft.sampleAnimation {
+            guard animationInspectionAvailable else { return }
+            do {
+                let paths = try draft.candidateModelPaths()
+                read { identity in
+                    let freshSources = try await inspectAnimationSources(paths, identity: identity)
+                    guard !Task.isCancelled, readIdentity == identity else { return }
+                    guard let reviewedSources = previewAnimationSources, freshSources == reviewedSources else {
+                        animationSources = freshSources
+                        preview = nil; previewRequest = nil; previewAnimationSources = nil
+                        plan = nil; selectedCandidateID = ""; clearApproval()
+                        message = "Candidate animation data changed. Review the refreshed timeline and preview again."
+                        return
+                    }
+                    guard (try? draft.request(animationSources: freshSources)) == request else { return }
+                    animationSources = freshSources
+                    beginMutation("save_production_template", request: request, recipeID: recipeID,
+                                  basis: "Save the displayed recipe without executing steps.", whileInspecting: true)
+                    previewRequest = nil; previewAnimationSources = nil
+                }
+            } catch { message = error.localizedDescription }
+        } else {
+            beginMutation("save_production_template", request: request, recipeID: recipeID,
+                          basis: "Save the displayed recipe without executing steps.")
+            previewRequest = nil; previewAnimationSources = nil
+        }
     }
     private func executeStep() {
         guard !busy, workflowAvailable, confirmed, let step = reviewedStep, let request = reviewedRequest, let plan,
@@ -270,8 +363,9 @@ struct ProductionWorkflowWorkspace: View {
             } catch { message = error.localizedDescription }
         }
     }
-    private func beginMutation(_ operation: String, request: JSONValue, recipeID: String, basis: String) {
-        guard !busy, workflowAvailable, RoadmapToolSchemas.all[operation] != nil,
+    private func beginMutation(_ operation: String, request: JSONValue, recipeID: String, basis: String, whileInspecting: Bool = false) {
+        let idle = whileInspecting ? !startingRun && activeRun?.state.isActive != true : !busy
+        guard idle, workflowAvailable, RoadmapToolSchemas.all[operation] != nil,
               let spec = CommandCatalog.byRegistryTool[operation] else { return }
         do {
             let body = try RoadmapToolRequest(value: request)

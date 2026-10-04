@@ -4,7 +4,7 @@ Checkpoint work began 4 October 2026 from public main `3a9cd3f08f970ded8db71d31e
 
 ## Isolation and authorization
 
-The discovered `game-asset-mcp` local checkout is older (`29715a5`) and dirty. None of its changes are inputs to this implementation. Work uses an independent public-source clone and local branch `codex/roadmap-checkpoints-20261004`. Its source changes were left intact; only the separately requested Codex model preference was updated in the original project's configuration. Ben authorized local implementation, CPU checks and commits. Public pushes, merges, releases, paid calls, account creation, cloud sync, user-asset purge, unattended updates, local Blender, GPU and application-window launches are excluded until separately authorized. CI workflow changes are prepared locally; no hosted workflow has been triggered.
+The discovered `game-asset-mcp` local checkout is older (`29715a5`) and dirty. None of its changes are inputs to this implementation. Work uses an independent public-source clone and local branch `codex/roadmap-checkpoints-20261004`. Its source changes were left intact; only the separately requested Codex model preference was updated in the original project's configuration. Ben authorized local implementation, CPU checks and commits, then approved isolated branch pushes, draft PRs and the existing hosted CI workflows, including hosted Blender/Metal and optional CPU tools. His subsequent correction permits CI testing only: local Anvil/application-window, Blender and GPU launches remain excluded. Merges, releases, npm publication, paid provider calls, account creation, cloud sync, user-asset purge and unattended updates require separate authorization. Draft core PR #11 and skills PR #8 are open; no merge or release occurred.
 
 ## Intended integrated checkpoints
 
@@ -43,7 +43,7 @@ Evidence is recorded as **real CPU**, **mock/fault injection**, **source/build**
 - Public 1.3.1 tarball and manifest bytes matched GitHub release digests. Its installed free route passed on macOS arm64 Node 25.2.1. Real public 1.2.0 → 1.3.1 → 1.2.0 → 1.3.1 passed in one disposable prefix, with fresh doctor/sample/capture/seal/comparison checks at every stage. Source-packed first-run also passed; final integrated artifact evidence is saved separately from repository files.
 - Canonical five-skill export and companion closed roster/ZIP construction passed. New CI actions retain immutable full-SHA pins, dependency locks and existing license inventory; no dependency was added.
 
-### Final local validation
+### First checkpoint local validation (bede3f7 / f785d97)
 
 - Integrated TypeScript CPU/mock suite: **94 files passed, 976 tests passed, 30 skipped**, with real Blender/GPU/CoACD/Basis lanes disabled. Loopback fixture access was explicitly allowed; fake optional-tool processes remain mock evidence.
 - Runtime payload packaging: **2 real CPU tests passed** separately. Combined TypeScript validation is **978 passed, 30 skipped across 95 passing files**; the runtime packaging lane is kept separate from mocks.
@@ -61,14 +61,24 @@ An isolated Node 25.2.1/macOS arm64 process measured the 226,200-byte, 10,000-tr
 
 ### Pending or gated evidence
 
-- Windows/Linux execution of new free-route matrix: prepared locally; requires authorized hosted CI or those platforms.
+- The first hosted head passed Linux/macOS free-route execution and failed Windows at the installed shim quoting check. A bounded command quoting fix is implemented and requires the next hosted run.
 - Native keyboard/accessibility/light-dark/repeated-click/cancel/relaunch interaction: requires authorized app-window launch.
-- Blender and GPU outputs: require fresh explicit local execution approval or separately authorized hosted CI.
+- Hosted Blender and Metal tests passed on the first head. These are runner evidence, not local/target-engine acceptance. Local execution remains disallowed.
 - Three unfamiliar testers completing the free route: requires human usability sessions.
 - npm publication: requires publisher access plus explicit publication approval; no credentials will be created.
 - Developer ID signing/notarization and normal clean-Mac launch: require account access and explicit authorization. Gatekeeper bypass is not acceptance.
 - Additional bundled Windows runtime: decision requires measured setup friction; not justified by the closed historical Windows question alone.
-- Continuous animation scrubbing, CUBICSPLINE, exact authored tangent/complex transparency rendering, larger production assets and direct compressed KTX2 appearance are outside this bounded checkpoint. Compressed assets need a separately prepared decoded core-glTF review source. These are implementation follow-ups, distinct from launch/publication permission gates.
+- Continuous playback rendering, IBL/shadows, direct compressed KTX2 appearance and fuller comparison UX remain implementation follow-ups, distinct from launch/publication permission gates. Compressed assets currently need a separately prepared decoded core-glTF review source.
+
+### Second checkpoint implementation and hosted acceptance
+
+Core draft [PR #11](https://github.com/theisegoria/game-development-studio/pull/11) and companion [PR #8](https://github.com/theisegoria/game-development-studio-skills/pull/8) preserve the isolated branch. First-head hosted evidence is tied to core `bede3f7` / skills `f785d97`: Linux/macOS first-run, Basis on three platforms, installed Windows CLI/fsync, native archive, hosted Blender and hosted Metal passed. Windows first-run failed at the shim path-with-spaces check. CoACD on four runners refused the standard setuptools `.pth` hook before decomposition, so its native algorithm was not established by that run. The fixes preserve the exact allowlist and structured CLI argument boundaries; real hosted reruns are required.
+
+The next source slice adds CUBICSPLINE and validated animation metadata shared by CLI/MCP/native forms; fixed default-pose or explicit shared framing; authored/morphed tangents with reflection parity; bounded per-pixel transparency; a measured 50,000-triangle/150,000-vertex appearance envelope with explicitly sampled 2,000-triangle auxiliary diagrams; and source-bound clip/time selection. Renderer identity advances to `gds-cpu-review@2.1.0`, requiring fresh appearance review. Native interactions are source/CPU evidence only until separately approved. Second-checkpoint CPU/mock suite passed **99 files / 1,010 tests**, with 30 real optional/GPU tests skipped. Native CPU build/tests passed **124 tests in 11 suites**; the subsequent candidate-path contract fix passed all 14 guided-workflow tests. A final targeted review/runtime check passed 27 cases, including 2 runtime payload fixture tests kept distinct from real installed-byte evidence. Additional raw-reference, flat-normal/morph-tangent and fetch cleanup fixes were rechecked by targeted suites. Typecheck, lint, production build and 51 native schema snapshots passed. The actual source-packed first free workflow passed on macOS; public-release and Windows proof still depends on the updated CI head.
+
+The final envelope fixture is a 4,801,020-byte GLB with 50,000 triangles / 150,000 vertex instances. An isolated static preview took 487 ms with +376,995,840 bytes RSS; a selected-pose pass took 992 ms with +423,215,104 bytes RSS. Auxiliary SVGs were about 3.87 MB. The earlier temporary 100,000-triangle experiment is retained as rejected-cap research, not current support. Resource measurements are host/asset specific; neither RSS deltas nor accepted source size imply a universal peak.
+
+The existing CI workflow now separates current-source six-platform/Node installs from exact public 1.3.1/1.2.0 Linux/macOS install, update, rollback and reinstall. Both tarballs and manifests must match GitHub release API digests, sizes and URLs before execution. Published Windows 1.3.1 sample capture remains unsupported and explicitly documented; the source Windows fix is its own hosted gate.
 
 ## Integration procedure
 

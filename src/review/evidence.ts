@@ -13,13 +13,13 @@ const hash=(value:Uint8Array|string)=>createHash('sha256').update(value).digest(
 export async function writeReviewCapture(directory:string,previews:CpuPreviews,settings:ReviewSettings,sourceSha256:string,previewSha256:string){
   if(!previews.appearance.length)throw new Error('Sealed review captures require appearance previews');
   const runId=`review-${randomUUID()}`,runPath=path.join(directory,runId),adapterId='gds-cpu-review';
-  const scenarioId=`appearance-${hash(canonicalJson({settings,renderer:REVIEW_RENDERER})).slice(0,32)}`;
+  const scenarioId=`appearance-${hash(canonicalJson({settings,renderer:REVIEW_RENDERER,framing:{policy:previews.framing.policy,center:previews.framing.center,extent:previews.framing.extent}})).slice(0,32)}`;
   await fs.mkdir(runPath,{recursive:true,mode:0o700});
   const artifacts:RunArtifact[]=[];
   async function write(file:string,bytes:Uint8Array|string,kind:RunArtifact['kind']){await fs.writeFile(path.join(runPath,file),bytes,{flag:'wx',mode:0o600});artifacts.push({path:file,kind,bytes:Buffer.byteLength(bytes),sha256:hash(bytes)});}
   const adapter=canonicalJson({schema:'game_dev.cpu_review_renderer.v1',renderer:REVIEW_RENDERER,execution:'in-process CPU; no capture executable or subprocess'});
   await write('renderer.json',adapter,'adapter');
-  await write('source-binding.json',canonicalJson({schema:'game_dev.cpu_review_source.v1',sourceSha256,previewSha256,settings,renderer:REVIEW_RENDERER}),'receipt');
+  await write('source-binding.json',canonicalJson({schema:'game_dev.cpu_review_source.v1',sourceSha256,previewSha256,settings,renderer:REVIEW_RENDERER,framing:previews.framing}),'receipt');
   const frames=[];
   for(const [index,image] of previews.appearance.entries()){
     const file=`angle-${index}.png`;await write(file,Buffer.from(image.split(',')[1]!,'base64'),'capture_color');

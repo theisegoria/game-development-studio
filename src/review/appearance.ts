@@ -10,7 +10,12 @@ export interface ReviewMaterial {
   base?: ReviewTexture; packed?: ReviewTexture; normal?: ReviewTexture; emission?: ReviewTexture; occlusion?: ReviewTexture;
   densityTextureSize?: { width: number; height: number };
 }
-export interface ReviewFace { points: V3[]; normals: V3[]; uv: number[][]; colors: number[][]; material: ReviewMaterial; materialIndex: number }
+export interface ReviewFace {
+  points: V3[]; normals: V3[]; uv: number[][]; colors: number[][];
+  /** Optional transformed glTF tangent vec4s at each corner: world-space xyz plus handedness ±1. */
+  tangents?: number[][];
+  material: ReviewMaterial; materialIndex: number;
+}
 export const sub = (a: number[], b: number[]): V3 => [a[0]! - b[0]!, a[1]! - b[1]!, a[2]! - b[2]!];
 export const cross = (a: number[], b: number[]): V3 => [a[1]! * b[2]! - a[2]! * b[1]!, a[2]! * b[0]! - a[0]! * b[2]!, a[0]! * b[1]! - a[1]! * b[0]!];
 export const dot = (a: number[], b: number[]): number => a[0]! * b[0]! + a[1]! * b[1]! + a[2]! * b[2]!;
@@ -70,30 +75,48 @@ export function measureUv(faces: ReviewFace[]): UvEvidence {
   return { channel: 0, gridResolution: 128, coveredFraction: complete ? covered / occupancy.length : null, overlappedFraction: complete ? overlapped / occupancy.length : null, sampleChecks, complete, outOfTileTriangles, missingUvTriangles, degenerateUvTriangles, density: [...density.values()] };
 }
 
+/** Explicit cap for retained BLEND pixel fragments across all eight views. */
+export const REVIEW_BLEND_FRAGMENT_BUDGET = REVIEW_LIMITS.blendFragments;
+
+function validateTangents(face: ReviewFace): void {
+  if (face.tangents === undefined) return;
+  if (!Array.isArray(face.tangents) || face.tangents.length !== 3 || face.tangents.some(t => !Array.isArray(t) || t.length !== 4 || t.some(v => !Number.isFinite(v)) || Math.hypot(t[0]!, t[1]!, t[2]!) < 1e-12 || (t[3] !== 1 && t[3] !== -1))) {
+    throw new Error('Authored tangent frame is unsupported or malformed; expected three finite world-space vec4 tangents with handedness +1 or -1');
+  }
+}
+
 /** Eight orthographic CPU GGX views with a fixed key, fill, and ambient term. */
 export function renderAppearance(faces: ReviewFace[], center: number[], extent: number, settings: ReviewSettings): { images: string[]; sampleChecks: number } {
+  for (const face of faces) validateTangents(face);
   const size = settings.resolution, scale = size * 0.7 / Math.max(extent, 0.00001);
-  const images: string[] = []; let sampleChecks = 0;
+  const images: string[] = []; let sampleChecks = 0, blendFragmentsUsed = 0;
   for (let frame = 0; frame < 8; frame++) {
     const angle = frame * Math.PI / 4, c = Math.cos(angle), s = Math.sin(angle);
     const rotate = (v: number[]): V3 => [c * v[0]! + s * v[2]!, v[1]!, c * v[2]! - s * v[0]!];
     const data = new Uint8Array(size * size * 4), radiances = new Float32Array(size * size * 3), depth = new Float64Array(size * size).fill(-Infinity);
+    // Compact linked records avoid retaining a JS object for every translucent sample.
+    const blendHeads = new Int32Array(size * size).fill(-1);
+    let blendRecords = new Float64Array(0), blendNext = new Int32Array(0), blendCount = 0;
     const background = [21,32,49].map(v => {const l=linear(v/255);return l/(1-l);});
     for (let i = 0; i < radiances.length; i += 3) radiances.set(background,i);
-    const projected = faces.map(face => ({ face, points: face.points.map(p => { const v = rotate(sub(p, center)); return [size / 2 + v[0] * scale, size / 2 - v[1] * scale, v[2]]; }), normals: face.normals.map(rotate) }));
-    projected.sort((a, b) => Number(a.face.material.alphaMode === 'BLEND') - Number(b.face.material.alphaMode === 'BLEND') || a.points.reduce((v, p) => v + p[2]!, 0) - b.points.reduce((v, p) => v + p[2]!, 0));
+    const projected = faces.map(face => ({ face, points: face.points.map(p => { const v = rotate(sub(p, center)); return [size / 2 + v[0] * scale, size / 2 - v[1] * scale, v[2]]; }), normals: face.normals.map(rotate), tangents: face.tangents?.map(t => [...rotate(t), t[3]!] ) }));
     for (const item of projected) {
-      const { face, points: p, normals } = item, material = face.material;
+      const { face, points: p, normals, tangents: authoredTangents } = item, material = face.material;
       const signed = edge(p[0]!, p[1]!, p[2]!); if (Math.abs(signed) < 1e-8 || (!material.doubleSided && signed > 0)) continue;
       const b = bounds(p, size), checks = Math.max(0, b.x1 - b.x0 + 1) * Math.max(0, b.y1 - b.y0 + 1);
       sampleChecks += checks; if (sampleChecks > REVIEW_LIMITS.rasterSamples) throw new Error('Appearance raster budget exceeded; use a smaller review LOD or 128px resolution');
-      let tangent: V3 | undefined, handed = 1;
-      if (face.uv.length === 3 && material.normal) {
+      let uvTangent: V3 | undefined, uvBitangent: V3 | undefined;
+      if (material.normal && !authoredTangents) {
+        if (face.uv.length !== 3 || face.uv.some(uv => uv.length < 2 || !Number.isFinite(uv[0]) || !Number.isFinite(uv[1]))) throw new Error('Normal mapping without authored tangents requires three finite TEXCOORD_0 coordinates');
         const d1 = sub(face.points[1]!, face.points[0]!), d2 = sub(face.points[2]!, face.points[0]!);
         const u1 = face.uv[1]![0]! - face.uv[0]![0]!, v1 = face.uv[1]![1]! - face.uv[0]![1]!, u2 = face.uv[2]![0]! - face.uv[0]![0]!, v2 = face.uv[2]![1]! - face.uv[0]![1]!;
         const determinant = u1 * v2 - u2 * v1;
         if (Math.abs(determinant) < 1e-10) throw new Error('Normal mapping requires nondegenerate UV triangles');
-        tangent = rotate(unit(d1.map((v, k) => (v * v2 - d2[k]! * v1) / determinant))); handed = Math.sign(determinant);
+        // Use the transformed geometry for both UV derivatives. A reflected node reverses T but not necessarily N or B;
+        // deriving handedness from the fixed UV determinant alone loses that world-transform parity.
+        uvTangent = rotate(d1.map((v, k) => (v * v2 - d2[k]! * v1) / determinant));
+        uvBitangent = rotate(d2.map((v, k) => (v * u1 - d1[k]! * u2) / determinant));
+        if (Math.hypot(...uvTangent) < 1e-12 || Math.hypot(...uvBitangent) < 1e-12) throw new Error('Normal mapping requires a nondegenerate UV tangent frame');
       }
       for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) {
         const pixel = [x + 0.5, y + 0.5], weights = [edge(p[1]!, p[2]!, pixel) / signed, edge(p[2]!, p[0]!, pixel) / signed, edge(p[0]!, p[1]!, pixel) / signed];
@@ -103,9 +126,28 @@ export function renderAppearance(faces: ReviewFace[], center: number[], extent: 
         const uv = face.uv.length === 3 ? mix(face.uv, 2) : [0, 0], base = sample(material.base, uv), vertex = mix(face.colors, 4);
         const alpha = material.alphaMode === 'OPAQUE' ? 1 : base[3]! * material.color[3]! * vertex[3]!;
         if (material.alphaMode === 'MASK' && alpha < material.alphaCutoff) continue;
-        let normal = unit(mix(normals, 3)); if (signed > 0) normal = normal.map(v => -v) as V3;
-        if (tangent && material.normal) {
-          const projection = dot(tangent, normal), t = unit(tangent.map((v, k) => v - normal[k]! * projection)), bt = cross(normal, t).map(v => v * handed), nm = sample(material.normal, uv);
+        const unflippedNormal = unit(mix(normals, 3));
+        let normal = signed > 0 ? unflippedNormal.map(v => -v) as V3 : unflippedNormal;
+        if (material.normal) {
+          let tangent: V3, handed: number;
+          if (authoredTangents) {
+            tangent = mix(authoredTangents.map(t => t.slice(0, 3)), 3) as V3;
+            const handedness = mix(authoredTangents.map(t => [t[3]!]), 1)[0]!;
+            if (Math.abs(handedness) < 1e-12) throw new Error('Authored tangent handedness is ambiguous at a covered pixel');
+            handed = handedness < 0 ? -1 : 1;
+          } else {
+            tangent = uvTangent!;
+            handed = 1;
+          }
+          const projection = dot(tangent, unflippedNormal), orthogonal = tangent.map((v, k) => v - unflippedNormal[k]! * projection), tangentLength = Math.hypot(...orthogonal);
+          if (tangentLength < 1e-12) throw new Error('Normal mapping tangent frame is degenerate at a covered pixel');
+          const t = orthogonal.map(v => v / tangentLength) as V3;
+          if (!authoredTangents) {
+            const orientation = dot(cross(unflippedNormal, t), uvBitangent!);
+            if (!Number.isFinite(orientation) || Math.abs(orientation) < 1e-12) throw new Error('UV-derived tangent handedness is degenerate at a covered pixel');
+            handed = orientation < 0 ? -1 : 1;
+          }
+          const bt = cross(normal, t).map(v => v * handed), nm = sample(material.normal, uv);
           const mapped = unit([(nm[0]! * 2 - 1) * material.normalScale, (nm[1]! * 2 - 1) * material.normalScale, nm[2]! * 2 - 1]);
           normal = unit(normal.map((v, k) => t[k]! * mapped[0] + bt[k]! * mapped[1] + v * mapped[2]));
         }
@@ -123,12 +165,42 @@ export function renderAppearance(faces: ReviewFace[], center: number[], extent: 
           }
         }
         const emission = sample(material.emission, uv);
+        const outputColor = [0, 0, 0];
         for (let k = 0; k < 3; k++) {
           const radiance = (color[k]! + material.emissive[k]! * (material.emission ? linear(emission[k]!) : 1)) * settings.exposure;
-          const offset = at * 3 + k;
-          radiances[offset] = material.alphaMode === 'BLEND' ? radiance * alpha + radiances[offset]! * (1 - alpha) : radiance;
+          outputColor[k] = radiance;
         }
-        if (material.alphaMode !== 'BLEND') depth[at] = z;
+        if (material.alphaMode === 'BLEND') {
+          if (blendFragmentsUsed >= REVIEW_BLEND_FRAGMENT_BUDGET) throw new Error(`Appearance BLEND fragment budget exceeded (${REVIEW_BLEND_FRAGMENT_BUDGET}); reduce transparent coverage or use a smaller review LOD`);
+          if (blendCount === blendNext.length) {
+            const capacity = Math.min(REVIEW_BLEND_FRAGMENT_BUDGET, Math.max(1024, blendNext.length * 2));
+            const records = new Float64Array(capacity * 5); records.set(blendRecords); blendRecords = records;
+            const next = new Int32Array(capacity); next.set(blendNext); blendNext = next;
+          }
+          const index = blendCount++, offset = index * 5;
+          blendRecords[offset] = z; blendRecords[offset + 1] = outputColor[0]!; blendRecords[offset + 2] = outputColor[1]!; blendRecords[offset + 3] = outputColor[2]!; blendRecords[offset + 4] = alpha;
+          blendNext[index] = blendHeads[at]!; blendHeads[at] = index; blendFragmentsUsed++;
+        } else {
+          for (let k = 0; k < 3; k++) radiances[at * 3 + k] = outputColor[k]!;
+          depth[at] = z;
+        }
+      }
+    }
+    const fragmentOrder: number[] = [];
+    for (let at = 0; at < blendHeads.length; at++) {
+      fragmentOrder.length = 0;
+      for (let fragment = blendHeads[at]!; fragment !== -1; fragment = blendNext[fragment]!) {
+        const record = fragment * 5;
+        if (blendRecords[record]! > depth[at]!) fragmentOrder.push(fragment);
+      }
+      if (!fragmentOrder.length) continue;
+      fragmentOrder.sort((a, b) => blendRecords[a * 5]! - blendRecords[b * 5]! || a - b);
+      for (const fragment of fragmentOrder) {
+        const offset = fragment * 5, alpha = blendRecords[offset + 4]!;
+        for (let k = 0; k < 3; k++) {
+          const radianceOffset = at * 3 + k;
+          radiances[radianceOffset] = blendRecords[offset + 1 + k]! * alpha + radiances[radianceOffset]! * (1 - alpha);
+        }
       }
     }
     for(let at=0;at<size*size;at++) {for(let k=0;k<3;k++){const value=radiances[at*3+k]!;data[at*4+k]=Math.round(srgb(clamp(value/(1+value))));}data[at*4+3]=255;}

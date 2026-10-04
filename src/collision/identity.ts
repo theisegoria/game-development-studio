@@ -11,7 +11,7 @@ const MAX_ENTRIES = 100_000;
 const MAX_DEPTH = 32;
 const supportedPythonDirs = new Set(['python3.9', 'python3.10', 'python3.11', 'python3.12']);
 const supportedPosixExecutables = new Set(['python', 'python3', 'python3.9', 'python3.10', 'python3.11', 'python3.12']);
-const distutilsPrecedenceHook = "import os; var = 'SETUPTOOLS_USE_DISTUTILS'; enabled = os.environ.get(var, 'local') == 'local'; enabled and __import__('_distutils_hack').add_shim()";
+const distutilsPrecedenceHook = "import os; var = 'SETUPTOOLS_USE_DISTUTILS'; enabled = os.environ.get(var, 'local') == 'local'; enabled and __import__('_distutils_hack').add_shim(); \n";
 
 interface IdentitySelection {
   executablePath: string;
@@ -187,7 +187,7 @@ async function verifyPth(file: string, packageRoot: string, venvRoot: string, de
   } catch {
     fail('CoACD .pth metadata is not valid UTF-8.');
   }
-  if (path.basename(file) === 'distutils-precedence.pth' && source.replace(/\r\n/g, '\n').trim() === distutilsPrecedenceHook) return true;
+  if (path.basename(file) === 'distutils-precedence.pth' && source.replace(/\r\n/g, '\n') === distutilsPrecedenceHook) return true;
   for (const line of source.split(/\r?\n/)) {
     const entry = line.trim();
     if (!entry || entry.startsWith('#')) continue;

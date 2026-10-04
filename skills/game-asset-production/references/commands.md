@@ -173,3 +173,13 @@ Normals, roughness, metallic, alpha, UV overlap/density, skinning and morph
 inspection are bounded technical evidence. This renderer is not a target engine
 and its preview is not artistic approval. Use existing sealed snapshot comparison
 and regression tools for before/after outputs under the same review settings.
+
+`inspect_review_animation` reads clip metadata without rendering, launching a
+process or creating records. Metadata binds exact source bytes and renderer.
+LINEAR, STEP and CUBICSPLINE samples use the asset's default-pose frame; clipped
+views are explicit. Use an explicit shared `framing.center/extent` when comparing
+normalized, compressed-review or LOD sources whose bounds differ. Matching
+settings alone do not establish a matching camera. New source/settings/time
+requires fresh review; native clip-name mapping acknowledgment is also bound
+to source hashes and renderer identity. A timeline slider selects a reproducible
+sample for explicit execution, not live playback rendering.
