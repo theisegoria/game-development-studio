@@ -15,7 +15,7 @@
 
 import { z } from 'zod';
 import type { ToolRegistrar } from '../commands/registry.js';
-import { runDoctor } from '../cli/doctor.js';
+import { runDoctor, doctorWorkflowSchema } from '../cli/doctor.js';
 import { createOptimizationGoal, evaluateOptimizationGoal } from '../harness/goals.js';
 import { resolveRunPath } from '../harness/run-bundle.js';
 import { guard, ok, type ToolContext } from './context.js';
@@ -147,9 +147,9 @@ export function registerOptimizationTools(server: ToolRegistrar, ctx: ToolContex
         'credentials are configured (never their values), whether Blender and its scripts are ' +
         'reachable, and whether the packaged skills are installed. Ask this before assuming a ' +
         'capability is missing or a failure is yours.',
-      inputSchema: {},
+      inputSchema: { workflow: doctorWorkflowSchema.optional(), expectedVersion: z.string().min(1).optional() },
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    guard(ctx.logger, 'run_doctor', async () => ok(await runDoctor({ config: ctx.config }))),
+    guard(ctx.logger, 'run_doctor', async args => ok(await runDoctor({ config: ctx.config }, args))),
   );
 }

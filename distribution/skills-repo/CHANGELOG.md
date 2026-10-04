@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased roadmap checkpoint
+
+- Aligns release installation links and the compiler-free generic capture route.
+- Documents capability-discovered guided workflows, optional tool configuration,
+  redacted support reports and settings-bound CPU appearance/pose evidence.
+- Keeps published 1.3.1 distinct from the local source checkpoint and preserves
+  explicit per-invocation authorization and evidence limits.
+
 ## 1.3.1
 
 - Aligns the canonical skills export with the native optional-dependency process

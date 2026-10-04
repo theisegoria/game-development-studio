@@ -22,7 +22,7 @@ async function fixture() {
   const io = new NodeIO(); const doc = await io.read(model); const data = new Uint8Array(4*4*4).fill(128);
   const texture = doc.createTexture('color').setMimeType('image/png').setImage(encodePNG({width:4,height:4,data})); doc.getRoot().listMaterials()[0]!.setBaseColorTexture(texture);
   await io.write(model,doc);
-  const executable = path.join(root,'mock-encoder'); await fs.writeFile(executable,'mock; never executed');
+  const executable = path.join(root,'mock-encoder'); await fs.writeFile(executable,'mock; never executed', { mode: 0o700 });
   const identity = {path:executable,sha256:await hashBasisFile(executable),supportedVersion:BASIS_VERSION,upstreamCommit:BASIS_COMMIT};
   const calls: string[][] = [];
   const runner: BasisRunner = async (_file,args) => {

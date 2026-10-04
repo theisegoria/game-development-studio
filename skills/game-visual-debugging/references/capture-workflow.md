@@ -1,5 +1,27 @@
 # Capture and comparison workflow
 
+## Free first capture
+
+Install the CLI through the [canonical verified-release guide](https://github.com/theisegoria/game-development-studio/blob/main/docs/install.md).
+The [first-capture guide](https://github.com/theisegoria/game-development-studio/blob/main/docs/quickstart.md)
+uses the shipped generic sample adapter and needs Node, without a C compiler,
+Blender, provider credentials, or GPU authorization. First inspect the plan,
+then execute the exact sample invocation when requested by the user:
+
+```text
+game-dev doctor --json
+game-dev adapter sample --project "NEW_SAMPLE_DIRECTORY" --json
+game-dev adapter sample --project "NEW_SAMPLE_DIRECTORY" --confirm --json
+game-dev scenario plan capture --project "NEW_SAMPLE_DIRECTORY" --json
+game-dev scenario run capture --project "NEW_SAMPLE_DIRECTORY" --confirm --json
+game-dev capture verify RUN_PATH --json
+game-dev visual compare BASELINE_RUN_PATH CANDIDATE_RUN_PATH --threshold 0 --json
+```
+
+Take run paths from the actual result envelopes. Capture twice before comparing;
+the synthetic sample establishes harness integrity and reproducibility only.
+The C probe SDK is a separate advanced engine-integration route.
+
 ## Adapter discovery
 
 ```text

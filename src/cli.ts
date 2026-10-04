@@ -5,7 +5,8 @@ import { parseArguments, assertKnownFlags, booleanFlag, readRequest, stringFlag,
 import { isDirectInvocation } from './util/entrypoint.js';
 import { buildMcpConfig, isMcpClient, MCP_CLIENTS } from './mcp/config-templates.js';
 import { planOptimization, startOptimization, readOptimization, evaluateOptimization, recoverOptimization, stopOptimization, exportOptimization } from './optimization/session.js';
-import { runDoctor } from './cli/doctor.js';
+import { runDoctor, doctorWorkflowSchema } from './cli/doctor.js';
+import { buildSupportReport, writeSupportReport } from './installation/support-report.js';
 import { EventStream } from './cli/events.js';
 import { createGameDevRuntime, type GameDevRuntime } from './runtime.js';
 import { refreshAssetJob } from './tools/jobs.js';
@@ -47,9 +48,24 @@ const HELP = `Game Development Studio local harness
 
 Usage:
   game-dev capabilities [--json]
-  game-dev doctor [--json]
+  game-dev doctor [--workflow generic-capture|asset-inspect|asset-package|blender-normalize|texture-compression|collision-decomposition|metal-capture|all]
+                    [--expected-version VERSION] [--json]
+  game-dev support report [--workflow WORKFLOW] [--expected-version VERSION]
+                    [--output NEW_FILE --confirm] [--json]
   game-dev credentials status [--json]
   game-dev tool call <name> [--request FILE|- | --input JSON] [--json|--jsonl]
+  game-dev tool list [--json]
+  game-dev tool configure <blender|basisu|coacd-python> --executable ABSOLUTE_PATH
+                    [--sha256 HASH] --confirm [--json]
+  game-dev tool clear <blender|basisu|coacd-python> --confirm [--json]
+  game-dev workflow templates [--json]
+  game-dev workflow create <template-id> [model.glb] --name NAME --license SPDX
+                    [--recipe-id ID] [--request OPTIONS.json] [--confirm] [--json]
+  game-dev workflow plan <recipe-id> [--json]
+  game-dev workflow step <recipe-id> <step-id> --fingerprint HASH --confirm [--json]
+  game-dev workflow review <recipe-id> <candidate-id> --fingerprint HASH
+                    --reviewer NAME --reason TEXT --confirm [--json]
+  game-dev workflow recover <recipe-id> --confirm [--json]
   game-dev provider tripo <generate|retexture|rig|retarget|retopologize> --request FILE
                     --approve-spend --spend-limit-cents N [--json|--jsonl]
   game-dev provider leonardo <image-generate|sound-generate> --request FILE
@@ -287,6 +303,7 @@ function capabilities(runtime: GameDevRuntime): Record<string, unknown> {
       'capabilities',
       'mcp',
       'doctor',
+      'support',
       'credentials',
       'adapter',
       'probe',
@@ -304,6 +321,7 @@ function capabilities(runtime: GameDevRuntime): Record<string, unknown> {
       'migrate',
       'launch',
       'tool',
+      'workflow',
     ],
     localOperations: runtime.registry.capabilities(),
     approval: {
@@ -440,7 +458,21 @@ async function dispatch(
     };
   }
   if (family === 'doctor') {
-    return { operation: 'doctor', data: await runDoctor(runtime) };
+    const options = { workflow: doctorWorkflowSchema.parse(stringFlag(parsed, 'workflow') ?? 'generic-capture'),
+      ...(stringFlag(parsed, 'expected-version') ? { expectedVersion: requireFlag(parsed, 'expected-version') } : {}) };
+    const report = await runDoctor(runtime, options);
+    return { operation: 'doctor', data: report as unknown as Record<string, unknown>, ...(report.healthy ? {} : { isError: true }) };
+  }
+  if (family === 'support' && action === 'report') {
+    const options = { workflow: doctorWorkflowSchema.parse(stringFlag(parsed, 'workflow') ?? 'generic-capture'),
+      ...(stringFlag(parsed, 'expected-version') ? { expectedVersion: requireFlag(parsed, 'expected-version') } : {}) };
+    const output = stringFlag(parsed, 'output');
+    if (output && !booleanFlag(parsed, 'confirm')) return { operation: 'support.report', isError: true, data: {
+      error: 'APPROVAL_REQUIRED', message: 'Preview the redacted report first, then authorize writing a new local report with --confirm.',
+    } };
+    return { operation: 'support.report', data: output
+      ? await writeSupportReport(runtime, { ...options, outputPath: path.resolve(output) })
+      : await buildSupportReport(runtime, options) };
   }
   if (family === 'credentials' && action === 'status') {
     return {
@@ -622,6 +654,48 @@ async function dispatch(
     };
   }
 
+  if (family === 'workflow') {
+    if (action === 'templates') return callLocal(runtime, 'workflow.templates', 'list_production_templates', {});
+    if (action === 'create') {
+      const templateId = requirePositional(parsed, 2, 'workflow template id');
+      const request = { ...await readRequest(parsed) };
+      const model = parsed.positionals[3];
+      if (model) request.modelPath = path.resolve(model);
+      const name = stringFlag(parsed, 'name');
+      const license = stringFlag(parsed, 'license');
+      const recipeId = stringFlag(parsed, 'recipe-id');
+      if (name) request.name = name;
+      if (license) request.license = license;
+      if (recipeId) request.recipeId = recipeId;
+      else if (typeof request.recipeId !== 'string' && typeof request.name === 'string') {
+        request.recipeId = `workflow_${request.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 51)}`;
+      }
+      return callLocal(runtime, 'workflow.create', booleanFlag(parsed, 'confirm') ? 'save_production_template' : 'plan_production_template', { templateId, request });
+    }
+    if (action === 'plan') return callLocal(runtime, 'workflow.plan', 'plan_production_recipe', { recipeId: requirePositional(parsed, 2, 'recipe id') });
+    if (['step', 'review', 'recover'].includes(action ?? '')) {
+      if (!booleanFlag(parsed, 'confirm')) return { operation: `workflow.${action}`, isError: true, data: { error: 'APPROVAL_REQUIRED', message: 'Review the current workflow evidence and authorize this one operation with --confirm.' } };
+      const recipeId = requirePositional(parsed, 2, 'recipe id');
+      if (action === 'recover') return callLocal(runtime, 'workflow.recover', 'recover_production_lock', { recipeId });
+      if (action === 'review') return callLocal(runtime, 'workflow.review', 'set_production_review', {
+        recipeId, stepId: 'select', candidateId: requirePositional(parsed, 3, 'candidate id'),
+        reviewedFingerprint: requireFlag(parsed, 'fingerprint'), reviewer: requireFlag(parsed, 'reviewer'), reason: requireFlag(parsed, 'reason'),
+      });
+      return callLocal(runtime, 'workflow.step', 'run_production_step', { recipeId, stepId: requirePositional(parsed, 3, 'step id'), approvedFingerprint: requireFlag(parsed, 'fingerprint') });
+    }
+    throw invalidInput('workflow expects templates, create, plan, step, review, or recover');
+  }
+
+  if (family === 'tool' && action === 'list') return callLocal(runtime, 'tool.list', 'list_optional_tools', {});
+  if (family === 'tool' && ['configure', 'clear'].includes(action ?? '')) {
+    const tool = requirePositional(parsed, 2, 'optional tool id');
+    if (!booleanFlag(parsed, 'confirm')) return { operation: `tool.${action}`, isError: true, data: { error: 'APPROVAL_REQUIRED', message: 'Review the executable selection and authorize this configuration change with --confirm.' } };
+    if (action === 'clear') return callLocal(runtime, 'tool.clear', 'clear_optional_tool', { tool });
+    return callLocal(runtime, 'tool.configure', 'configure_optional_tool', {
+      tool, executablePath: requireFlag(parsed, 'executable'),
+      ...(stringFlag(parsed, 'sha256') ? { expectedSHA256: requireFlag(parsed, 'sha256') } : {}),
+    });
+  }
   if (family === 'tool' && action === 'call') {
     const name = requirePositional(parsed, 2, 'local command name');
     if (ROADMAP_MUTATION_TOOLS.has(name) && !booleanFlag(parsed, 'confirm')) {
@@ -1324,6 +1398,9 @@ function needsDurableJob(runtime: GameDevRuntime, parsed: ParsedArguments): bool
   if (family === 'probe' && action === 'install' && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'skill' && action === 'install' && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'scenario' && action === 'run') return true;
+  if (family === 'workflow' && ['create', 'step', 'review', 'recover'].includes(action ?? '') && booleanFlag(parsed, 'confirm')) return true;
+  if (family === 'tool' && ['configure', 'clear'].includes(action ?? '') && booleanFlag(parsed, 'confirm')) return true;
+  if (family === 'support' && action === 'report' && stringFlag(parsed, 'output') !== undefined && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'visual' && action === 'compare' && stringFlag(parsed, 'output') !== undefined) return true;
   if (family === 'visual' && action === 'stability') return true;
   if (family === 'performance' && ['goal-create', 'goal-evaluate'].includes(action ?? '') && booleanFlag(parsed, 'confirm')) {

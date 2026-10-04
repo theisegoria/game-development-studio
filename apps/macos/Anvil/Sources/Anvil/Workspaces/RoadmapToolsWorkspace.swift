@@ -13,6 +13,7 @@ struct RoadmapToolsWorkspace: View {
     @State private var reviewedStep: JSONValue?
     @State private var busy = false
     @State private var message: String?
+    @State private var advanced = false
 
     private var spec: CommandSpec? { CommandCatalog[selectedID] }
     private var operation: String? { reviewedStep?["operation"]?.stringValue }
@@ -26,62 +27,71 @@ struct RoadmapToolsWorkspace: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Production tools").font(.title2.bold())
+                Text("Production workflows").font(.title2.bold())
                 Spacer()
                 Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
             }
-            Picker("Operation", selection: $selectedID) {
-                ForEach(WorkspaceRoute.allCases, id: \.self) { route in
-                    Section(route.title) {
-                        ForEach(RoadmapToolSchemas.commands.filter { $0.route == route }) { command in
-                            Text(command.title).tag(command.id)
+            Picker("Interface", selection: $advanced) {
+                Text("Guided tasks").tag(false)
+                Text("Advanced JSON").tag(true)
+            }.pickerStyle(.segmented)
+            if !advanced {
+                ProductionWorkflowWorkspace()
+            } else {
+                Picker("Operation", selection: $selectedID) {
+                    ForEach(WorkspaceRoute.allCases, id: \.self) { route in
+                        Section(route.title) {
+                            ForEach(RoadmapToolSchemas.commands.filter { $0.route == route }) { command in
+                                Text(command.title).tag(command.id)
+                            }
                         }
                     }
                 }
-            }
-            if let spec {
-                Text(spec.summary).foregroundStyle(.secondary)
-                DisclosureGroup("Request fields and schema from the shipped runtime") {
-                    ScrollView {
-                        Text(RoadmapToolSchemas.formatted(spec.registryTool ?? ""))
-                            .font(.system(.caption, design: .monospaced)).textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }.frame(maxHeight: 180)
-                }
-                Text("JSON request").font(.headline)
-                TextEditor(text: $requestJSON).font(.system(.body, design: .monospaced))
-                    .frame(minHeight: 160, maxHeight: 250).border(.separator)
-                    .accessibilityLabel("Tool JSON request")
-                if spec.conditionalSpend {
-                    Button("Review selected step") { reviewStep() }.disabled(busy || !model.hasRuntime)
-                    if let reviewedStep {
+                if let spec {
+                    Text(spec.summary).foregroundStyle(.secondary)
+                    DisclosureGroup("Request fields and schema from the shipped runtime") {
                         ScrollView {
-                            Text(pretty(reviewedStep)).font(.system(.caption, design: .monospaced))
-                                .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
-                        }.frame(maxHeight: 140)
+                            Text(RoadmapToolSchemas.formatted(spec.registryTool ?? ""))
+                                .font(.system(.caption, design: .monospaced)).textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }.frame(maxHeight: 180)
                     }
-                    if paidStep {
-                        Text("This selected operation can spend money. Its invoice cost is not known here; the runtime enforces your ceiling.")
-                            .foregroundStyle(.secondary)
-                        Toggle("Approve spend for this invocation only", isOn: $approveSpend)
-                        TextField("Spend ceiling (cents)", value: $ceilingCents, format: .number)
-                            .frame(maxWidth: 300)
+                    Text("JSON request").font(.headline)
+                    TextEditor(text: $requestJSON).font(.system(.body, design: .monospaced))
+                        .frame(minHeight: 160, maxHeight: 250).border(.separator)
+                        .accessibilityLabel("Tool JSON request")
+                    if spec.conditionalSpend {
+                        Button("Review selected step") { reviewStep() }.disabled(busy || !model.hasRuntime)
+                        if let reviewedStep {
+                            ScrollView {
+                                Text(pretty(reviewedStep)).font(.system(.caption, design: .monospaced))
+                                    .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                            }.frame(maxHeight: 140)
+                        }
+                        if paidStep {
+                            Text("This selected operation can spend money. Its invoice cost is not known here; the runtime enforces your ceiling.")
+                                .foregroundStyle(.secondary)
+                            Toggle("Approve spend for this invocation only", isOn: $approveSpend)
+                            TextField("Spend ceiling (cents)", value: $ceilingCents, format: .number)
+                                .frame(maxWidth: 300)
+                        }
                     }
-                }
-                if spec.authorities.contains(.confirm) {
-                    Toggle(spec.confirmationLabel, isOn: $confirmed)
-                }
-                if let message { Text(message).textSelection(.enabled).font(.callout) }
-                HStack {
-                    Text("\(model.outputDirectory.path)").font(.caption).foregroundStyle(.secondary)
-                    Spacer()
-                    Button("Run once") { runOnce(spec) }.buttonStyle(.borderedProminent).disabled(!canRun)
+                    if spec.authorities.contains(.confirm) {
+                        Toggle(spec.confirmationLabel, isOn: $confirmed)
+                    }
+                    if let message { Text(message).textSelection(.enabled).font(.callout) }
+                    HStack {
+                        Text("\(model.outputDirectory.path)").font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Run once") { runOnce(spec) }.buttonStyle(.borderedProminent).disabled(!canRun)
+                    }
                 }
             }
         }
         .padding(24).frame(minWidth: 700, idealWidth: 800, minHeight: 580)
         .onChange(of: selectedID) { _, _ in requestJSON = "{}"; resetApproval(); message = nil }
         .onChange(of: requestJSON) { _, _ in resetApproval() }
+        .onChange(of: advanced) { _, _ in resetApproval() }
     }
 
     private func resetApproval() { confirmed = false; approveSpend = false; reviewedStep = nil }

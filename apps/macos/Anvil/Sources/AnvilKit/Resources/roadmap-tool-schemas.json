@@ -147,6 +147,58 @@
         },
         "minItems": 1,
         "maxItems": 6
+      },
+      "settings": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "geometry",
+              "appearance"
+            ],
+            "default": "geometry"
+          },
+          "resolution": {
+            "type": "number",
+            "enum": [
+              128,
+              256
+            ],
+            "default": 256
+          },
+          "exposure": {
+            "type": "number",
+            "minimum": 0.25,
+            "maximum": 4,
+            "default": 1
+          },
+          "pose": {
+            "type": "object",
+            "properties": {
+              "clipIndex": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "timeSeconds": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 86400
+              }
+            },
+            "required": [
+              "clipIndex",
+              "timeSeconds"
+            ],
+            "additionalProperties": false
+          },
+          "reviewLod": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "additionalProperties": false
       }
     },
     "required": [
@@ -741,6 +793,630 @@
     "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
+  "list_production_templates": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "plan_production_template": {
+    "type": "object",
+    "properties": {
+      "templateId": {
+        "type": "string",
+        "enum": [
+          "inspect-validate-package",
+          "review-select-package",
+          "platform-variants"
+        ]
+      },
+      "request": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "recipeId": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,60}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "license": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "modelPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "policy": {
+                "type": "object",
+                "properties": {
+                  "requireUVs": {
+                    "type": "boolean"
+                  },
+                  "requireNormals": {
+                    "type": "boolean"
+                  },
+                  "requireTangentsWithNormalMap": {
+                    "type": "boolean"
+                  },
+                  "requireBaseColorTexture": {
+                    "type": "boolean"
+                  },
+                  "maxTriangles": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 50000000
+                  },
+                  "maxMaterials": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 4096
+                  },
+                  "minTextureSize": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 16384
+                  },
+                  "requirePowerOfTwoTextures": {
+                    "type": "boolean"
+                  },
+                  "maxDimensionMeters": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "minDimensionMeters": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "recipeId",
+              "name",
+              "license",
+              "modelPath"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "recipeId": {
+                "$ref": "#/properties/request/anyOf/0/properties/recipeId"
+              },
+              "name": {
+                "$ref": "#/properties/request/anyOf/0/properties/name"
+              },
+              "license": {
+                "$ref": "#/properties/request/anyOf/0/properties/license"
+              },
+              "modelPath": {
+                "$ref": "#/properties/request/anyOf/0/properties/modelPath"
+              },
+              "candidates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "modelPath": {
+                      "$ref": "#/properties/request/anyOf/0/properties/modelPath"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "modelPath"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 6
+              },
+              "policy": {
+                "$ref": "#/properties/request/anyOf/0/properties/policy"
+              },
+              "reviewSettings": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "geometry",
+                      "appearance"
+                    ],
+                    "default": "geometry"
+                  },
+                  "resolution": {
+                    "type": "number",
+                    "enum": [
+                      128,
+                      256
+                    ],
+                    "default": 256
+                  },
+                  "exposure": {
+                    "type": "number",
+                    "minimum": 0.25,
+                    "maximum": 4,
+                    "default": 1
+                  },
+                  "pose": {
+                    "type": "object",
+                    "properties": {
+                      "clipIndex": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "timeSeconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 86400
+                      }
+                    },
+                    "required": [
+                      "clipIndex",
+                      "timeSeconds"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewLod": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "recipeId",
+              "name",
+              "license"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "recipeId": {
+                "$ref": "#/properties/request/anyOf/0/properties/recipeId"
+              },
+              "name": {
+                "$ref": "#/properties/request/anyOf/0/properties/name"
+              },
+              "license": {
+                "$ref": "#/properties/request/anyOf/0/properties/license"
+              },
+              "modelPath": {
+                "$ref": "#/properties/request/anyOf/0/properties/modelPath"
+              },
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9_-]{1,32}$"
+                    },
+                    "lodTriangles": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 10000000
+                      },
+                      "minItems": 1,
+                      "maxItems": 8
+                    },
+                    "maxMaterials": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 4096
+                    },
+                    "maxTextureSize": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 16384
+                    },
+                    "textureMode": {
+                      "type": "string",
+                      "enum": [
+                        "preserve",
+                        "resize",
+                        "compress"
+                      ],
+                      "default": "preserve"
+                    },
+                    "materialMode": {
+                      "type": "string",
+                      "enum": [
+                        "preserve",
+                        "opaque"
+                      ],
+                      "default": "preserve"
+                    },
+                    "collision": {
+                      "type": "string",
+                      "enum": [
+                        "none",
+                        "box",
+                        "convex"
+                      ],
+                      "default": "none"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "lodTriangles",
+                    "maxMaterials",
+                    "maxTextureSize"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 16
+              }
+            },
+            "required": [
+              "recipeId",
+              "name",
+              "license",
+              "modelPath",
+              "variants"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "required": [
+      "templateId",
+      "request"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "save_production_template": {
+    "type": "object",
+    "properties": {
+      "templateId": {
+        "type": "string",
+        "enum": [
+          "inspect-validate-package",
+          "review-select-package",
+          "platform-variants"
+        ]
+      },
+      "request": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "recipeId": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,60}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "license": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "modelPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "policy": {
+                "type": "object",
+                "properties": {
+                  "requireUVs": {
+                    "type": "boolean"
+                  },
+                  "requireNormals": {
+                    "type": "boolean"
+                  },
+                  "requireTangentsWithNormalMap": {
+                    "type": "boolean"
+                  },
+                  "requireBaseColorTexture": {
+                    "type": "boolean"
+                  },
+                  "maxTriangles": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 50000000
+                  },
+                  "maxMaterials": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 4096
+                  },
+                  "minTextureSize": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 16384
+                  },
+                  "requirePowerOfTwoTextures": {
+                    "type": "boolean"
+                  },
+                  "maxDimensionMeters": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "minDimensionMeters": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "recipeId",
+              "name",
+              "license",
+              "modelPath"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "recipeId": {
+                "$ref": "#/properties/request/anyOf/0/properties/recipeId"
+              },
+              "name": {
+                "$ref": "#/properties/request/anyOf/0/properties/name"
+              },
+              "license": {
+                "$ref": "#/properties/request/anyOf/0/properties/license"
+              },
+              "modelPath": {
+                "$ref": "#/properties/request/anyOf/0/properties/modelPath"
+              },
+              "candidates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "modelPath": {
+                      "$ref": "#/properties/request/anyOf/0/properties/modelPath"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "modelPath"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 6
+              },
+              "policy": {
+                "$ref": "#/properties/request/anyOf/0/properties/policy"
+              },
+              "reviewSettings": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "geometry",
+                      "appearance"
+                    ],
+                    "default": "geometry"
+                  },
+                  "resolution": {
+                    "type": "number",
+                    "enum": [
+                      128,
+                      256
+                    ],
+                    "default": 256
+                  },
+                  "exposure": {
+                    "type": "number",
+                    "minimum": 0.25,
+                    "maximum": 4,
+                    "default": 1
+                  },
+                  "pose": {
+                    "type": "object",
+                    "properties": {
+                      "clipIndex": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "timeSeconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 86400
+                      }
+                    },
+                    "required": [
+                      "clipIndex",
+                      "timeSeconds"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewLod": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "recipeId",
+              "name",
+              "license"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "recipeId": {
+                "$ref": "#/properties/request/anyOf/0/properties/recipeId"
+              },
+              "name": {
+                "$ref": "#/properties/request/anyOf/0/properties/name"
+              },
+              "license": {
+                "$ref": "#/properties/request/anyOf/0/properties/license"
+              },
+              "modelPath": {
+                "$ref": "#/properties/request/anyOf/0/properties/modelPath"
+              },
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9_-]{1,32}$"
+                    },
+                    "lodTriangles": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 10000000
+                      },
+                      "minItems": 1,
+                      "maxItems": 8
+                    },
+                    "maxMaterials": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 4096
+                    },
+                    "maxTextureSize": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 16384
+                    },
+                    "textureMode": {
+                      "type": "string",
+                      "enum": [
+                        "preserve",
+                        "resize",
+                        "compress"
+                      ],
+                      "default": "preserve"
+                    },
+                    "materialMode": {
+                      "type": "string",
+                      "enum": [
+                        "preserve",
+                        "opaque"
+                      ],
+                      "default": "preserve"
+                    },
+                    "collision": {
+                      "type": "string",
+                      "enum": [
+                        "none",
+                        "box",
+                        "convex"
+                      ],
+                      "default": "none"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "lodTriangles",
+                    "maxMaterials",
+                    "maxTextureSize"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 16
+              }
+            },
+            "required": [
+              "recipeId",
+              "name",
+              "license",
+              "modelPath",
+              "variants"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "required": [
+      "templateId",
+      "request"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "set_production_review": {
+    "type": "object",
+    "properties": {
+      "recipeId": {
+        "type": "string"
+      },
+      "stepId": {
+        "type": "string"
+      },
+      "reviewedFingerprint": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "candidateId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "reviewer": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "reason": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4000
+      }
+    },
+    "required": [
+      "recipeId",
+      "stepId",
+      "reviewedFingerprint",
+      "candidateId",
+      "reviewer",
+      "reason"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
   "save_production_recipe": {
     "type": "object",
     "properties": {
@@ -777,6 +1453,10 @@
                     "download_asset",
                     "get_asset_job",
                     "select_reference",
+                    "inspect_asset",
+                    "create_asset_review",
+                    "decide_asset_review",
+                    "package_reviewed_asset",
                     "normalize_mesh",
                     "validate_game_asset",
                     "build_asset_package",
@@ -807,6 +1487,23 @@
                   },
                   "maxItems": 128,
                   "default": []
+                },
+                "reviewBinding": {
+                  "type": "object",
+                  "properties": {
+                    "stepId": {
+                      "$ref": "#/properties/recipe/properties/id"
+                    },
+                    "fingerprint": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    }
+                  },
+                  "required": [
+                    "stepId",
+                    "fingerprint"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -1022,6 +1719,10 @@
                         "download_asset",
                         "get_asset_job",
                         "select_reference",
+                        "inspect_asset",
+                        "create_asset_review",
+                        "decide_asset_review",
+                        "package_reviewed_asset",
                         "normalize_mesh",
                         "validate_game_asset",
                         "build_asset_package",
@@ -1052,6 +1753,23 @@
                       },
                       "maxItems": 128,
                       "default": []
+                    },
+                    "reviewBinding": {
+                      "type": "object",
+                      "properties": {
+                        "stepId": {
+                          "$ref": "#/properties/family/properties/template/properties/id"
+                        },
+                        "fingerprint": {
+                          "type": "string",
+                          "pattern": "^[0-9a-f]{64}$"
+                        }
+                      },
+                      "required": [
+                        "stepId",
+                        "fingerprint"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -1561,6 +2279,111 @@
     },
     "required": [
       "modelPath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "list_optional_tools": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "configure_optional_tool": {
+    "type": "object",
+    "properties": {
+      "tool": {
+        "type": "string",
+        "enum": [
+          "blender",
+          "basisu",
+          "coacd-python"
+        ]
+      },
+      "executablePath": {
+        "type": "string",
+        "minLength": 1
+      },
+      "expectedSHA256": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      }
+    },
+    "required": [
+      "tool",
+      "executablePath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "clear_optional_tool": {
+    "type": "object",
+    "properties": {
+      "tool": {
+        "type": "string",
+        "enum": [
+          "blender",
+          "basisu",
+          "coacd-python"
+        ]
+      }
+    },
+    "required": [
+      "tool"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "preview_support_report": {
+    "type": "object",
+    "properties": {
+      "workflow": {
+        "type": "string",
+        "enum": [
+          "generic-capture",
+          "asset-inspect",
+          "asset-package",
+          "blender-normalize",
+          "texture-compression",
+          "collision-decomposition",
+          "metal-capture",
+          "all"
+        ]
+      },
+      "expectedVersion": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "write_support_report": {
+    "type": "object",
+    "properties": {
+      "workflow": {
+        "type": "string",
+        "enum": [
+          "generic-capture",
+          "asset-inspect",
+          "asset-package",
+          "blender-normalize",
+          "texture-compression",
+          "collision-decomposition",
+          "metal-capture",
+          "all"
+        ]
+      },
+      "expectedVersion": {
+        "type": "string",
+        "minLength": 1
+      },
+      "outputPath": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "outputPath"
     ],
     "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"

@@ -9,6 +9,7 @@
       "title": "Synthetic capture",
       "command": {
         "executable": "capture.mjs",
+        "runtime": "node",
         "arguments": [
           "{param.mode}"
         ],

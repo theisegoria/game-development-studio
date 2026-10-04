@@ -307,6 +307,10 @@ struct GameDevCLIClientTests {
             "GAME_DEV_BASISU_PATH": "/chosen tools/basisu;$(must-not-run)",
             "GAME_DEV_BASISU_SHA256": String(repeating: "a", count: 64),
             "GAME_DEV_COACD_PYTHON": "/chosen tools/coacd/bin/python",
+            "GAME_DEV_COACD_PYTHON_SHA256": String(repeating: "b", count: 64),
+            "GAME_DEV_TOOL_CONFIG_PATH": "/chosen tools/user config.json",
+            "BLENDER_PATH": "/chosen tools/Blender.app/Contents/MacOS/Blender",
+            "GAME_DEV_BLENDER_SHA256": String(repeating: "c", count: 64),
         ]
         var environment = settings
         for key in ["GAME_DEV_APPROVE_SPEND", "GAME_DEV_CONFIRM", "GAME_DEV_SPEND_CEILING_CENTS",
@@ -347,6 +351,27 @@ struct GameDevCLIClientTests {
         } catch let error as GameDevCLIClientError {
             #expect(error == .trustedExecutableRequired)
             #expect(!error.localizedDescription.contains("must-not-enter-path-lookup"))
+        }
+    }
+
+    @Test("Optional tool and guided mutations cannot fall back to PATH")
+    func guidedMutationsRejectPATH() async throws {
+        let client = GameDevCLIClient(executableName: "must-not-launch-game-dev", baseEnvironment: ["PATH": "/usr/bin:/bin"])
+        for arguments in [
+            ["tool", "configure", "blender", "--executable", "/tmp/fake tool", "--confirm"],
+            ["tool", "clear", "basisu", "--confirm"],
+            ["tool", "call", "save_production_template", "--request", "-", "--confirm"],
+            ["tool", "call", "set_production_review", "--request", "-", "--confirm"],
+            ["tool", "call", "run_production_step", "--request", "-", "--confirm"],
+            ["tool", "call", "future_unknown_mutation", "--request", "-"],
+            ["workflow", "save", "--request", "-", "--confirm"],
+        ] {
+            do {
+                _ = try await client.execute(CLIInvocation(arguments: arguments), credentials: [:], timeout: .seconds(1))
+                Issue.record("Mutation escaped configured runtime requirement: \(arguments)")
+            } catch let error as GameDevCLIClientError {
+                #expect(error == .trustedExecutableRequired)
+            }
         }
     }
 

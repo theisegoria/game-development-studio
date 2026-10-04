@@ -6,6 +6,7 @@ import { canonicalJson } from '../packages/format.js';
 import { sha256 } from '../storage/filesystem.js';
 import { describeError, invalidInput, invalidState, notFound } from '../util/errors.js';
 import { redact } from '../util/logging.js';
+import { boundedFileSHA256 } from '../util/file-identity.js';
 import { registerOwnedProcessTerminator, type OwnedProcessSignal } from '../util/process-lifecycle.js';
 import type { LoadedAdapter, ScenarioRunPlan } from './adapter.js';
 import { serializableAdapterSnapshot } from './adapter.js';
@@ -136,7 +137,20 @@ function safeChildEnvironment(plan: ScenarioRunPlan): NodeJS.ProcessEnv {
 async function runProcess(plan: ScenarioRunPlan, signal?: AbortSignal): Promise<ProcessOutcome> {
   let child;
   try {
-    child = spawn(plan.executable, plan.arguments, {
+    if (plan.runtime === 'node') {
+      // Check again after writing the run metadata, immediately before spawn.
+      // This catches ordinary concurrent edits; portable path/hash checks do
+      // not isolate a hostile same-user writer during the final OS open.
+      if (plan.runtimeExecutable !== await fs.realpath(process.execPath)
+        || await boundedFileSHA256(await fs.realpath(process.execPath)) !== plan.runtimeSHA256
+        || await fs.realpath(plan.executable) !== plan.executable
+        || await boundedFileSHA256(plan.executable, 16 * 1024 * 1024) !== plan.executableSHA256) {
+        throw invalidState('Node scenario changed before launch; no process was started');
+      }
+    }
+    signal?.throwIfAborted();
+    child = spawn(plan.runtime === 'node' ? plan.runtimeExecutable! : plan.executable,
+      plan.runtime === 'node' ? [plan.executable, ...plan.arguments] : plan.arguments, {
       cwd: plan.workingDirectory,
       env: safeChildEnvironment(plan),
       shell: false,
@@ -373,6 +387,16 @@ export async function executeScenarioRun(options: {
   if (options.plan.adapterManifestSha256 !== options.adapter.manifestSha256) {
     throw invalidState('scenario plan no longer matches the loaded adapter manifest');
   }
+  if (options.plan.runtime === 'node') {
+    const script = await fs.realpath(options.plan.executable);
+    const relative = path.relative(options.adapter.projectRoot, script);
+    if (relative.startsWith('..') || path.isAbsolute(relative) || script !== options.plan.executable
+      || !options.plan.executableSHA256 || await boundedFileSHA256(script, 16 * 1024 * 1024) !== options.plan.executableSHA256
+      || options.plan.runtimeExecutable !== await fs.realpath(process.execPath)
+      || !options.plan.runtimeSHA256 || await boundedFileSHA256(await fs.realpath(process.execPath)) !== options.plan.runtimeSHA256) {
+      throw invalidState('Node scenario source or runtime changed after planning; create and review a fresh plan');
+    }
+  }
 
   await fs.mkdir(path.dirname(options.plan.runPath), { recursive: true, mode: 0o700 });
   await fs.mkdir(options.plan.runPath, { mode: 0o700 });
@@ -497,6 +521,11 @@ export async function executeScenarioRun(options: {
     status,
     process: {
       executable: options.plan.executable,
+      ...(options.plan.runtime === 'node' ? {
+        runtime: options.plan.runtime,
+        runtimeExecutable: options.plan.runtimeExecutable,
+        runtimeSHA256: options.plan.runtimeSHA256,
+      } : {}),
       arguments: options.plan.arguments,
       workingDirectory: options.plan.workingDirectory,
       exitCode: outcome.exitCode,

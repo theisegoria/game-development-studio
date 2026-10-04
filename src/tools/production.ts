@@ -1,6 +1,5 @@
 import path from 'node:path';
-import { promises as fs } from 'node:fs';
-import { findBlender, packagedScript } from '../util/blender.js';
+import { packagedScript } from '../util/blender.js';
 import { GAME_DEV_VERSION } from '../version.js';
 import { z } from 'zod';
 import type { ToolRegistrar } from '../commands/registry.js';
@@ -12,22 +11,48 @@ import { prepareTextureVariant } from '../production/textures.js';
 import { FamilyStore, familySchema } from '../production/families.js';
 import { planPlatform, platformSchema, prepareCollisionBox, validatePlatformAsset } from '../production/platform.js';
 import { guard, ok, type ToolContext } from './context.js';
-import { coacdScript, diagnoseCoacd } from '../collision/process.js';
+import { coacdScript } from '../collision/process.js';
+import { coacdEnvironmentIdentitySHA256 } from '../collision/identity.js';
+import { listProductionTemplates, planProductionTemplate, productionTemplateIdSchema, productionTemplateRequestSchema } from '../production/templates.js';
+import { toolOperationIdentity } from '../installation/tool-config.js';
+import { REVIEW_RENDERER, reviewSettingsSchema } from '../review/settings.js';
 
 /** Caller supplies dispatch through its current authorization boundary; never raw registry.call. */
 export function registerProductionTools(server: ToolRegistrar, ctx: ToolContext, dispatch?: RecipeDispatch): void {
   const recipes = new RecipeStore(path.join(ctx.config.outputDir, '.production', 'recipes'), `${GAME_DEV_VERSION}:production-v1`, async operation => {
-    if (operation === 'compress_texture_variant') return diagnoseTextureCompression();
+    if (operation === 'create_asset_review') return { renderer: REVIEW_RENDERER, defaultSettings: reviewSettingsSchema.parse({}) };
+    const configured = toolOperationIdentity(operation);
+    if (configured && !configured.available) throw invalidState(`Required ${configured.tool} is unavailable (${configured.code}); inspect optional-tool configuration before authorizing this step.`);
+    if (operation === 'compress_texture_variant') {
+      const diagnostic = await diagnoseTextureCompression();
+      if (!diagnostic.available) throw invalidState('Pinned CPU texture compression is unavailable; run diagnose_texture_compression.');
+      return { configured, diagnostic };
+    }
     if (operation === 'decompose_collision_mesh') {
-      const diagnostic = await diagnoseCoacd();
-      return { diagnostic, wrapperSHA256: await fileDigest(coacdScript), pythonSHA256: diagnostic.available ? await fileDigest(await fs.realpath(diagnostic.python)) : null };
+      // Fingerprinting must not start even the diagnostic Python process.
+      return {
+        configured,
+        wrapperSHA256: await fileDigest(coacdScript),
+        venvSHA256: await coacdEnvironmentIdentitySHA256(configured?.identity),
+      };
     }
     if (operation !== 'normalize_mesh') return null;
-    const executable = findBlender();
-    return { executable: executable ? await fileDigest(await fs.realpath(executable)) : 'unavailable', script: await fileDigest(packagedScript('blender_normalize.py')) };
+    return { configured, script: await fileDigest(packagedScript('blender_normalize.py')) };
   });
   const families = new FamilyStore(path.join(ctx.config.outputDir, '.production', 'families'), recipes);
   const annotation = (readOnly: boolean) => ({ readOnlyHint: readOnly, destructiveHint: false, idempotentHint: readOnly, openWorldHint: false });
+  server.registerTool('list_production_templates', { description: 'List typed guided workflows for local inspection, explicit candidate review and platform variants. Does not save or execute anything.', inputSchema: {}, annotations: annotation(true) }, guard(ctx.logger, 'list_production_templates', async () => ok(listProductionTemplates())));
+  const templateInput = { templateId: productionTemplateIdSchema, request: productionTemplateRequestSchema };
+  server.registerTool('plan_production_template', { description: 'Compile a typed workflow form into an advanced recipe graph without saving or executing it. Human candidate selection remains blocked until actual review evidence exists.', inputSchema: templateInput, annotations: annotation(true) }, guard(ctx.logger, 'plan_production_template', async args => ok(planProductionTemplate(args.templateId, args.request))));
+  server.registerTool('save_production_template', { description: 'Save a typed guided workflow. Does not execute steps, launch tools or approve a candidate. Each current step still requires separate fingerprint and transport approval.', inputSchema: templateInput, annotations: annotation(false) }, guard(ctx.logger, 'save_production_template', async args => {
+    const compiled = planProductionTemplate(args.templateId, args.request);
+    const record = await recipes.save(compiled.recipe);
+    return ok({ ...compiled, record, plan: await recipes.plan(record.recipe.id) });
+  }));
+  server.registerTool('set_production_review', { description: 'Bind an explicit human approval selection to a candidate ID from unchanged completed review evidence. Persists reviewer and reason but does not execute the decision or package. Plan and authorize the selection step separately.', inputSchema: { recipeId: z.string(), stepId: z.string(), reviewedFingerprint: z.string().regex(/^[0-9a-f]{64}$/), candidateId: z.string().uuid(), reviewer: z.string().trim().min(1).max(200), reason: z.string().trim().min(1).max(4000) }, annotations: annotation(false) }, guard(ctx.logger, 'set_production_review', async args => {
+    const record = await recipes.bindReview(args.recipeId, args.stepId, args.reviewedFingerprint, args.candidateId, args.reviewer, args.reason);
+    return ok({ record, plan: await recipes.plan(record.recipe.id) });
+  }));
   server.registerTool('save_production_recipe', { description: 'Persist a versioned workflow graph. Does not execute any step. Invalidates changed inputs on the next plan.', inputSchema: { recipe: recipeSchema }, annotations: annotation(false) }, guard(ctx.logger, 'save_production_recipe', async args => ok(await recipes.save(args.recipe))));
   server.registerTool('plan_production_recipe', { description: 'Inspect checkpoints, input hashes, exact next operation arguments, and current approval fingerprint. Writes nothing.', inputSchema: { recipeId: z.string() }, annotations: annotation(true) }, guard(ctx.logger, 'plan_production_recipe', async args => ok(await recipes.plan(args.recipeId))));
   server.registerTool('run_production_step', { description: 'Execute ONE ready step with matching current fingerprint. Transport separately requires fresh spend/mutation approval. Never resumes an uncertain submission automatically.', inputSchema: { recipeId: z.string(), stepId: z.string(), approvedFingerprint: z.string().length(64) }, annotations: annotation(false) }, guard(ctx.logger, 'run_production_step', async args => {
