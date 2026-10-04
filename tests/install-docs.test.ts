@@ -75,6 +75,18 @@ it('preserves cmd.exe quoting for a Windows shim installed under a path with spa
     args: ['/d', '/s', '/c', `""${installedShim}" --version"`],
     options: { windowsVerbatimArguments: true },
   });
-  expect(assertWindowsPathLookup(`${installedShim}\r\nC:\\Users\\runner\\AppData\\Local\\Temp\\old cli bin\\game-dev.cmd\r\n`, installedShim)).toBe(installedShim);
-  expect(() => assertWindowsPathLookup(`C:\\Users\\runner\\AppData\\Local\\Temp\\old cli bin\\game-dev.cmd\r\n${installedShim}\r\n`, installedShim)).toThrow('Windows PATH selected');
+  const reportedLongPath = 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\game dev first run\\cli prefix\\game-dev.cmd';
+  const expectedShortPath = 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\game dev first run\\cli prefix\\game-dev.cmd';
+  const stalePath = 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\old cli bin\\game-dev.cmd';
+  const canonicalInstalled = 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\game dev first run\\cli prefix\\game-dev.cmd';
+  const canonicalStale = 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\old cli bin\\game-dev.cmd';
+  const realpath = async (value: string) => {
+    const normalized = path.win32.normalize(value).toLowerCase();
+    if ([reportedLongPath, expectedShortPath].some(alias => normalized === path.win32.normalize(alias).toLowerCase())) return canonicalInstalled;
+    if (normalized === path.win32.normalize(stalePath).toLowerCase()) return canonicalStale;
+    throw Object.assign(new Error(`Unable to resolve ${value}`), { code: 'ENOENT' });
+  };
+  await expect(assertWindowsPathLookup(`${reportedLongPath}\r\n${stalePath}\r\n`, expectedShortPath, realpath)).resolves.toBe(reportedLongPath);
+  await expect(assertWindowsPathLookup(`${stalePath}\r\n${reportedLongPath}\r\n`, expectedShortPath, realpath)).rejects.toThrow('Windows PATH selected');
+  await expect(assertWindowsPathLookup(`C:\\Users\\runneradmin\\unknown\\game-dev.cmd\r\n`, expectedShortPath, realpath)).rejects.toThrow('Unable to resolve');
 });

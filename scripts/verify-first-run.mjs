@@ -62,10 +62,18 @@ export function windowsShimInvocation(comSpec, shimPath) {
   };
 }
 
-export function assertWindowsPathLookup(output, expectedLauncher) {
+export async function assertWindowsPathLookup(output, expectedLauncher, realpath = fs.realpath) {
   const firstLauncher = output.split(/\r?\n/).map((line) => line.trim()).find(Boolean);
   invariant(firstLauncher, 'where.exe did not find the installed game-dev.cmd shim');
-  invariant(path.win32.resolve(firstLauncher).toLowerCase() === path.win32.resolve(expectedLauncher).toLowerCase(),
+  // where.exe may report a long user-profile path while the temp directory
+  // supplied to the verifier contains its 8.3 alias (or vice versa). Compare
+  // the filesystem-resolved paths, while still checking that the first PATH
+  // match is the intended shim.
+  const [resolvedLauncher, resolvedExpected] = await Promise.all([
+    realpath(firstLauncher),
+    realpath(expectedLauncher),
+  ]);
+  invariant(path.win32.resolve(resolvedLauncher).toLowerCase() === path.win32.resolve(resolvedExpected).toLowerCase(),
     `Windows PATH selected ${firstLauncher}, expected ${expectedLauncher}`);
   return firstLauncher;
 }
@@ -220,7 +228,7 @@ async function verifyFirstRunInRoot(root, options) {
     const expectedLauncher = path.join(bin, commandName);
     const whereExe = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'where.exe');
     const pathLookup = await run(whereExe, ['game-dev.cmd'], outside, pathEnv);
-    assertWindowsPathLookup(pathLookup, expectedLauncher);
+    await assertWindowsPathLookup(pathLookup, expectedLauncher);
     const invocation = windowsShimInvocation(process.env.ComSpec ?? 'cmd.exe', expectedLauncher);
     shimVersion = await run(invocation.command, invocation.args, outside, pathEnv, invocation.options);
   } else {
