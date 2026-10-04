@@ -4,6 +4,7 @@ import { expect, it, vi } from 'vitest';
 
 const repository = 'theisegoria/game-development-studio';
 const verifier = new URL('../scripts/verify-published-first-run.mjs', import.meta.url).href;
+const firstRunVerifier = new URL('../scripts/verify-first-run.mjs', import.meta.url).href;
 const sha256 = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 
 async function releaseFixture(version: string) {
@@ -86,19 +87,55 @@ it('rejects an asset redirect outside the fixed GitHub asset hosts without reque
   expect(calls.some((call) => call.url.startsWith('https://attacker.example/'))).toBe(false);
 });
 
-it('follows the official GitHub release asset CDN within the byte and redirect limits', async () => {
+it('sends the supplied token only to metadata and follows the asset CDN anonymously', async () => {
   const fixture = await releaseFixture('1.3.1');
   const cdnUrl = 'https://release-assets.githubusercontent.com/github-production-release-asset/fixture?token=redacted';
+  const apiToken = 'fixture-token-never-log';
   const { fetcher, calls } = fixtureFetcher([fixture], (url) => {
     if (url.endsWith(`/${fixture.name}`)) return new Response(null, { status: 302, headers: { location: cdnUrl } });
     if (url === cdnUrl) return new Response(fixture.artifactBytes);
     return undefined;
   });
   const { fetchPublishedRelease } = await import(verifier);
-  await expect(fetchPublishedRelease('1.3.1', fetcher)).resolves.toMatchObject({
+  const result = await fetchPublishedRelease('1.3.1', fetcher, apiToken);
+  expect(result).toMatchObject({
     verification: { version: '1.3.1', integrity: 'github-release-digest-and-manifest' },
   });
   expect(calls.map((call) => new URL(call.url).hostname)).toContain('release-assets.githubusercontent.com');
+  const metadataCalls = calls.filter((call) => new URL(call.url).hostname === 'api.github.com');
+  const assetCalls = calls.filter((call) => new URL(call.url).hostname !== 'api.github.com');
+  expect(metadataCalls).toHaveLength(1);
+  expect(metadataCalls[0]?.init?.headers).toEqual({ Accept: 'application/vnd.github+json', Authorization: `Bearer ${apiToken}` });
+  expect(assetCalls.every((call) => !new Headers(call.init?.headers).has('authorization'))).toBe(true);
+  expect(JSON.stringify(result)).not.toContain(apiToken);
+});
+
+it('strips GitHub release tokens from the npm and CLI child environment', async () => {
+  const { firstRunChildEnvironment } = await import(firstRunVerifier);
+  const env = firstRunChildEnvironment('/tmp/published first run', {
+    PATH: '/system/path',
+    GDS_RELEASE_API_TOKEN: 'release-api-token',
+    GH_TOKEN: 'gh-token',
+    GITHUB_TOKEN: 'github-token',
+  });
+  expect(env).toMatchObject({ PATH: '/system/path' });
+  expect(env).not.toHaveProperty('GDS_RELEASE_API_TOKEN');
+  expect(env).not.toHaveProperty('GH_TOKEN');
+  expect(env).not.toHaveProperty('GITHUB_TOKEN');
+});
+
+it('reports only numeric rate-limit headers for API failures and cancels the response body', async () => {
+  const fixture = await releaseFixture('1.3.1');
+  const response = new Response('private response body must not be included', {
+    status: 403,
+    headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '12345' },
+  });
+  const { fetcher } = fixtureFetcher([fixture], (url) => url.includes('/releases/tags/') ? response : undefined);
+  const { fetchPublishedRelease } = await import(verifier);
+  const failure = fetchPublishedRelease('1.3.1', fetcher, 'fixture-token');
+  await expect(failure).rejects.toThrow('HTTP 403 (rate limit remaining=0, rate limit reset=12345)');
+  expect(response.bodyUsed).toBe(true);
+  await expect(failure).rejects.not.toThrow('private response body');
 });
 
 it('bounds release metadata reads before parsing JSON', async () => {

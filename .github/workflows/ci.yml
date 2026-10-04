@@ -82,6 +82,8 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Install, upgrade, rollback and reinstall exact public releases
+        env:
+          GDS_RELEASE_API_TOKEN: ${{ github.token }}
         run: node scripts/verify-published-first-run.mjs
 
   probe-sdk:

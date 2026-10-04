@@ -43,7 +43,10 @@ export function verifyChecksum(bytes, name, manifest, release, manifestBytes) {
 function run(command, args, cwd, env, options = {}) {
   return new Promise((resolve, reject) => {
     execFile(command, args, { cwd, env, encoding: 'utf8', timeout: 60_000, maxBuffer: 16 * 1024 * 1024, ...options }, (error, stdout, stderr) => {
-      if (error) reject(new Error(`${path.basename(command)} ${args.join(' ')} failed (${error.code}): ${stderr || stdout}`, { cause: error }));
+      if (error) {
+        const status = [`code=${error.code ?? 'unknown'}`, `killed=${error.killed}`, error.signal ? `signal=${error.signal}` : undefined].filter(Boolean).join(', ');
+        reject(new Error(`${path.basename(command)} ${args.join(' ')} failed (${status}): ${stderr || stdout || error.message}`, { cause: error }));
+      }
       else resolve(stdout);
     });
   });
@@ -65,6 +68,15 @@ export function assertWindowsPathLookup(output, expectedLauncher) {
   invariant(path.win32.resolve(firstLauncher).toLowerCase() === path.win32.resolve(expectedLauncher).toLowerCase(),
     `Windows PATH selected ${firstLauncher}, expected ${expectedLauncher}`);
   return firstLauncher;
+}
+
+export function firstRunChildEnvironment(root, parentEnvironment = process.env) {
+  const env = { ...parentEnvironment, npm_config_cache: path.join(root, 'npm cache'), GAME_DEV_TOOL_CONFIG_PATH: path.join(root, 'optional tools.json') };
+  for (const key of ['TRIPO_API_KEY', 'LEONARDO_API_KEY', 'ASSET_SPEND_LIMIT_CENTS', 'GAME_DEV_MCP_ALLOW_EXECUTION', 'GAME_DEV_TEST_BLENDER', 'GAME_DEV_TEST_GPU',
+    'GDS_RELEASE_API_TOKEN', 'GH_TOKEN', 'GITHUB_TOKEN',
+    'BLENDER_PATH', 'GAME_DEV_BLENDER_SHA256', 'GAME_DEV_BASISU_PATH', 'GAME_DEV_BASISU_SHA256', 'GAME_DEV_COACD_PYTHON', 'GAME_DEV_COACD_PYTHON_SHA256',
+    'GAME_DEV_DATA_ROOT', 'ASSET_OUTPUT_DIR', 'GAME_DEV_APP_VERSION']) delete env[key];
+  return env;
 }
 
 // Running npm's JS entry with an explicit Node works without a shell and avoids
@@ -109,10 +121,7 @@ export async function verifyFirstRun(options = {}) {
 }
 
 async function verifyFirstRunInRoot(root, options) {
-  const env = { ...process.env, npm_config_cache: path.join(root, 'npm cache'), GAME_DEV_TOOL_CONFIG_PATH: path.join(root, 'optional tools.json') };
-  for (const key of ['TRIPO_API_KEY', 'LEONARDO_API_KEY', 'ASSET_SPEND_LIMIT_CENTS', 'GAME_DEV_MCP_ALLOW_EXECUTION', 'GAME_DEV_TEST_BLENDER', 'GAME_DEV_TEST_GPU',
-    'BLENDER_PATH', 'GAME_DEV_BLENDER_SHA256', 'GAME_DEV_BASISU_PATH', 'GAME_DEV_BASISU_SHA256', 'GAME_DEV_COACD_PYTHON', 'GAME_DEV_COACD_PYTHON_SHA256',
-    'GAME_DEV_DATA_ROOT', 'ASSET_OUTPUT_DIR', 'GAME_DEV_APP_VERSION']) delete env[key];
+  const env = firstRunChildEnvironment(root);
   const npm = await npmEntry();
   const prefix = path.join(root, 'cli prefix');
   const outside = path.join(root, 'outside source');
@@ -130,7 +139,7 @@ async function verifyFirstRunInRoot(root, options) {
     identity = verifyChecksum(await fs.readFile(artifact), path.basename(artifact), manifest.toString('utf8'),
       options['release-metadata'] ? JSON.parse(await fs.readFile(options['release-metadata'], 'utf8')) : undefined, manifest);
   }
-  const install = async (tarball) => run(process.execPath, [npm, 'install', '--global', '--prefix', prefix, '--ignore-scripts', '--no-audit', '--no-fund', '--fetch-retries=0', '--fetch-timeout=20000', tarball], outside, env);
+  const install = async (tarball) => run(process.execPath, [npm, 'install', '--global', '--prefix', prefix, '--ignore-scripts', '--no-audit', '--no-fund', '--fetch-retries=0', '--fetch-timeout=20000', tarball], outside, env, { timeout: 180_000 });
   const packageRoot = path.join(prefix, process.platform === 'win32' ? '' : 'lib', 'node_modules/@theisegoria/game-development-studio');
   const entry = path.join(packageRoot, 'dist/cli.js');
   const cli = async (args, customEnv = env, workspace = output) => {
@@ -209,7 +218,8 @@ async function verifyFirstRunInRoot(root, options) {
   let shimVersion;
   if (process.platform === 'win32') {
     const expectedLauncher = path.join(bin, commandName);
-    const pathLookup = await run('where.exe', ['game-dev.cmd'], outside, pathEnv);
+    const whereExe = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'where.exe');
+    const pathLookup = await run(whereExe, ['game-dev.cmd'], outside, pathEnv);
     assertWindowsPathLookup(pathLookup, expectedLauncher);
     const invocation = windowsShimInvocation(process.env.ComSpec ?? 'cmd.exe', expectedLauncher);
     shimVersion = await run(invocation.command, invocation.args, outside, pathEnv, invocation.options);

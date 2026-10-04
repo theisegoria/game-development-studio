@@ -63,15 +63,27 @@ async function readBoundedBody(response, maxBytes, label) {
   return Buffer.concat(chunks, size);
 }
 
-async function fetchReleaseMetadata(version, fetcher) {
+function githubApiRateLimitHint(response) {
+  const remaining = response.headers.get('x-ratelimit-remaining');
+  const reset = response.headers.get('x-ratelimit-reset');
+  const details = [];
+  if (/^\d+$/.test(remaining ?? '')) details.push(`rate limit remaining=${remaining}`);
+  if (/^\d+$/.test(reset ?? '')) details.push(`rate limit reset=${reset}`);
+  return details.length ? ` (${details.join(', ')})` : '';
+}
+
+async function fetchReleaseMetadata(version, fetcher, apiToken) {
+  const headers = { Accept: 'application/vnd.github+json' };
+  if (apiToken) headers.Authorization = `Bearer ${apiToken}`;
   const response = await fetcher(releaseApiUrl(version), {
-    headers: { Accept: 'application/vnd.github+json' },
+    headers,
     redirect: 'error',
     signal: globalThis.AbortSignal.timeout(requestTimeoutMs),
   });
   if (!response.ok) {
+    const hint = githubApiRateLimitHint(response);
     await response.body?.cancel().catch(() => {});
-    throw new Error(`GitHub release metadata for v${version} failed: HTTP ${response.status}`);
+    throw new Error(`GitHub release metadata for v${version} failed: HTTP ${response.status}${hint}`);
   }
   const bytes = await readBoundedBody(response, maxMetadataBytes, `GitHub release metadata for v${version}`);
   return JSON.parse(bytes.toString('utf8'));
@@ -108,9 +120,9 @@ async function fetchReleaseAsset(url, maxBytes, label, fetcher) {
 }
 
 /** Fetch one exact public release pair and verify its bytes against the GitHub API digest and checksum manifest. */
-export async function fetchPublishedRelease(version, fetcher = globalThis.fetch) {
+export async function fetchPublishedRelease(version, fetcher = globalThis.fetch, apiToken) {
   invariant(allowedVersions.has(version), `Unsupported published first-run release version: ${version}`);
-  const release = await fetchReleaseMetadata(version, fetcher);
+  const release = await fetchReleaseMetadata(version, fetcher, apiToken);
   const name = artifactName(version);
   const [artifactBytes, manifestBytes] = await Promise.all([
     fetchReleaseAsset(releaseAssetUrl(version, name), maxArtifactBytes, `CLI tarball v${version}`, fetcher),
@@ -125,9 +137,10 @@ export async function verifyPublishedFirstRun() {
   const packageJson = JSON.parse(await readFile(path.join(repositoryRoot, 'package.json'), 'utf8'));
   const currentVersion = packageJson.version;
   invariant(currentVersion === currentReleaseBaseline, `package.json release baseline must be ${currentReleaseBaseline}; found ${currentVersion}`);
+  const apiToken = process.env.GDS_RELEASE_API_TOKEN;
   const [current, previous] = await Promise.all([
-    fetchPublishedRelease(currentVersion),
-    fetchPublishedRelease(previousReleaseVersion),
+    fetchPublishedRelease(currentVersion, globalThis.fetch, apiToken),
+    fetchPublishedRelease(previousReleaseVersion, globalThis.fetch, apiToken),
   ]);
   const root = await mkdtemp(path.join(os.tmpdir(), 'game dev published rollback '));
   try {
