@@ -104,26 +104,26 @@ function makeDds(info: Ktx2Info, basePixel = [17, 34, 51, 255]): Uint8Array {
   const u32 = (offset: number, value: number) => view.setUint32(offset, value, true);
   u32(0, 0x20534444);
   u32(4, 124);
-  u32(8, 0x1007 | (info.levels > 1 ? 0x20000 : 0));
+  u32(8, 0x21007);
   u32(12, info.height);
   u32(16, info.width);
-  u32(20, info.width * 4);
+  u32(20, 0);
   u32(24, 0);
   u32(28, info.levels);
   u32(76, 32);
   u32(80, 0x4);
   u32(84, 0x30315844);
-  u32(88, 0);
-  u32(92, 0);
-  u32(96, 0);
-  u32(100, 0);
-  u32(104, 0);
-  u32(108, 0x1000 | (info.levels > 1 ? 0x400008 : 0));
+  u32(88, info.transfer === 'linear' ? 32 : 0);
+  u32(92, info.transfer === 'linear' ? 0xff : 0);
+  u32(96, info.transfer === 'linear' ? 0xff00 : 0);
+  u32(100, info.transfer === 'linear' ? 0xff0000 : 0);
+  u32(104, info.transfer === 'linear' ? 0xff000000 : 0);
+  u32(108, 0x401008);
   u32(112, 0);
   u32(128, info.transfer === 'srgb' ? 29 : 28);
   u32(132, 3);
   u32(136, 0);
-  u32(140, 1);
+  u32(140, 0);
   u32(144, 0);
   let offset = 148;
   const pattern = Uint8Array.from(basePixel);
@@ -170,6 +170,11 @@ describe('pinned Basis CPU review decoder', () => {
     const wrongDimension = new Uint8Array(valid);
     new DataView(wrongDimension.buffer).setUint32(132, 4, true);
     expect(() => parseBasisRgba32Dds(wrongDimension, info)).toThrow(/header/);
+    for (const [offset, value] of [[8, 0x2100f], [20, info.width * 4], [88, 0], [92, 0], [108, 0x1000], [140, 1]]) {
+      const changed = new Uint8Array(valid);
+      new DataView(changed.buffer).setUint32(offset!, value!, true);
+      expect(() => parseBasisRgba32Dds(changed, info)).toThrow(/header/);
+    }
     expect(() => parseBasisRgba32Dds(valid, { ...info, width: 4_194_304, levels: 1 })).toThrow(/bounded KTX2|header/);
   });
 

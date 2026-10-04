@@ -35,10 +35,11 @@ function makeKtx2(marker: number, transfer: 'srgb' | 'linear' = 'srgb'): Uint8Ar
 function makeDds(info: Ktx2Info, pixel: number): Uint8Array {
   const bytes = new Uint8Array(148 + info.width * info.height * 4), view = new DataView(bytes.buffer);
   const u32 = (offset: number, value: number) => view.setUint32(offset, value, true);
-  u32(0, 0x20534444); u32(4, 124); u32(8, 0x1007); u32(12, info.height); u32(16, info.width); u32(20, info.width * 4);
-  u32(24, 0); u32(28, 1); u32(76, 32); u32(80, 4); u32(84, 0x30315844); u32(88, 0);
-  u32(92, 0); u32(96, 0); u32(100, 0); u32(104, 0); u32(108, 0x1000); u32(112, 0);
-  u32(128, info.transfer === 'srgb' ? 29 : 28); u32(132, 3); u32(136, 0); u32(140, 1); u32(144, 0);
+  u32(0, 0x20534444); u32(4, 124); u32(8, 0x21007); u32(12, info.height); u32(16, info.width); u32(20, 0);
+  u32(24, 0); u32(28, 1); u32(76, 32); u32(80, 4); u32(84, 0x30315844); u32(88, info.transfer === 'linear' ? 32 : 0);
+  u32(92, info.transfer === 'linear' ? 0xff : 0); u32(96, info.transfer === 'linear' ? 0xff00 : 0);
+  u32(100, info.transfer === 'linear' ? 0xff0000 : 0); u32(104, info.transfer === 'linear' ? 0xff000000 : 0); u32(108, 0x401008); u32(112, 0);
+  u32(128, info.transfer === 'srgb' ? 29 : 28); u32(132, 3); u32(136, 0); u32(140, 0); u32(144, 0);
   for (let offset = 148; offset < bytes.length; offset += 4) bytes.set([pixel, 35, 65, 255], offset);
   return bytes;
 }

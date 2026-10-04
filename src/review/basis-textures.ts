@@ -151,17 +151,24 @@ export function parseBasisRgba32Dds(bytes: Uint8Array, expected: Ktx2Info): Rast
   const arraySize = requireUint32(view, 140, 'array size');
   const miscFlags2 = requireUint32(view, 144, 'misc flags');
 
-  const expectedFlags = 0x1007 | (expected.levels > 1 ? 0x20000 : 0);
-  const expectedCaps = 0x1000 | (expected.levels > 1 ? 0x400008 : 0);
+  // Pinned Basis exports through tinydds.h: mip flags are always set, pitch
+  // and the single-image array field are zero. The linear format retains
+  // its legacy RGBA masks; sRGB is encoded solely by the DX10 format.
+  // See the pinned upstream encoder/3rdparty/tinydds.h TinyDDS_WriteImage.
+  const expectedFlags = 0x21007;
+  const expectedCaps = 0x401008;
+  const legacyLinearMasks = expected.transfer === 'linear';
   const caps = requireUint32(view, 108, 'caps');
   const expectedDxgi = expected.transfer === 'srgb' ? DDS_DXGI_RGBA8_UNORM_SRGB : DDS_DXGI_RGBA8_UNORM;
   if (
     flags !== expectedFlags || width !== expected.width || height !== expected.height ||
-    pitch !== width * 4 || depth !== 0 || levels !== expected.levels ||
+    pitch !== 0 || depth !== 0 || levels !== expected.levels ||
     pixelFormatSize !== 32 || pixelFormatFlags !== 0x4 || fourCC !== DDS_FOURCC_DX10 ||
-    bitCount !== 0 || rMask !== 0 || gMask !== 0 || bMask !== 0 || aMask !== 0 ||
+    bitCount !== (legacyLinearMasks ? 32 : 0) || rMask !== (legacyLinearMasks ? 0xff : 0) ||
+    gMask !== (legacyLinearMasks ? 0xff00 : 0) || bMask !== (legacyLinearMasks ? 0xff0000 : 0) ||
+    aMask !== (legacyLinearMasks ? 0xff000000 : 0) ||
     caps !== expectedCaps || caps2 !== 0 || dxgiFormat !== expectedDxgi ||
-    resourceDimension !== DDS_RESOURCE_DIMENSION_TEXTURE2D || miscFlag !== 0 || arraySize !== 1 || miscFlags2 !== 0
+    resourceDimension !== DDS_RESOURCE_DIMENSION_TEXTURE2D || miscFlag !== 0 || arraySize !== 0 || miscFlags2 !== 0
   ) {
     throw invalidState('Basis review DDS header does not match the validated 2D RGBA8 KTX2 profile.');
   }
