@@ -43,7 +43,7 @@ body:
     id: report
     attributes:
       label: Optional reviewed support report
-      description: New source builds can preview game-dev support report --workflow generic-capture --json. Inspect the allowlist report before choosing to share. Published 1.3.1 does not include this checkpoint. Do not paste unreviewed doctor output.
+      description: CLI 1.4.0 or newer can preview game-dev support report --workflow generic-capture --json. Inspect the allowlist report before choosing to share. Do not paste unreviewed doctor output.
   - type: checkboxes
     id: review
     attributes:

@@ -55,7 +55,7 @@ describe('every surface states the same version', () => {
   it('bumps the lockfile and both legal profiles in an isolated fixture', async () => {
     const fixture = await mkdtemp(path.join(os.tmpdir(), 'version-bump-'));
     try {
-      for (const relative of ['package.json', 'package-lock.json', 'src/version.ts', 'skills/manifest.json', '.codex-plugin/plugin.json', 'scripts/set-version.mjs', 'CHANGELOG.md', 'distribution/macos-app-repo', 'distribution/macos-ci-upstream-node', 'distribution/skills-repo/README.md']) {
+      for (const relative of ['package.json', 'package-lock.json', 'src/version.ts', 'skills/manifest.json', '.codex-plugin/plugin.json', 'scripts/set-version.mjs', 'CHANGELOG.md', 'distribution/macos-app-repo', 'distribution/macos-ci-upstream-node', 'distribution/skills-repo/README.md', 'distribution/skills-repo/PLUGIN_README.md']) {
         await mkdir(path.dirname(path.join(fixture, relative)), { recursive: true });
         await cp(path.join(root, relative), path.join(fixture, relative), { recursive: true });
       }
@@ -66,6 +66,10 @@ describe('every surface states the same version', () => {
       expect(exportedReadme).toContain(`--ref v${next}`);
       expect(exportedReadme).toContain(`game-development-studio-plugin-${next}.zip`);
       expect(exportedReadme).toContain('CLI **1.0.2** or newer');
+      const pluginReadme = await readFile(path.join(fixture, 'distribution/skills-repo/PLUGIN_README.md'), 'utf8');
+      expect(pluginReadme).toContain(`releases/tag/v${next}`);
+      expect(pluginReadme).toContain(`blob/v${next}/docs/install.md`);
+      expect(pluginReadme).toContain(`blob/v${next}/docs/windows-install.md`);
       const lock = JSON.parse(await readFile(path.join(fixture, 'package-lock.json'), 'utf8'));
       expect(lock.version).toBe(next);
       expect(lock.packages[''].version).toBe(next);

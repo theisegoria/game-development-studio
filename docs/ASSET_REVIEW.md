@@ -1,6 +1,6 @@
 # Asset review and visual regression history
 
-Renderer 2.2, Basis texture decoding, sampled playback and the new form/overlay controls are additions on the roadmap branch, not published v1.3.1 features. Follow the release-driven [quickstart](quickstart.md) for installation and inspect the installed tool schemas before using these settings. These additions require the roadmap source checkpoint until a release is separately approved.
+Release 1.4.0 includes renderer 2.2, optional Basis texture decoding, sampled playback and form/overlay controls. Follow the release-driven [quickstart](quickstart.md) for installation and inspect the installed tool schemas before using these settings. Older versions do not expose all of these capabilities.
 
 Review extends the asset catalog and the existing sealed visual comparison system. All operations are local and free. They do not launch Blender, a GPU process, an engine, or a provider request. Tools share the CLI/MCP registry and normal transport approval boundary. Reviewer and reason fields are attribution, not authentication or proof of human identity. Direct library callers must obtain authorization themselves.
 

@@ -4,14 +4,14 @@ Use the built-in `generic-sample` adapter to create, seal, verify and compare a
 synthetic capture. This free workflow requires only Node.js 22.5+, npm and the
 CLI. It does not require a compiler, provider credentials, Blender or a GPU.
 Follow the [canonical install guide](install.md) first. The baseline is the
-checksum-verified GitHub release **1.3.1**; the npm registry name is unpublished.
+checksum-verified GitHub release **1.4.0**; the npm registry name is unpublished.
 
 The sample copies small known PNGs and synthetic measurements. It proves the
 capture workflow and comparison, not renderer performance, target-engine
-correctness or artistic approval. On **Windows, published 1.3.1 installs and
-starts, but its sample's direct `.mjs` launch is unsupported**. Use a source
-build containing the Node-interpreter fix until a new release is published.
-The prepared Windows CI gate must pass before claiming support.
+correctness or artistic approval. Release 1.4.0 uses an explicit Node interpreter
+for the sample on Windows, macOS and Linux. The release artifact gate exercises
+the installed tarball on each platform with Node 22 and 24.
+
 
 ## POSIX: macOS and Linux
 
@@ -67,7 +67,7 @@ The comparison reports changed pixels and writes diff artifacts. Read its
 summary and evidence ceiling. The generated files come from this fixture's
 declared inputs; they are not a screenshot of a real game.
 
-## PowerShell: source builds with the Node sample fix
+## PowerShell: Windows
 
 Install as described in [the canonical guide](install.md), then use `.cmd`
 launchers. Do not use PowerShell process substitution or change execution policy.
@@ -107,10 +107,9 @@ Invoke-GameDev visual compare "$($baseline.data.runPath)" "$($candidate.data.run
 
 ## Diagnostics, AI tools and next steps
 
-In a source build containing the diagnostic checkpoint, run `doctor
---workflow generic-capture --expected-version 1.3.1 --json` with the same
-`--output-dir`. Required and optional checks are identified for this workflow.
-Published 1.3.1 uses the plain `doctor` command shown above.
+Run `doctor --workflow generic-capture --expected-version 1.4.0 --json` with
+the same `--output-dir`. Required and optional checks are identified for this
+workflow; missing optional tools do not block the free capture.
 
 Shell-capable agents can call the CLI. For an MCP client, generate configuration
 with `game-dev mcp config --client generic --output-dir ABSOLUTE_WORKSPACE`, using

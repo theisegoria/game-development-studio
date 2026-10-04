@@ -9,7 +9,7 @@ import { afterEach, expect, it } from 'vitest';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const temporaryRoots: string[] = [];
 afterEach(async () => { await Promise.all(temporaryRoots.splice(0).map(directory => rm(directory, { recursive: true, force: true }))); });
-const files = ['README.md', 'docs/install.md', 'docs/quickstart.md', 'docs/windows-install.md', 'docs/distribution-roadmap.md', 'distribution/skills-repo/README.md', 'package.json'];
+const files = ['README.md', 'docs/install.md', 'docs/quickstart.md', 'docs/windows-install.md', 'docs/distribution-roadmap.md', 'distribution/skills-repo/README.md', 'distribution/skills-repo/PLUGIN_README.md', 'SUPPORT.md', 'package.json'];
 const checker = path.join(root, 'scripts/check-install-docs.mjs');
 const verifier = path.join(root, 'scripts/verify-first-run.mjs');
 function check(target: string): string {
@@ -27,14 +27,32 @@ async function fixture() {
 
 it('rejects old release links, unpublished registry installation and compiler-dependent free routes', async () => {
   const directory = await fixture();
-  expect(JSON.parse(check(directory))).toMatchObject({ version: '1.3.1', files: 6 });
+  const { version } = JSON.parse(await readFile(path.join(directory, 'package.json'), 'utf8'));
+  expect(JSON.parse(check(directory))).toMatchObject({ version, files: 8 });
   const readme = await readFile(path.join(directory, 'README.md'), 'utf8');
-  await writeFile(path.join(directory, 'README.md'), readme.replace('releases/tag/v1.3.1', 'releases/tag/v1.1.0'));
+  await writeFile(path.join(directory, 'README.md'), readme.replace(`releases/tag/v${version}`, 'releases/tag/v0.0.0'));
   expect(() => check(directory)).toThrow();
   await writeFile(path.join(directory, 'README.md'), `${readme}\nnpm install --global @theisegoria/game-development-studio\n`);
   expect(() => check(directory)).toThrow();
   await writeFile(path.join(directory, 'README.md'), readme);
   await writeFile(path.join(directory, 'docs/quickstart.md'), `${await readFile(path.join(directory, 'docs/quickstart.md'), 'utf8')}\ncc -std=c99 main.c\n`);
+  expect(() => check(directory)).toThrow();
+});
+
+it('rejects stale version-pinned documentation inside the exported plugin README', async () => {
+  const directory = await fixture();
+  const { version } = JSON.parse(await readFile(path.join(directory, 'package.json'), 'utf8'));
+  const pluginReadme = path.join(directory, 'distribution/skills-repo/PLUGIN_README.md');
+  const content = await readFile(pluginReadme, 'utf8');
+  await writeFile(pluginReadme, content.replace(`blob/v${version}/docs/install.md`, 'blob/v0.0.0/docs/install.md'));
+  expect(() => check(directory)).toThrow();
+});
+
+it('rejects stale version-pinned installation links in exported support guidance', async () => {
+  const directory = await fixture();
+  const support = path.join(directory, 'SUPPORT.md');
+  const content = await readFile(support, 'utf8');
+  await writeFile(support, content.replace('blob/main/docs/windows-install.md', 'blob/v0.0.0/docs/windows-install.md'));
   expect(() => check(directory)).toThrow();
 });
 

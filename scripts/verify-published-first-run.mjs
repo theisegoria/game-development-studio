@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /** Verify the published CLI release and its rollback using only fixed public GitHub assets. */
 import { Buffer } from 'node:buffer';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { URL, fileURLToPath, pathToFileURL } from 'node:url';
+import { URL, pathToFileURL } from 'node:url';
 import { verifyChecksum, verifyFirstRun } from './verify-first-run.mjs';
 
 const repository = 'theisegoria/game-development-studio';
@@ -17,7 +17,6 @@ const maxArtifactBytes = 64 * 1024 * 1024;
 const requestTimeoutMs = 20_000;
 const maxAssetRedirects = 3;
 const assetHosts = new Set(['github.com', 'release-assets.githubusercontent.com', 'objects.githubusercontent.com']);
-const repositoryRoot = fileURLToPath(new URL('..', import.meta.url));
 
 function invariant(value, message) { if (!value) throw new Error(message); }
 
@@ -134,9 +133,9 @@ export async function fetchPublishedRelease(version, fetcher = globalThis.fetch,
 }
 
 export async function verifyPublishedFirstRun() {
-  const packageJson = JSON.parse(await readFile(path.join(repositoryRoot, 'package.json'), 'utf8'));
-  const currentVersion = packageJson.version;
-  invariant(currentVersion === currentReleaseBaseline, `package.json release baseline must be ${currentReleaseBaseline}; found ${currentVersion}`);
+  // Historical public releases remain available before a new source version is published.
+  // Exact candidate bytes are checked separately by the release artifact matrix.
+  const currentVersion = currentReleaseBaseline;
   const apiToken = process.env.GDS_RELEASE_API_TOKEN;
   const [current, previous] = await Promise.all([
     fetchPublishedRelease(currentVersion, globalThis.fetch, apiToken),

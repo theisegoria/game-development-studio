@@ -1,8 +1,8 @@
 # Install Game Development Studio
 
-This is the canonical CLI install guide for release **1.3.1**. The compiled
+This is the canonical CLI install guide for release **1.4.0**. The compiled
 tarball and `SHA256SUMS.txt` are published on
-[GitHub Releases](https://github.com/theisegoria/game-development-studio/releases/tag/v1.3.1).
+[GitHub Releases](https://github.com/theisegoria/game-development-studio/releases/tag/v1.4.0).
 The public npm registry package remains unpublished. Install the downloaded
 tarball with npm; installing its registry name does not work. The skills/plugin
 ZIP contains instructions and does not install the CLI.
@@ -21,7 +21,7 @@ administrator access. Keep the tarball and checksum file for a later reinstall.
 set -eu
 node --version
 npm --version
-version=1.3.1
+version=1.4.0
 release="https://github.com/theisegoria/game-development-studio/releases/download/v$version"
 package="theisegoria-game-development-studio-$version.tgz"
 curl --fail --location "$release/$package" --output "$package"
@@ -61,7 +61,7 @@ policies without changing the policy or using an administrator shell.
 $ErrorActionPreference = 'Stop'
 node --version
 npm.cmd --version
-$version = '1.3.1'
+$version = '1.4.0'
 $release = "https://github.com/theisegoria/game-development-studio/releases/download/v$version"
 $package = "theisegoria-game-development-studio-$version.tgz"
 Invoke-WebRequest "$release/$package" -OutFile $package
@@ -152,8 +152,8 @@ your actual releases; `verifyGitHub: true` reads public GitHub release metadata:
 ```json
 {
   "installedVersion": "PRIOR_VERSION",
-  "targetVersion": "1.3.1",
-  "artifact": "/absolute/theisegoria-game-development-studio-1.3.1.tgz",
+  "targetVersion": "1.4.0",
+  "artifact": "/absolute/theisegoria-game-development-studio-1.4.0.tgz",
   "checksums": "/absolute/current/SHA256SUMS.txt",
   "rollbackArtifact": "/absolute/PRIOR_CLI_TARBALL.tgz",
   "rollbackChecksums": "/absolute/prior/SHA256SUMS.txt",
@@ -185,13 +185,15 @@ the already-built source, installs it into a disposable prefix outside the
 checkout, and exercises the compiler-free route. It includes spaces, PATH
 precedence over a simulated old shim and missing optional tools. It contacts npm
 for dependencies, never providers. Its JSON states the artifact digest,
-platform and evidence limit. Prepared Windows/Linux CI is not execution evidence.
+platform and evidence limit. The six source first-run lanes passed on
+Windows/Linux/macOS with Node 22 and 24. Exact release artifact checks remain
+a separate publication gate.
 
 ## Support
 
 Record the failed step, CLI/Node/npm versions, launcher path, OS and architecture,
 release version or source revision, artifact SHA-256, exit code and redacted
-output. In builds containing the diagnostic checkpoint, preview
+output. Preview
 `game-dev support report --workflow generic-capture --json`, review its redacted
 contents, then save with `--output NEWFILE --confirm`. Do not send automatically.
 Never attach credentials, project assets or unreviewed raw logs. Use the

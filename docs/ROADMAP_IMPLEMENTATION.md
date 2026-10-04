@@ -4,7 +4,7 @@ Checkpoint work began 4 October 2026 from public main `3a9cd3f08f970ded8db71d31e
 
 ## Isolation and authorization
 
-The discovered `game-asset-mcp` local checkout is older (`29715a5`) and dirty. None of its changes are inputs to this implementation. Work uses an independent public-source clone and local branch `codex/roadmap-checkpoints-20261004`. Its source changes were left intact; only the separately requested Codex model preference was updated in the original project's configuration. Ben authorized local implementation, CPU checks and commits, then approved isolated branch pushes, draft PRs and the existing hosted CI workflows, including hosted Blender/Metal and optional CPU tools. His subsequent correction permits CI testing only: local Anvil/application-window, Blender and GPU launches remain excluded. Merges, releases, npm publication, paid provider calls, account creation, cloud sync, user-asset purge and unattended updates require separate authorization. Draft core PR #11 and skills PR #8 are open; no merge or release occurred.
+The discovered `game-asset-mcp` local checkout is older (`29715a5`) and dirty. None of its changes are inputs to this implementation. Work uses an independent public-source clone and local branch `codex/roadmap-checkpoints-20261004`. Its source changes were left intact; only the separately requested Codex model preference was updated in the original project's configuration. Ben authorized local implementation, CPU checks and commits, then approved isolated branch pushes, draft PRs and the existing hosted CI workflows, including hosted Blender/Metal and optional CPU tools. His subsequent correction permits CI testing only: local Anvil/application-window, Blender and GPU launches remain excluded. At the third checkpoint, core PR #11 and skills PR #8 were drafts and no merge or release had occurred. Ben subsequently explicitly authorized publication on 4 October 2026; the release preparation below uses that authorization for GitHub merges, tags and releases. No local app, Blender or GPU launch, paid provider call, account creation, cloud sync, user-asset purge or unattended update is authorized.
 
 ## Intended integrated checkpoints
 
@@ -98,3 +98,33 @@ The first hosted third-slice run passed main CI, source installs, public rollbac
 ## Integration procedure
 
 Keep disjoint owners during implementation, integrate CLI/MCP contracts, run bounded targeted checks, independently review the patch, fix actionable findings, then commit local checkpoints. Export the companion skills from the canonical source and verify its closed roster. Preserve a Git bundle and this evidence ledger for resumption; publication approval is a final separate gate.
+
+
+### Release 1.4.0 preparation (publication authorized)
+
+Ben explicitly authorized publication after the third checkpoint. Versioned CLI,
+plugin and both macOS legal profiles advance together to 1.4.0. Current install
+and capability guides identify this release; historical checkpoint evidence above
+continues to describe what was available and tested at each checkpoint.
+
+Final pre-release source head `9e146810` / companion `238d69f` passed all six core
+hosted workflows and the companion validator. Core runs: CI `37184407330`, Basis
+`37184407322`, Windows install `37184407331`, Windows fsync `37184407320`, CoACD
+`37184407327`, and native archive `37184407325`. Companion run `37183706671`
+passed. The two real Basis review codec cases and one report unit case ran without
+skips on all three platforms; this supersedes the pending statements recorded
+before those runs. The final exact local tarball and full Git histories are saved
+in the immutable third checkpoint, separately from any published artifact.
+
+The release artifact workflow adds a six-lane exact tarball first-run gate, with
+Unix update/rollback against public 1.3.1. The existing historical 1.2.0/1.3.1
+public-byte lane remains independent of the source version so it can run before
+1.4.0 exists publicly. Tag/release publication requires fresh successful checks;
+publication metadata, exact downloaded bytes and final recovery bundles are saved
+in a separate publication evidence checkpoint rather than altering historical
+checkpoint digests.
+
+GitHub tarball/skills ZIP publication does not publish the npm registry name.
+Native ZIPs remain explicitly ad-hoc signed and non-notarized. Native interaction,
+three unfamiliar human testers, Developer ID/notarization and clean-Mac acceptance
+remain missing. Local app/Blender/GPU launches remain excluded by Ben's correction.

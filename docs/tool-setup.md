@@ -1,6 +1,6 @@
 # Optional local tools and support reports
 
-This source checkpoint adds workflow-aware diagnostics and saved tool selections. Use the [release-driven quickstart](quickstart.md) for the current published installation baseline. The free generic sample, inspection, and ordinary asset packaging do not require Blender, Basis Universal, CoACD, or provider credentials. Compressed assets require Basis validation when inspected for package admission.
+Release 1.4.0 adds workflow-aware diagnostics and saved tool selections. Use the [release-driven quickstart](quickstart.md) for the current published installation baseline. The free generic sample, inspection, and ordinary asset packaging do not require Blender, Basis Universal, CoACD, or provider credentials. Compressed assets require Basis validation when inspected for package admission.
 
 Choose the workflow you intend to run:
 

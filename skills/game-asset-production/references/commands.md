@@ -12,7 +12,7 @@ game-dev credentials status --json
 
 `capabilities.data.localOperations` is the installed command/schema authority. Do not infer request fields from an older example.
 
-Guided forms and renderer 2.2 settings (including Basis appearance decoding and sampled playback) require the roadmap source checkpoint. They are not published v1.3.1 features; inspect the installed schemas before using them.
+Guided forms and renderer 2.2 settings (including optional Basis appearance decoding and sampled playback) require CLI 1.4.0 or newer; inspect the installed schemas before using them.
 
 ## Provider jobs
 
@@ -131,10 +131,9 @@ See the source [production guide](https://github.com/theisegoria/game-developmen
 [Basis setup](https://github.com/theisegoria/game-development-studio/blob/main/docs/TEXTURE_COMPRESSION.md),
 and [CoACD setup](https://github.com/theisegoria/game-development-studio/blob/main/docs/coacd.md).
 
-## Guided source checkpoint (capability discovery required)
+## Guided workflows (CLI 1.4.0+, capability discovery required)
 
-These additions are an unreleased source checkpoint. Public 1.3.1 remains the
-release baseline; use them only when installed capabilities expose the named
+Use these additions only when installed CLI 1.4.0+ capabilities expose the named
 tools and schemas. The shared templates are `inspect-validate-package`,
 `review-select-package` and `platform-variants`.
 

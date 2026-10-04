@@ -1,7 +1,7 @@
 # Windows CLI installation and troubleshooting
 
 Use the [canonical install guide](install.md#windows-powershell) for the current
-**1.3.1** GitHub tarball, checksum verification and PowerShell commands. The npm
+**1.4.0** GitHub tarball, checksum verification and PowerShell commands. The npm
 registry package is unpublished. Node 22.5+ is installed separately; no Windows
 EXE/MSI or Authenticode signature is supplied. The skills/plugin ZIP does not
 contain the CLI. Runtime dependencies are downloaded from npm during install.
@@ -32,13 +32,12 @@ Record both paths and versions before changing anything.
 
 ## Sample workflow support
 
-Published 1.3.1 can install and run CLI startup checks on Windows. Its generic
-sample directly executes a `.mjs` file, which is unsupported by Windows process
-creation. The source checkpoint uses an explicit Node interpreter for this
-sample. Run [Your first capture](quickstart.md#powershell-source-builds-with-the-node-sample-fix)
-from a source build containing that fix until a verified new release ships.
-Prepared Windows Node 22/24 CI gates exercise the installed tarball's first-run
-flow; prepared CI is not a recorded Windows pass.
+Release 1.4.0 fixes the generic sample by invoking its script through an explicit
+Node interpreter. Run [Your first capture](quickstart.md#powershell-windows)
+after installing the verified release tarball. The source first-run gates passed
+on Windows with Node 22 and 24; release publication additionally requires the
+same free workflow to pass against the exact release tarball. Older release
+1.3.1 supported startup but could not launch this sample on Windows.
 
 ## Source build
 
@@ -86,6 +85,5 @@ a plugin ZIP checksum to a CLI tarball.
 For a failed install, the [installation issue form](https://github.com/theisegoria/game-development-studio/issues/new?template=installation.yml)
 accepts the failed command and exit code, OS/architecture, Node/npm versions,
 artifact checksum and command discovery without requiring a working CLI.
-After startup, use the [reviewed support report](install.md#support) in builds
-containing the diagnostic checkpoint. Remove credentials and private paths
+After startup, use the [reviewed support report](install.md#support). Remove credentials and private paths
 before sending any additional logs.

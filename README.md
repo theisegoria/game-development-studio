@@ -126,9 +126,9 @@ Keychain boundaries, commands, local-bundle status, and exact evidence limits.
 
 ## Install
 
-The CLI source is public. Release **1.3.1** provides a compiled Node.js package
-(`theisegoria-game-development-studio-1.3.1.tgz`) and SHA-256 manifest through
-[GitHub Releases](https://github.com/theisegoria/game-development-studio/releases/tag/v1.3.1).
+The CLI source is public. Release **1.4.0** provides a compiled Node.js package
+(`theisegoria-game-development-studio-1.4.0.tgz`) and SHA-256 manifest through
+[GitHub Releases](https://github.com/theisegoria/game-development-studio/releases/tag/v1.4.0).
 It requires a separately installed Node.js 22.5+ runtime; it is not a standalone
 Windows EXE/MSI. The skills plugin ZIP does not install `game-dev`.
 
@@ -155,8 +155,8 @@ No provider call is made during installation, build, test, `doctor`, or
 New here? [Your first capture](docs/quickstart.md) goes from an empty
 directory to a sealed synthetic capture your AI can verify and compare. The
 built-in generic sample requires no compiler, provider credentials or GPU.
-Published 1.3.1's Windows sample needs the source checkpoint's Node launch fix;
-the quickstart records that limit. Engine compilation is covered separately in
+Release 1.4.0 runs the sample through an explicit Node interpreter on Windows,
+macOS and Linux. Engine compilation is covered separately in
 the [advanced C probe tutorial](docs/advanced-c-probe.md).
 
 Choose a workspace and inspect the local environment:

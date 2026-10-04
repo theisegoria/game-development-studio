@@ -1,6 +1,6 @@
 # Production recipes, asset families, and standalone platform variants
 
-The guided forms and renderer 2.2 review settings described here are roadmap-branch additions, not published v1.3.1 features. Follow the release-driven [quickstart](quickstart.md) for installation and use the installed schemas as the request authority. These additions require the roadmap source checkpoint until a release is separately approved.
+Release 1.4.0 includes the guided forms and renderer 2.2 review settings described here. Follow the release-driven [quickstart](quickstart.md) for installation and use the installed schemas as the request authority. Older versions do not expose all of these capabilities.
 
 These tools are available through `game-dev tool call NAME --request FILE --json` and the same MCP tool names. They persist under `<outputDir>/.production`. No engine integration is performed. Recipes execute **one step per invocation**, with fresh transport approval for each mutation and paid call. A saved fingerprint or family review is never spend authority.
 

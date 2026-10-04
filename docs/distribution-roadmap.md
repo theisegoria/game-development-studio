@@ -1,18 +1,19 @@
 # Distribution readiness and first-run evidence
 
 The baseline is the compiled, checksum-verified GitHub CLI tarball documented
-in [Install Game Development Studio](install.md), currently **1.3.1**. Updates
-remain manual. This source checkpoint prepares checks and workflow fixes;
-it has not been published and does not replace the public artifact.
+in [Install Game Development Studio](install.md), release **1.4.0**. Updates
+remain manual. Its release workflow requires exact compiled artifact checks
+before the release is published; source-packed checks are recorded separately.
 
 ## Channel decisions
 
 | Channel | Prepared implementation | Remaining acceptance gate |
 | --- | --- | --- |
-| GitHub CLI tarball | Existing compiled JS package, release SHA-256 manifest, manual install and rollback, compiler-free installed-artifact verifier | Execute prepared Windows/Linux/macOS matrix for the new source; verify exact bytes again for the next release |
-| npm registry | Existing package metadata, publish roster, runtime license inventory and prepublish gates; source tarball exercises the same package | Authorized publisher access and explicit publication approval; no account or credentials created |
-| Windows bundled Node | User-prefix npm installation and `.cmd` launchers avoid administrator/policy changes; source fixes direct `.mjs` sample launch | Measure remaining Node/PATH setup failures before adding a verified bundled runtime and legal inventory; no new bundle justified yet |
-| Anvil macOS app | Existing closed runtime, binary-only packaging, checksum manifests and provenance verification | Developer ID account/access, signing/notarization approval, clean-Mac normal launch and actual UI tests; ad-hoc builds do not prove Gatekeeper acceptance |
+| GitHub CLI tarball | Existing compiled JS package, release SHA-256 manifest, manual install and rollback, compiler-free installed-artifact verifier | Source matrix passed on all six Windows/Linux/macOS Node 22/24 lanes at `9e146810`; exact 1.4.0 bytes must pass the release matrix before publication |
+| npm registry | Existing package metadata, publish roster, runtime license inventory and prepublish gates; source tarball exercises the same package | Existing authenticated publisher access; no account or credentials created, and no npm publication is performed by the GitHub release workflow |
+| Windows bundled Node | User-prefix npm installation and `.cmd` launchers avoid administrator/policy changes; release 1.4.0 fixes direct `.mjs` sample launch | Measure remaining Node/PATH setup failures before adding a verified bundled runtime and legal inventory; no new bundle justified yet |
+| Anvil macOS ad-hoc ZIP | Existing closed runtime, binary-only packaging, checksum manifests and provenance verification; hosted source archive passed at `9e146810` | Exact release staging/extraction/signature/runtime verification must pass; native interaction and clean-Mac Gatekeeper acceptance remain unproven |
+| Anvil Developer ID distribution | No Developer ID signed or notarized artifact is produced | Existing account/access, signing/notarization configuration and clean-Mac normal launch acceptance |
 | Skills/plugin ZIP | Existing canonical export and closed roster | Keep release version links and exported skill bytes in parity with CLI source |
 
 The historical Windows installation question was closed. It supports fixing
@@ -40,7 +41,7 @@ the GitHub release API JSON and download that release's tarball and manifest:
 
 ```sh
 node scripts/verify-first-run.mjs \
-  --artifact /absolute/theisegoria-game-development-studio-1.3.1.tgz \
+  --artifact /absolute/theisegoria-game-development-studio-1.4.0.tgz \
   --checksums /absolute/SHA256SUMS.txt \
   --release-metadata /absolute/release.json \
   --report /absolute/NEW-first-run-report.json
@@ -70,12 +71,15 @@ both prior digest and prior integrity level.
 | Exact public artifact macOS installed first-run | Passed 4 October 2026 on macOS arm64, Node 25.2.1: installed global prefix outside source, paths with spaces, planned sample, 3 captures, sealed verification, equal repeat, known visual change, PATH ahead of simulated stale shim and missing optional tools |
 | Source-packed macOS first-run | Passed 4 October 2026 on macOS arm64, Node 25.2.1; the same installed-artifact checks passed with the explicit Node sample runtime. This is local source-packed byte evidence, not a published release |
 | Windows published 1.3.1 sample | Direct `.mjs` scenario execution is unsupported; installation/startup support does not prove sample support |
-| Source Windows sample | Explicit Node interpreter prepared, with script/runtime identity checks; Windows Node 22/24 CI prepared, not executed in this session |
-| Linux/macOS Node 22/24 matrix | CI prepared; local macOS Node 25.2.1 evidence does not prove this matrix |
-| Different-version update/rollback | macOS arm64 Node 25.2.1 public 1.2.0 → 1.3.1 → 1.2.0 → 1.3.1 passed in a disposable prefix; both release artifacts/manifest digests bound to GitHub. Prior initial install, rollback and reinstall each passed doctor, sample plan, 2 captures, sealed verification and equal comparison in fresh workspaces. No production workspace migration rollback proven |
+| Source Windows sample | Passed on both Node 22/24 lanes at `9e146810`, including explicit Node interpreter, spaces/PATH/stale shim and missing optional tools |
+| Source Linux/macOS Node 22/24 matrix | All four lanes passed at `9e146810` |
+| Historical different-version update/rollback | All four hosted Linux/macOS Node 22/24 lanes passed at `9e146810`; macOS arm64 Node 25.2.1 public 1.2.0 → 1.3.1 → 1.2.0 → 1.3.1 passed in a disposable prefix; both release artifacts/manifest digests bound to GitHub. Prior initial install, rollback and reinstall each passed doctor, sample plan, 2 captures, sealed verification and equal comparison in fresh workspaces. No production workspace migration rollback proven |
 | Human completion, keyboard/accessibility/cancel/restart | Requires authorized UI and usability sessions |
-| Blender/GPU, signing/notarization, paid providers | Not executed or implied by this CPU fixture |
+| Hosted optional tools and native archive | Basis on three platforms, CoACD on four runners, Blender, Metal and ad-hoc archive checks passed at `9e146810`; these are hosted evidence |
+| Local Blender/GPU/app, Developer ID/notarization, paid providers | Not executed or implied by the CPU fixture or hosted results |
+| Exact 1.4.0 tarball and manual rollback | Release workflow checks the same artifact on six platform/Node lanes and different-version rollback on Unix; Windows 1.3.1 cannot run the old sample, so full Windows rollback is not claimed |
 
 See [the implementation ledger](ROADMAP_IMPLEMENTATION.md) for the broader
-checkpoint. CI definitions and local checks are evidence preparation; no
-workflow dispatch, public push, merge or release is authorized by their presence.
+checkpoint and hosted run identities. Ben separately authorized GitHub
+publication on 4 October 2026. A CI definition alone is not execution evidence;
+release publication requires terminal successful checks on the tagged revision.

@@ -1,6 +1,6 @@
 # Workflow routes
 
-Guided forms, renderer 2.2, Basis appearance decoding and sampled playback are roadmap-source features, not published v1.3.1 capabilities. Inspect the installed CLI/MCP schemas before constructing requests; use the matching roadmap source checkpoint for these additions until a release is approved.
+Guided forms, renderer 2.2, optional Basis appearance decoding and sampled playback require CLI 1.4.0 or newer. Inspect the installed CLI/MCP schemas before constructing requests; older versions do not expose all of these capabilities.
 
 ## Asset request to project admission
 
@@ -99,10 +99,10 @@ and [convex decomposition guide](https://github.com/theisegoria/game-development
 Real CPU tests run in explicit remote CI lanes; mocked local tests are not native
 execution evidence. These standalone workflows require no game-engine integration.
 
-## Guided source checkpoint
+## Guided workflows (CLI 1.4.0+)
 
-Public 1.3.1 remains the release baseline. Discover installed capabilities before
-using unreleased `list_production_templates`, `plan_production_template`,
+Discover installed CLI 1.4.0+ capabilities before using
+`list_production_templates`, `plan_production_template`,
 `save_production_template` or `set_production_review`. Prefer the native typed
 forms or `workflow` CLI commands, with raw JSON available for advanced requests.
 Graphs show completed, ready, blocked, invalidated and uncertain states with

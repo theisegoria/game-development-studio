@@ -1,17 +1,44 @@
 # Changelog
 
-## Unreleased roadmap checkpoint
+## 1.4.0
 
-- Repairs release-driven install/quickstart guidance and adds a compiler-free
-  installed-artifact capture gate, including explicit Node sample execution,
-  workflow diagnostics and locally reviewed redacted support reports.
-- Adds typed production templates, evidence-bound candidate selection, recipe
-  graph reasons and guided Anvil forms with advanced JSON retained.
-- Adds persistent verified optional-tool paths and bounded CPU appearance,
-  UV and reproducible pose review. Source/settings/rendered bytes remain bound
-  to fresh human review; previews do not establish target-engine correctness.
-- Prepares platform first-run CI and manual distribution checks. These changes
-  are local source checkpoints; public 1.3.1 remains the installation baseline.
+- Makes the checksum-verified GitHub tarball the canonical install route, with
+  POSIX and PowerShell guidance, manual update/rollback, and a compiler-free
+  first capture. The generic sample now invokes Node explicitly on Windows.
+- Adds workflow-aware diagnostics, validated persistent optional-tool paths that
+  work from Finder, locally reviewed redacted support reports and install issue forms.
+- Adds three shared production templates and guided Anvil forms for inspect /
+  validate / package, review / select / package, and platform variants. Graphs
+  explain readiness, invalidation and interrupted work; advanced JSON remains available.
+- Binds candidate selection, recipe next-step approval and output packaging to
+  actual results and fresh fingerprints. CoACD recipe approval additionally binds
+  the selected isolated environment's configuration and contained package bytes.
+- Adds renderer `gds-cpu-review@2.2.0`: bounded texture-mapped CPU material review
+  under controlled lighting, normal/roughness/metallic/alpha handling, UV overlap
+  and density evidence, and an explicit 50,000-triangle appearance envelope.
+  Larger or unsupported assets fail explicitly; auxiliary diagrams are sampled.
+- Adds source-bound animation clip/time selection with LINEAR, STEP and CUBICSPLINE
+  samples, supported skinning/morph inspection and shared before/after framing.
+  Offline dashboards can scrub or play 2–16 static samples and display synchronized
+  comparisons, overlays and heatmaps through the existing snapshot/regression tools.
+- Adds explicitly configured, hash-bound Basis Universal CPU decoding for ETC1S
+  and UASTC appearance review. Planning starts no decoder; execution bounds maps,
+  pixels, output bytes and time, and binds decoder receipts to reviewed outputs.
+- Verifies source installs on Windows/Linux/macOS with Node 22/24, preserves exact
+  historical public install/update/rollback gates, and requires exact release
+  tarball first-run checks before publication. Optional real Basis, CoACD, Blender,
+  Metal and native archive gates remain separate from default CPU/mock tests.
+- Aligns the five canonical skills, CLI/MCP schemas, plugin export, versioned
+  macOS legal profiles, immutable Actions pins and release artifact checksums.
+
+Distribution remains GitHub CLI tarball and skills ZIP. The optional Apple Silicon
+Anvil ZIP requires macOS 26+ and is ad-hoc signed, non-notarized; clean-Mac
+Gatekeeper acceptance and native keyboard/accessibility/cancel/restart interaction
+are not established. The npm registry package remains unpublished. CPU previews
+are review evidence, not target-engine correctness or artistic approval; IBL,
+shadows, continuous animation interpolation and combined Basis/timeline review
+are not supported. No new engine integration, paid provider call, cloud sync,
+asset purge or unattended update is added.
 
 ## 1.3.1
 
