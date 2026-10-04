@@ -1,5 +1,7 @@
 # Workflow routes
 
+Guided forms, renderer 2.2, optional Basis appearance decoding and sampled playback require CLI 1.4.0 or newer. Inspect the installed CLI/MCP schemas before constructing requests; older versions do not expose all of these capabilities.
+
 ## Asset request to project admission
 
 1. Produce or locate source bytes with `$game-asset-production`.
@@ -96,3 +98,41 @@ Setup and limits are documented in the source repository's
 and [convex decomposition guide](https://github.com/theisegoria/game-development-studio/blob/main/docs/coacd.md).
 Real CPU tests run in explicit remote CI lanes; mocked local tests are not native
 execution evidence. These standalone workflows require no game-engine integration.
+
+## Guided workflows (CLI 1.4.0+)
+
+Discover installed CLI 1.4.0+ capabilities before using
+`list_production_templates`, `plan_production_template`,
+`save_production_template` or `set_production_review`. Prefer the native typed
+forms or `workflow` CLI commands, with raw JSON available for advanced requests.
+Graphs show completed, ready, blocked, invalidated and uncertain states with
+reasons and actual output evidence. Authorize the reviewed next step using its
+current fingerprint; selecting a candidate binds the completed review evidence
+digest and grants no later execution authority.
+
+The checkpoint also exposes workflow-aware `run_doctor`, persistent optional-tool
+selection and local redacted support reports. Inspection does not launch the
+selected executable. Missing Blender/Basis/CoACD blocks only workflows that need
+it. Support reports must be reviewed by the user before sharing and are never
+uploaded automatically.
+
+Optional CPU appearance and reproducible clip/time reviews bind settings,
+renderer version, source hashes and dashboard/preview bytes. Their UV, material,
+skinning and morph evidence has explicit resource/unsupported-feature limits.
+Compare sealed before/after previews through the existing snapshot/regression
+tools under matching settings. A fresh input or setting needs fresh review;
+engine correctness and artistic approval remain separate human/engine checks.
+
+Direct Basis KTX2 appearance is an explicit appearance-only opt-in using the
+existing verified CPU executable. Planning is process-free; the sealed source
+receipt records decoder identity, texture/pixel hashes and actual subprocess
+counts. Reviewed packaging keeps the original compressed GLB bytes. A decoder
+change requires fresh review, and plain/compressed comparisons require matching
+settings, decode profile and an explicit shared frame.
+
+Sampled animation playback is an explicit 2–16-frame appearance sequence at
+128 pixels, prepared once and bound to source/settings/timestamps. Offline
+scrubbing starts no process. It currently uses PNG/JPEG sources without Basis;
+other combinations and exceeded sequence budgets refuse execution. Existing
+regression dashboards add side-by-side/opacity controls over verified pixels,
+without changing numerical verdicts or automatically promoting baselines.

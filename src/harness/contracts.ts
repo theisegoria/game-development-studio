@@ -156,6 +156,7 @@ const scenarioSchema = z.object({
   description: z.string().min(1).max(1200).optional(),
   command: z.object({
     executable: relativePathSchema,
+    runtime: z.literal('node').optional(),
     arguments: z.array(z.string().max(4096)).max(256).default([]),
     workingDirectory: workingDirectorySchema.default('.'),
   }).strict(),
@@ -449,6 +450,9 @@ export const runManifestSchema = z.object({
   status: z.enum(['completed', 'failed', 'timed_out']),
   process: z.object({
     executable: z.string().min(1),
+    runtime: z.literal('node').optional(),
+    runtimeExecutable: z.string().min(1).optional(),
+    runtimeSHA256: sha256.optional(),
     arguments: z.array(z.string()),
     workingDirectory: z.string().min(1),
     exitCode: z.number().int().nullable(),

@@ -10,6 +10,7 @@ import { invalidState } from '../src/util/errors.js';
 import { boxMesh,concaveU,uParts,collisionGlb } from './helpers/collision-fixture.js';
 const roots:string[]=[];
 async function scratch(){const root=await fs.mkdtemp(path.join(os.tmpdir(),'coacd-test-'));roots.push(root);return root;}
+async function fakeCoacdEnvironment(root:string){const python=path.join(root,'venv','bin','python');await fs.mkdir(path.dirname(python),{recursive:true});await fs.writeFile(python,'test-only fake Python bytes');await fs.chmod(python,0o700);await fs.writeFile(path.join(root,'venv','pyvenv.cfg'),'home = /base/python\ninclude-system-site-packages = false\nversion = 3.11.12\n');await fs.mkdir(path.join(root,'venv','lib','python3.11','site-packages','coacd'),{recursive:true});await fs.writeFile(path.join(root,'venv','lib','python3.11','site-packages','coacd','_coacd.abi3.so'),'fake native wheel bytes');return {python,env:{GAME_DEV_COACD_PYTHON:python} as NodeJS.ProcessEnv,packageTree:path.join(root,'venv','lib','python3.11','site-packages')};}
 afterEach(async()=>{await Promise.all(roots.splice(0).map(root=>fs.rm(root,{recursive:true,force:true})));});
 const environment={schema:'game_dev.coacd_environment.v1',python:'3.11.12',coacd:'1.0.14',numpy:'2.0.2',platform:'Linux',architecture:'x86_64',isolatedVenv:true,coacdCodeSHA256:'a'.repeat(64),upstreamSourceCommit:'1401ce2a7ae1ed89c65ab958b48d489350c233c7'};
 function mockRunner(parts:TriangleMesh[],calls:string[][]):CoacdRunner{return async request=>{
@@ -57,28 +58,36 @@ describe('CPU collision contracts without native execution',()=>{
   });
   it('writes separate validated convex GLB/OBJ parts with hashed manifest and receipt',async()=>{
     const root=await scratch(),modelPath=path.join(root,'u.glb');await fs.writeFile(modelPath,await collisionGlb(concaveU()));
+    const fake=await fakeCoacdEnvironment(root);
     const before=await fs.readFile(modelPath),calls:string[][]=[];
-    const result=await decomposeCollisionMesh({modelPath},path.join(root,'out'),{env:{GAME_DEV_COACD_PYTHON:process.execPath},runner:mockRunner(uParts(),calls)});
+    const result=await decomposeCollisionMesh({modelPath},path.join(root,'out'),{env:fake.env,runner:mockRunner(uParts(),calls)});
     expect(result.partCount).toBe(3);expect(result.validation.passed).toBe(true);expect(result.engineVerified).toBe(false);expect(calls).toHaveLength(2);
     expect(JSON.parse(calls[1]![calls[1]!.indexOf('--options')+1]!)).toMatchObject({seed:0,maxParts:16,memoryMB:2048,cpuSeconds:120});
     for(const part of result.parts)for(const file of part.files){const bytes=await fs.readFile(file.path);expect(createHash('sha256').update(bytes).digest('hex')).toBe(file.sha256);if(file.format==='glb')validateConvexHull(await extractCollisionTriangles(bytes),64);}
-    const manifest=JSON.parse(await fs.readFile(result.manifestPath,'utf8'));expect(manifest.schema).toBe('game_dev.collision_decomposition.v1');expect(manifest.validation.exactBound).toBe(false);
-    expect(JSON.parse(await fs.readFile(result.receiptPath,'utf8')).cpuOnly).toBe(true);expect(await fs.readFile(modelPath)).toEqual(before);
+    const manifest=JSON.parse(await fs.readFile(result.manifestPath,'utf8'));expect(manifest.schema).toBe('game_dev.collision_decomposition.v1');expect(manifest.validation.exactBound).toBe(false);expect(manifest.tool.selectedVenvSHA256).toMatch(/^[0-9a-f]{64}$/);
+    const receipt=JSON.parse(await fs.readFile(result.receiptPath,'utf8'));expect(receipt.cpuOnly).toBe(true);expect(receipt.tool.selectedVenvSHA256).toBe(manifest.tool.selectedVenvSHA256);expect(await fs.readFile(modelPath)).toEqual(before);
   });
   it('rejects a hole-filling result and leaves no accepted or temporary collision artifacts',async()=>{
-    const root=await scratch(),modelPath=path.join(root,'u.glb'),out=path.join(root,'out');await fs.writeFile(modelPath,await collisionGlb(concaveU()));
-    await expect(decomposeCollisionMesh({modelPath},out,{env:{GAME_DEV_COACD_PYTHON:process.execPath},runner:mockRunner([boxMesh([-1.5,-1.5,-0.5],[1.5,1.5,0.5])],[])})).rejects.toThrow(/approximation-error/);
+    const root=await scratch(),modelPath=path.join(root,'u.glb'),out=path.join(root,'out');await fs.writeFile(modelPath,await collisionGlb(concaveU()));const fake=await fakeCoacdEnvironment(root);
+    await expect(decomposeCollisionMesh({modelPath},out,{env:fake.env,runner:mockRunner([boxMesh([-1.5,-1.5,-0.5],[1.5,1.5,0.5])],[])})).rejects.toThrow(/approximation-error/);
     expect(await fs.readdir(out)).toEqual([]);
   });
   it('enforces requested part budgets and refuses a successful process with no result',async()=>{
-    const root=await scratch(),modelPath=path.join(root,'u.glb'),out=path.join(root,'out');await fs.writeFile(modelPath,await collisionGlb(concaveU()));
-    await expect(decomposeCollisionMesh({modelPath,maxParts:2},out,{env:{GAME_DEV_COACD_PYTHON:process.execPath},runner:mockRunner(uParts(),[])})).rejects.toThrow(/part count/);
-    await expect(decomposeCollisionMesh({modelPath},out,{env:{GAME_DEV_COACD_PYTHON:process.execPath},runner:async request=>({stdout:request.args.includes('--diagnose')?JSON.stringify(environment):'',stderr:''})})).rejects.toMatchObject({code:'ENOENT'});
+    const root=await scratch(),modelPath=path.join(root,'u.glb'),out=path.join(root,'out');await fs.writeFile(modelPath,await collisionGlb(concaveU()));const fake=await fakeCoacdEnvironment(root);
+    await expect(decomposeCollisionMesh({modelPath,maxParts:2},out,{env:fake.env,runner:mockRunner(uParts(),[])})).rejects.toThrow(/part count/);
+    await expect(decomposeCollisionMesh({modelPath},out,{env:fake.env,runner:async request=>({stdout:request.args.includes('--diagnose')?JSON.stringify(environment):'',stderr:''})})).rejects.toMatchObject({code:'ENOENT'});
     expect(await fs.readdir(out)).toEqual([]);
   });
   it('refuses version drift before requesting native decomposition',async()=>{
-    const root=await scratch(),modelPath=path.join(root,'u.glb');await fs.writeFile(modelPath,await collisionGlb(concaveU()));let count=0;
-    await expect(decomposeCollisionMesh({modelPath},path.join(root,'out'),{env:{GAME_DEV_COACD_PYTHON:process.execPath},runner:async()=>{count++;return {stdout:JSON.stringify({...environment,coacd:'9.0.0'}),stderr:''};}})).rejects.toThrow(/unavailable/);expect(count).toBe(1);
+    const root=await scratch(),modelPath=path.join(root,'u.glb');await fs.writeFile(modelPath,await collisionGlb(concaveU()));const fake=await fakeCoacdEnvironment(root);let count=0;
+    await expect(decomposeCollisionMesh({modelPath},path.join(root,'out'),{env:fake.env,runner:async()=>{count++;return {stdout:JSON.stringify({...environment,coacd:'9.0.0'}),stderr:''};}})).rejects.toThrow(/unavailable/);expect(count).toBe(1);
+  });
+  it('rejects worker output if selected venv bytes change before result admission',async()=>{
+    const root=await scratch(),modelPath=path.join(root,'u.glb'),out=path.join(root,'out');await fs.writeFile(modelPath,await collisionGlb(concaveU()));const fake=await fakeCoacdEnvironment(root);const calls:string[][]=[];
+    const base=mockRunner(uParts(),calls);
+    const mutatingRunner:CoacdRunner=async request=>{const result=await base(request);if(!request.args.includes('--diagnose'))await fs.writeFile(path.join(fake.packageTree,'coacd','_coacd.abi3.so'),'mutated native wheel bytes');return result;};
+    await expect(decomposeCollisionMesh({modelPath},out,{env:fake.env,runner:mutatingRunner})).rejects.toThrow(/package bytes changed/);
+    expect(calls).toHaveLength(2);expect(await fs.readdir(out)).toEqual([]);
   });
   it.skipIf(process.platform==='win32')('terminates an unresponsive child at its wall-time budget',async()=>{
     const root=await scratch(),script=path.join(root,'child.cjs');await fs.writeFile(script,"setInterval(()=>{},1000)");

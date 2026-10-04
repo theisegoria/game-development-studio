@@ -13,7 +13,7 @@ evidence discipline. Local execution uses the separately installed
 `game-dev` CLI; the plugin does not embed a daemon, hosted backend, provider
 credential, shared provider account, or standing permission.
 
-This public repository carries skills bundle **1.3.1**. Provider execution
+This public repository carries skills bundle **1.4.0**. Provider execution
 requires the separately installed `game-dev` CLI **1.0.2** or newer; the plugin
 archive itself contains no executable provider client or credential.
 
@@ -47,7 +47,7 @@ human-review claim.
 Add this tagged marketplace:
 
 ```sh
-codex plugin marketplace add theisegoria/game-development-studio-skills --ref v1.3.1
+codex plugin marketplace add theisegoria/game-development-studio-skills --ref v1.4.0
 codex plugin marketplace list
 ```
 
@@ -71,13 +71,15 @@ game project.
 
 The CLI source is public at
 [game-development-studio](https://github.com/theisegoria/game-development-studio).
-The [CLI 1.1.0 GitHub release](https://github.com/theisegoria/game-development-studio/releases/tag/v1.1.0)
+The [CLI 1.4.0 GitHub release](https://github.com/theisegoria/game-development-studio/releases/tag/v1.4.0)
 provides a compiled Node.js package (`.tgz`) and SHA-256 manifest. It requires
 Node.js 22.5+ and is not a standalone Windows installer. The public npm registry
 package remains unpublished. This plugin's ZIP installs skills only.
 
-Follow the [Windows installation and PATH guide](https://github.com/theisegoria/game-development-studio/blob/v1.1.0/docs/windows-install.md)
-for release-tarball verification, PowerShell commands, and source-build fallback.
+Follow the [canonical installation guide](https://github.com/theisegoria/game-development-studio/blob/main/docs/install.md)
+for release-tarball verification, PowerShell and POSIX commands, PATH checks,
+manual updates, and rollback. Then follow the [free first capture](https://github.com/theisegoria/game-development-studio/blob/main/docs/quickstart.md)
+using the bundled generic sample adapter, without a C compiler or provider account.
 The manifest verifies the downloaded package bytes; no Windows code-signing
 certificate or EXE/MSI is supplied. Installing the plugin alone cannot add the
 CLI to PATH.
@@ -105,7 +107,7 @@ until the user authorizes that exact source, destination, and invocation.
 ## Public plugin archive
 
 GitHub Releases includes
-`game-development-studio-plugin-1.3.1.zip`. It contains the screenshot-free
+`game-development-studio-plugin-1.4.0.zip`. It contains the screenshot-free
 plugin root (`.codex-plugin/`, `skills/`, the suite icon, and policy files) and
 is the same skills-only shape prepared for OpenAI review. The repository-root
 marketing illustrations above are intentionally excluded from that upload.
@@ -114,7 +116,7 @@ Build and verify it locally:
 
 ```sh
 python3 scripts/verify.py
-python3 scripts/build_release.py /tmp/game-development-studio-plugin-1.3.1.zip
+python3 scripts/build_release.py /tmp/game-development-studio-plugin-1.4.0.zip
 ```
 
 `build_release.py` requires an explicit output path outside the exported

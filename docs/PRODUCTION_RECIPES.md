@@ -1,8 +1,83 @@
 # Production recipes, asset families, and standalone platform variants
 
+Release 1.4.0 includes the guided forms and renderer 2.2 review settings described here. Follow the release-driven [quickstart](quickstart.md) for installation and use the installed schemas as the request authority. Older versions do not expose all of these capabilities.
+
 These tools are available through `game-dev tool call NAME --request FILE --json` and the same MCP tool names. They persist under `<outputDir>/.production`. No engine integration is performed. Recipes execute **one step per invocation**, with fresh transport approval for each mutation and paid call. A saved fingerprint or family review is never spend authority.
 
-## A local validate/package workflow
+## Guided workflows
+
+Use a typed workflow first; keep manual recipe JSON for advanced graphs. The CLI and MCP share three templates:
+
+| Template ID | Form inputs | Result |
+| --- | --- | --- |
+| `inspect-validate-package` | Recipe ID, name, actual license, local self-contained GLB path, optional validation policy | Inspect → validate → standalone package |
+| `review-select-package` | Recipe ID, name, actual license, one GLB path or 1–6 named GLB candidates, optional policy and review settings | Saved review → explicit human selection → validate selected snapshot → package approved bytes |
+| `platform-variants` | Recipe ID, name, actual license, model path, variants with LOD and material/texture budgets | Existing platform preparation graph with separate variant/LOD packages |
+
+The first workflow is free, requires no provider credential or compiler, and launches neither Blender nor a GPU. Platform normalization requires Blender; compression and convex collision require their separately configured CPU tools. Planning verifies paths/tool identity when a step becomes ready and explains missing dependencies without installing or launching tools. Template compilation lists required tools but does not claim to have checked their availability.
+
+The inspect/package and review/package forms require self-contained GLB input because canonical packages require binary GLB. Advanced inspection accepts glTF, and the platform workflow can convert it through separately approved Blender normalization. The guided first route never starts a conversion implicitly.
+
+```sh
+game-dev workflow templates --json
+game-dev workflow create inspect-validate-package "/absolute/path/prop.glb" --name "Reviewed prop" --license CC0-1.0 --recipe-id prop_v1 --json
+```
+
+Without `--confirm`, creation previews the typed recipe. Inspect the source, license and policy, then repeat with `--confirm` to save it. Saving executes no operations. PowerShell accepts the same command shape and quoted paths; use the actual asset license rather than assuming the example grants rights.
+
+```sh
+game-dev workflow create inspect-validate-package "/absolute/path/prop.glb" --name "Reviewed prop" --license CC0-1.0 --recipe-id prop_v1 --confirm --json
+game-dev workflow plan prop_v1 --json
+game-dev workflow step prop_v1 inspect --fingerprint COPY_CURRENT_FINGERPRINT --confirm --json
+```
+
+Plan again before `validate`, and again before `package`; use each step's current fingerprint. The validation source comes from the actual inspection result and the package source from the actual validation result. A failed validation blocks packaging. Each invocation executes one operation through the existing transport approval boundary.
+
+For MCP or portable request-file usage, call `list_production_templates`, `plan_production_template`, or `save_production_template`. Plan/save both accept `{templateId,request}`. For example:
+
+```json
+{"templateId":"inspect-validate-package","request":{"recipeId":"prop_v1","name":"Reviewed prop","license":"CC0-1.0","modelPath":"/absolute/path/prop.glb","policy":{"maxTriangles":5000}}}
+```
+
+The plan response contains `recipe`, `template`, `requiredTools` and `executes:false`. Save returns those fields plus `record` and the current `plan`. Repeated identical saves preserve the revision and checkpoints. Extra or mismatched form fields fail validation; templates cannot introduce provider calls.
+
+### Review an actual candidate
+
+Create a `review-select-package` workflow with `modelPath` or `candidates:[{name,modelPath},...]`. Execute only `review` first. The new plan exposes the saved dashboard path, candidate IDs, snapshot paths and current `reviewedFingerprint` under `nextStep`. The `select` step stays blocked until the reviewer inspects that saved evidence and explicitly chooses an actual candidate.
+
+Optional `reviewSettings` use the same schema as `create_asset_review`: `mode` (`geometry` or `appearance`), `resolution` (128 or 256), `exposure`, optional `pose:{clipIndex,timeSeconds}`, shared `framing:{center,extent}`, explicit appearance-only `decodeBasisTextures` (default false), and a `reviewLod` label. Settings, renderer version and controlled-lighting identity bind the current checkpoint. Opted-in Basis review also fingerprints the current verified executable without launching it during planning; missing or changed configuration blocks the current step or invalidates its approval. Changed settings require fresh evidence and selection; appearance output remains a bounded CPU review with documented limitations.
+
+Alternatively, `timeline:{clipIndex,startSeconds,endSeconds,frameCount}` prepares a bounded sequence of 2–16 appearance samples at 128 pixels. It cannot be combined with `pose` or Basis decoding. Native forms validate the range against all inspected sources; offline playback/scrubbing selects the sealed samples without rerunning a tool. See [asset review](ASSET_REVIEW.md) for cumulative resource limits and renderer approximations.
+
+Prepare `selection.json` from those returned values:
+
+```json
+{"recipeId":"prop_v1","stepId":"select","reviewedFingerprint":"COPY_CURRENT_REVIEW_FINGERPRINT","candidateId":"COPY_ACTUAL_CANDIDATE_UUID","reviewer":"Reviewer name","reason":"Specific reason for approving this saved candidate"}
+```
+
+```sh
+game-dev tool call set_production_review --request selection.json --confirm --json
+```
+
+Binding saves the explicit choice and attribution; it does not execute the decision or package. Plan again, review `select` arguments and execute that step with its fresh fingerprint. Then plan/execute `validate` and `package` individually. Validation reads the selected saved snapshot rather than a predicted filename. Packaging uses the actual approved decision ID and verifies the approved bytes. Source or preview changes require a new current review and selection. Reviewer attribution does not prove human identity, and static review does not establish target-engine correctness or artistic acceptance.
+
+Use `nextStep.reviewedFingerprint` for candidate binding. It hashes the completed review result and artifacts as well as its input checkpoint. It differs from the execution `fingerprint`, so regenerating a review with the same source/settings still requires a fresh selection of the newly returned evidence.
+
+### Understand a saved graph
+
+`plan_production_recipe` returns dependency `edges`, each step's `dependsOn`, `reasons`, current arguments/fingerprint and `evidence` with actual result and saved artifacts. `nextStep` is a reviewable recommendation, never permission to run automatically.
+
+| Guided `state` | Meaning |
+| --- | --- |
+| `completed` | Current input fingerprints and saved output bytes verify |
+| `ready` | Inputs and dependencies are current; review and authorize one operation |
+| `blocked` | An input, tool, dependency or explicit human selection is missing |
+| `invalidated` | A previously completed checkpoint no longer matches its inputs, settings, dependencies or outputs |
+| `uncertain` | Execution started but completion is unproven; inspect and reconcile before retry |
+
+Legacy v1 `status` remains `complete`, `ready`, `blocked`, `invalid` or `uncertain`. An invalidated step is executable only when its legacy status is `ready` and approval matches its fresh fingerprint. Historical checkpoints retained by older v1 records remain readable; interrupted removed steps appear under `historicalCheckpoints` and are never silently discarded. Completed historical entries are pruned on a later graph edit. Advanced changes preserve recovery and invalidate changed fingerprints rather than reusing stale approval.
+
+## Advanced local validate/package graph
 
 Create `recipe.json` with an absolute path to a GLB you own:
 
@@ -30,7 +105,7 @@ Plan again, inspect `package`, and execute with its current fingerprint and `--c
 
 ## Generate, normalize, validate, package
 
-The allowlist includes `generate_asset_reference`, `select_reference`, `create_3d_asset`, `get_asset_job`, `download_asset`, `normalize_mesh`, `validate_game_asset`, `validate_platform_asset`, `build_asset_package`, `prepare_texture_variant`, `compress_texture_variant`, `prepare_collision_box`, and `decompose_collision_mesh` (plus `texture_existing_asset` for provider retexturing). There is no arbitrary command execution.
+The allowlist includes `generate_asset_reference`, `select_reference`, `create_3d_asset`, `get_asset_job`, `download_asset`, `inspect_asset`, `create_asset_review`, `decide_asset_review`, `package_reviewed_asset`, `normalize_mesh`, `validate_game_asset`, `validate_platform_asset`, `build_asset_package`, `prepare_texture_variant`, `compress_texture_variant`, `prepare_collision_box`, and `decompose_collision_mesh` (plus `texture_existing_asset` for provider retexturing). There is no arbitrary command execution.
 
 The complete [text-to-package request](examples/production-recipes/text-to-package.json) can be saved with `save_production_recipe --request docs/examples/production-recipes/text-to-package.json --confirm`. Saving is local; only an explicitly approved generate step spends credits. Its unknown license intentionally makes no rights claim.
 

@@ -39,6 +39,19 @@ extension CommandCatalog {
             authorities: [.confirm]
         ),
         // MARK: - Storage and job recovery
+        tool("list_optional_tools", title: "Inspect optional tool selections",
+             summary: "Verify saved executable file identities without launching tools.", route: .setup),
+        tool("configure_optional_tool", title: "Save an optional tool selection",
+             summary: "Validate bounded executable file identity and save an explicit per-user selection.",
+             lane: .workspaceWrite, route: .setup, durable: true, authorities: [.confirm]),
+        tool("clear_optional_tool", title: "Clear a saved optional tool selection",
+             summary: "Remove one saved selection, preserving the executable and assets.",
+             lane: .workspaceWrite, route: .setup, durable: true, authorities: [.confirm]),
+        tool("preview_support_report", title: "Preview a redacted support report",
+             summary: "Inspect allowlisted workflow diagnostics locally before sharing.", route: .setup),
+        tool("write_support_report", title: "Write a new redacted support report",
+             summary: "Write a new local report after review, refusing overwrites and sending nothing.",
+             lane: .workspaceWrite, route: .setup, durable: true, authorities: [.confirm]),
         tool(
             "diagnose_durable_jobs",
             title: "Diagnose durable jobs",
@@ -139,6 +152,8 @@ extension CommandCatalog {
             route: .setup
         ),
         // MARK: - Asset inspection and review
+        tool("inspect_review_animation", title: "Inspect animation review clips",
+             summary: "Read bounded clip durations and source identity without rendering or writing.", route: .library),
         tool(
             "create_asset_review",
             title: "Create an asset review",
@@ -204,6 +219,24 @@ extension CommandCatalog {
             authorities: [.confirm]
         ),
         // MARK: - Production recipes and families
+        tool(
+            "list_production_templates", title: "List guided workflow templates",
+            summary: "Inspect the shipped free workflow templates without executing steps.", route: .createBrief
+        ),
+        tool(
+            "plan_production_template", title: "Preview a guided workflow",
+            summary: "Expand task form values into the canonical recipe and inspect required capabilities.", route: .createBrief
+        ),
+        tool(
+            "save_production_template", title: "Save a guided workflow",
+            summary: "Persist the reviewed template recipe without executing its steps.",
+            lane: .workspaceWrite, route: .createBrief, durable: true, authorities: [.confirm]
+        ),
+        tool(
+            "set_production_review", title: "Record a reviewed candidate selection",
+            summary: "Bind an actual candidate and human review to the current review fingerprint. Execution needs a separate approval.",
+            lane: .workspaceWrite, route: .createBrief, durable: true, authorities: [.confirm]
+        ),
         tool(
             "save_production_recipe",
             title: "Save a production recipe",

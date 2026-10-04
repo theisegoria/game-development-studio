@@ -6,6 +6,9 @@ export const ROADMAP_MUTATION_TOOLS: ReadonlySet<string> = new Set([
   'name_visual_baseline', 'compare_visual_matrix', 'decide_visual_regression', 'visual_regression_dashboard',
   'execute_workspace_retention', 'restore_workspace_retention', 'export_workspace_files', 'purge_workspace_retention',
   'save_production_recipe', 'run_production_step', 'recover_production_lock', 'reconcile_production_step',
+  'save_production_template', 'set_production_review',
+  'configure_optional_tool', 'clear_optional_tool',
+  'write_support_report',
   'create_asset_family', 'approve_family_sample', 'expand_asset_family',
   'save_platform_preparation', 'prepare_collision_box', 'decompose_collision_mesh', 'prepare_texture_variant', 'compress_texture_variant',
 ]);
@@ -15,4 +18,8 @@ export const ROADMAP_FREE_TOOLS: ReadonlySet<string> = new Set([
   'get_provider_history', 'diagnose_durable_jobs', 'inspect_workspace_storage',
   'plan_workspace_retention', 'plan_workspace_purge', 'list_workspace_retention', 'plan_release_change',
   'diagnose_texture_compression', 'diagnose_collision_decomposition', 'plan_production_recipe', 'plan_family_approval', 'plan_platform_preparation', 'validate_platform_asset',
+  'list_production_templates', 'plan_production_template',
+  'list_optional_tools',
+  'preview_support_report',
+  'inspect_review_animation',
 ]);

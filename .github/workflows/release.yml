@@ -94,13 +94,14 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  verify-windows-artifact:
+  verify-release-artifact:
     needs: build-artifacts
-    runs-on: windows-latest
-    timeout-minutes: 15
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         node: ['22', '24']
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -111,28 +112,90 @@ jobs:
         with:
           name: game-development-studio-${{ github.sha }}
           path: release-artifacts
-      - name: Verify checksums and install the actual release tarball
+      - name: Verify the release artifact with public baseline, upgrade, rollback and reinstall
+        id: unix-release-acceptance
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          GDS_RELEASE_API_TOKEN: ${{ github.token }}
+        run: |
+          cat > "$RUNNER_TEMP/verify-release-rollback.mjs" <<'NODE'
+          import assert from 'node:assert/strict';
+          import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+          import path from 'node:path';
+          import { pathToFileURL } from 'node:url';
+
+          const [workspace, runnerTemp] = process.argv.slice(2);
+          const sourcePackage = JSON.parse(await readFile(path.join(workspace, 'package.json'), 'utf8'));
+          const targetVersion = sourcePackage.version;
+          assert.match(targetVersion, /^\d+\.\d+\.\d+$/, 'Invalid source package version');
+          const { fetchPublishedRelease } = await import(pathToFileURL(path.join(workspace, 'scripts/verify-published-first-run.mjs')));
+          const { verifyFirstRun } = await import(pathToFileURL(path.join(workspace, 'scripts/verify-first-run.mjs')));
+          assert(process.env.GDS_RELEASE_API_TOKEN, 'Read-only GitHub token is unavailable for the public baseline');
+          const previous = await fetchPublishedRelease('1.3.1', globalThis.fetch, process.env.GDS_RELEASE_API_TOKEN);
+          assert.equal(previous.version, '1.3.1', 'Public rollback baseline version mismatch');
+          const root = await mkdtemp(path.join(runnerTemp, 'gds release baseline '));
+          try {
+            const previousArtifact = path.join(root, previous.name);
+            const previousChecksums = path.join(root, 'previous SHA256SUMS.txt');
+            const previousMetadata = path.join(root, 'previous release.json');
+            await Promise.all([
+              writeFile(previousArtifact, previous.artifactBytes, { flag: 'wx' }),
+              writeFile(previousChecksums, previous.manifestBytes, { flag: 'wx' }),
+              writeFile(previousMetadata, JSON.stringify(previous.release), { flag: 'wx' }),
+            ]);
+            const artifact = path.join(workspace, 'release-artifacts', `theisegoria-game-development-studio-${targetVersion}.tgz`);
+            const checksums = path.join(workspace, 'release-artifacts', 'SHA256SUMS.txt');
+            const reportPath = path.join(runnerTemp, 'game-dev-release-rollback.json');
+            const execution = await verifyFirstRun({
+              artifact,
+              checksums,
+              'previous-artifact': previousArtifact,
+              'previous-checksums': previousChecksums,
+              'previous-release-metadata': previousMetadata,
+              report: reportPath,
+            });
+            assert.equal(execution.version, targetVersion, 'Built tarball version differs from package.json');
+            assert.equal(execution.rollback?.from, '1.3.1', 'Public rollback baseline mismatch');
+            assert.equal(execution.rollback?.to, targetVersion, 'Rollback target differs from package.json');
+            assert.equal(execution.rollback?.verified, true, 'Upgrade, rollback and reinstall stages did not complete');
+            console.log(JSON.stringify({
+              schema: 'game_dev.release_artifact_rollback_verification.v1',
+              platform: process.platform,
+              arch: process.arch,
+              node: process.version,
+              target: { version: execution.version, sha256: execution.sha256, integrity: execution.integrity },
+              previous: { version: previous.version, sha256: previous.verification.sha256, integrity: previous.verification.integrity },
+              execution,
+            }, null, 2));
+          } finally {
+            await rm(root, { recursive: true, force: true });
+          }
+          NODE
+          npm exec -- node "$RUNNER_TEMP/verify-release-rollback.mjs" "$GITHUB_WORKSPACE" "$RUNNER_TEMP"
+      - name: Install and verify the exact built release tarball
+        id: windows-release-acceptance
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
-          foreach ($line in Get-Content release-artifacts/SHA256SUMS.txt) {
-            if ($line -notmatch '^([a-f0-9]{64})  ([A-Za-z0-9._-]+)$') { throw 'Invalid checksum record' }
-            $digest = $Matches[1]
-            $file = Join-Path release-artifacts $Matches[2]
-            if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ne $digest) { throw "Checksum mismatch: $file" }
-          }
-          $tarball = (Resolve-Path "release-artifacts/theisegoria-game-development-studio-$version.tgz").Path
-          $prefix = Join-Path $env:RUNNER_TEMP 'Release CLI with spaces'
-          npm.cmd install --global --prefix "$prefix" --ignore-scripts "$tarball"
-          if ($LASTEXITCODE -ne 0) { throw 'Release tarball install failed' }
-          $env:Path = "$prefix;$env:Path"
-          Set-Location $env:RUNNER_TEMP
-          $actualVersion = game-dev.cmd --version
-          if ($LASTEXITCODE -ne 0 -or $actualVersion.Trim() -ne $version) { throw 'Installed version mismatch' }
-          $workspace = Join-Path $env:RUNNER_TEMP 'Release smoke workspace'
-          foreach ($command in @('capabilities', 'doctor')) {
-            $output = game-dev.cmd $command --output-dir "$workspace" --json
-            if ($LASTEXITCODE -ne 0) { throw "$command failed" }
-            $result = $output | ConvertFrom-Json
-            if ($result.schema -ne 'game_dev.result.v1' -or $result.operation -ne $command -or $result.ok -ne $true -or $result.data.version -ne $version) { throw "Unexpected $command response" }
-          }
+          $version = node -p "require('./package.json').version"
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read the source package version' }
+          $artifact = "release-artifacts/theisegoria-game-development-studio-$version.tgz"
+          npm.cmd exec -- node scripts/verify-first-run.mjs --artifact $artifact --checksums release-artifacts/SHA256SUMS.txt --report "$env:RUNNER_TEMP\game-dev-release-first-run.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Installed release first-run verification failed' }
+      - name: Upload Windows release first-run report
+        if: ${{ always() && steps.windows-release-acceptance.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-first-run-${{ matrix.os }}-node-${{ matrix.node }}-${{ github.sha }}
+          path: ${{ runner.temp }}/game-dev-release-first-run.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Unix release and rollback report
+        if: ${{ always() && steps.unix-release-acceptance.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-rollback-${{ matrix.os }}-node-${{ matrix.node }}-${{ github.sha }}
+          path: ${{ runner.temp }}/game-dev-release-rollback.json
+          if-no-files-found: error
+          retention-days: 14

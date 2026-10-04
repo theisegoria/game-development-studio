@@ -57,26 +57,16 @@ verification must pass in remote CI before a native ZIP is published.
 
 ## Optional CPU dependencies in Anvil
 
-Prepare the explicitly chosen tools using [texture compression](TEXTURE_COMPRESSION.md)
-and [CoACD setup](coacd.md). Anvil forwards only the three dependency settings below
-to its CLI child; the runtime still validates their configuration. They grant no
-spend or mutation approval. Do not place provider credentials in this command.
+Release 1.4.0 can save explicitly selected Blender, Basis and CoACD paths through
+Anvil's tool settings or `game-dev tool configure`. These validated per-user
+selections work when the app is opened from Finder; see [tool setup](tool-setup.md)
+for paths, hash binding, environment precedence and diagnostics. Saving a path
+starts no tool and grants no spend, process or mutation approval.
 
-Quit an existing Anvil instance, then start the bundle executable directly from a
-terminal with your own absolute paths and the SHA-256 recorded by the Basis build
-manifest (replace the example values):
-
-```sh
-GAME_DEV_BASISU_PATH='/absolute/chosen-tools/basisu' \
-GAME_DEV_BASISU_SHA256='REPLACE_WITH_MANIFEST_SHA256' \
-GAME_DEV_COACD_PYTHON='/absolute/chosen-tools/coacd/bin/python' \
-  '/absolute/chosen-apps/Anvil.app/Contents/MacOS/Anvil'
-```
-
-Launching from Finder does not inherit this terminal's settings. In Anvil's
-Production tools, run **Diagnose texture compression** and **Diagnose collision
-decomposition** first. Basis diagnostics inspect configuration and hash the encoder
+Prepare the tools using [texture compression](TEXTURE_COMPRESSION.md) and
+[CoACD setup](coacd.md). Run the corresponding diagnostics before approving an
+operation. Basis diagnostics inspect configuration and hash the executable
 without starting it. Configured CoACD diagnostics start a bounded metadata-only
 Python child; they do not run decomposition, Blender or GPU work. Compression and
-decomposition still require a fresh mutation confirmation; missing dependencies
+decomposition still require fresh mutation confirmation; missing dependencies
 remain explicitly unavailable.

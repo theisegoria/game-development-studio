@@ -29,6 +29,12 @@ On Windows, use the environment's `Scripts\python.exe` and set `$env:GAME_DEV_CO
 
 The checked-in requirements pin every accepted official wheel by SHA-256; `WHEELS.json` records URLs, sizes, and digests. `--only-binary=:all:` prevents heavy source builds. CoACD wheels are roughly 1.5–3.4 MB; NumPy is additional. These optional binaries are not bundled in the Studio release.
 
+### Release 1.4.0: recipe approval identity
+
+Release 1.4.0 binds recipe approval to the selected interpreter, bridge, `pyvenv.cfg`, and contained `site-packages` bytes, including native libraries, metadata and startup files. Planning measures those bytes without starting Python. Execution checks them around diagnosis and worker execution; ordinary package/configuration drift fails closed and requires a new plan and approval. The manifest and receipt record `selectedVenvSHA256`.
+
+This bounded identity supports standard POSIX `bin/python` layouts for CPython 3.9–3.12 and Windows `Scripts/python.exe`. It requires `include-system-site-packages = false`; rejects escaping links, external imports and arbitrary executable `.pth` hooks; and permits the exact contained setuptools distutils hook. Limits are 100,000 entries, 32 directory levels, 512 MiB total package bytes, 64 MiB per file and 64 KiB configuration/startup metadata. The interpreter bytes are separately bound, but this package-tree identity does not cover the base interpreter's standard library or isolate hostile same-user writers. This identity binding requires release 1.4.0 or newer.
+
 ## Diagnose and run
 
 ```sh

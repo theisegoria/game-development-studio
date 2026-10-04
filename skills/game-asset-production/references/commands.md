@@ -12,6 +12,8 @@ game-dev credentials status --json
 
 `capabilities.data.localOperations` is the installed command/schema authority. Do not infer request fields from an older example.
 
+Guided forms and renderer 2.2 settings (including optional Basis appearance decoding and sampled playback) require CLI 1.4.0 or newer; inspect the installed schemas before using them.
+
 ## Provider jobs
 
 Provider execution requires `game-dev` 1.0.2 or newer. The account holder must
@@ -128,3 +130,71 @@ evidence rather than silently retried.
 See the source [production guide](https://github.com/theisegoria/game-development-studio/blob/main/docs/PRODUCTION_RECIPES.md),
 [Basis setup](https://github.com/theisegoria/game-development-studio/blob/main/docs/TEXTURE_COMPRESSION.md),
 and [CoACD setup](https://github.com/theisegoria/game-development-studio/blob/main/docs/coacd.md).
+
+## Guided workflows (CLI 1.4.0+, capability discovery required)
+
+Use these additions only when installed CLI 1.4.0+ capabilities expose the named
+tools and schemas. The shared templates are `inspect-validate-package`,
+`review-select-package` and `platform-variants`.
+
+```text
+game-dev workflow templates --json
+game-dev workflow create inspect-validate-package model.glb --name NAME --license SPDX --recipe-id RECIPE --json
+game-dev workflow create inspect-validate-package model.glb --name NAME --license SPDX --recipe-id RECIPE --confirm --json
+game-dev workflow plan RECIPE --json
+game-dev workflow step RECIPE STEP --fingerprint CURRENT_STEP_FINGERPRINT --confirm --json
+game-dev workflow review RECIPE CANDIDATE --fingerprint CURRENT_REVIEWED_FINGERPRINT --reviewer NAME --reason REASON --confirm --json
+game-dev tool list --json
+game-dev tool configure basisu --executable ABSOLUTE_PATH --confirm --json
+game-dev doctor --workflow asset-package --json
+game-dev support report --json
+game-dev support report --output NEW_LOCAL_REPORT.json --confirm --json
+```
+
+The first `workflow create` is a plan. Inspect/package and review/package
+templates accept self-contained GLB; platform requests retain explicit variant
+settings through the native form or advanced `--request`. Choose the returned
+candidate ID after reviewing actual outputs. Candidate selection uses the
+completed review's `reviewedFingerprint`; execution uses the next step's
+`fingerprint`. Changes to source, settings or rendered evidence require a fresh
+review. Repeated invocations cannot reuse stale approval or silently resubmit
+uncertain work. Inspect existing job evidence and the recipe's recovery reason.
+
+`list_optional_tools`, `configure_optional_tool` and `clear_optional_tool` share
+the CLI/native persistent configuration. Configuration hashes a selected regular
+executable without launching it; subsequent operations fail closed after drift.
+Selecting a path is not installing a tool or approving a later process launch.
+`preview_support_report` and `write_support_report` emit an allowlisted local
+report. Review it before sharing; neither command transmits it.
+
+`create_asset_review` optionally accepts settings for controlled CPU appearance,
+resolution/exposure, explicit review LOD and clip/time selection. It reports its
+size/work envelope and unsupported features rather than silently truncating.
+Normals, roughness, metallic, alpha, UV overlap/density, skinning and morph
+inspection are bounded technical evidence. This renderer is not a target engine
+and its preview is not artistic approval. Use existing sealed snapshot comparison
+and regression tools for before/after outputs under the same review settings.
+
+Direct KTX2 appearance requires `mode:"appearance",decodeBasisTextures:true`
+and a configured, hash-verified Basis 2.50 CPU executable. Planning stays
+process-free; authorized execution decodes into bounded temporary DDS pixels
+and records actual process counts plus executable/source/pixel hashes. Originals
+remain unchanged and reviewed packaging uses the compressed snapshot bytes.
+Use the same opt-in and explicit shared frame for PNG/compressed comparisons.
+Changed decoder configuration or bytes requires fresh evidence and approval.
+
+`inspect_review_animation` reads clip metadata without rendering, launching a
+process or creating records. Metadata binds exact source bytes and renderer.
+LINEAR, STEP and CUBICSPLINE samples use the asset's default-pose frame; clipped
+views are explicit. Use an explicit shared `framing.center/extent` when comparing
+normalized, compressed-review or LOD sources whose bounds differ. Matching
+settings alone do not establish a matching camera. New source/settings/time
+requires fresh review; native clip-name mapping acknowledgment is also bound
+to source hashes and renderer identity. A timeline slider selects a reproducible
+sample for explicit execution. Optional `timeline` prepares 2–16 sealed still
+samples at 128 pixels for offline appearance playback/scrubbing; it requires an
+increasing supported clip range, no separate `pose`, and PNG/JPEG sources without
+Basis decoding. Offline playback shows existing samples and starts no process.
+Sequence budgets can require fewer frames or an explicit smaller review LOD.
+The existing regression dashboard offers verified side-by-side/opacity overlays;
+view controls never change comparison metrics, verdicts or baselines.

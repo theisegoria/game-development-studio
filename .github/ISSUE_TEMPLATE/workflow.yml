@@ -1,0 +1,49 @@
+name: Local workflow failure
+description: Report a guided workflow, capture, review or packaging failure with its evidence limit.
+title: "[Workflow] "
+body:
+  - type: input
+    id: versions
+    attributes:
+      label: CLI version, OS/architecture and Node version
+    validations:
+      required: true
+  - type: dropdown
+    id: workflow
+    attributes:
+      label: Workflow
+      options:
+        - Generic sample capture
+        - Inspect / validate / package
+        - Review / select / package
+        - Platform variant
+        - Blender normalization
+        - Texture compression
+        - Collision decomposition
+        - Other local workflow
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction, expected result and actual result
+      description: Use a small synthetic fixture where possible. Include failed step/state and reviewed redacted output. State whether the evidence is real CPU, mock, GPU/Blender or interactive UI.
+    validations:
+      required: true
+  - type: textarea
+    id: recovery
+    attributes:
+      label: Approval, interruption and recovery
+      description: Did the failure follow a repeated click, cancellation, restart or changed input? Do not share project assets or approval fingerprints containing private paths.
+  - type: textarea
+    id: support
+    attributes:
+      label: Optional reviewed support report
+      description: In a build containing the checkpoint, preview support report with your workflow and inspect its allowlist before sharing. No report is sent automatically.
+  - type: checkboxes
+    id: review
+    attributes:
+      label: Review before sharing
+      options:
+        - label: I reviewed this report and removed secrets, private assets and identifying paths.
+          required: true

@@ -73,7 +73,9 @@ export const KNOWN_FLAGS: ReadonlySet<string> = new Set([
   'approve-spend', 'category', 'client', 'confirm', 'description', 'destination', 'detail',
   'dry-run', 'expected-adapter-sha256', 'from', 'help', 'input', 'invalid', 'json', 'jsonl', 'license', 'limit',
   'manifest', 'max-seconds', 'name', 'noise-floor', 'output', 'output-dir', 'package-version',
-  'plan-hash', 'session-root', 'preview', 'project', 'query', 'request', 'spend-limit-cents', 'stat',
+  'executable', 'sha256',
+  'workflow', 'expected-version',
+  'plan-hash', 'recipe-id', 'fingerprint', 'reviewer', 'reason', 'session-root', 'preview', 'project', 'query', 'request', 'spend-limit-cents', 'stat',
   'status', 'target', 'threshold', 'valid', 'version', 'warmup-frames', 'with',
 ]);
 

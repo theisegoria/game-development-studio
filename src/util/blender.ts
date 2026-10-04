@@ -9,47 +9,13 @@
 
 import { parseBlenderReceipt, type CompatibleBlenderReceipt } from '../domain/blender-receipt.js';
 import { spawn } from 'node:child_process';
-import { accessSync, constants, existsSync, mkdirSync, mkdtempSync, rmSync, readdirSync, openSync, fstatSync, readSync, closeSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, readdirSync, openSync, fstatSync, readSync, closeSync, realpathSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AssetPipelineError } from './errors.js';
 import { registerOwnedProcessTerminator, type OwnedProcessSignal } from './process-lifecycle.js';
-
-/** Where Blender actually lives on each platform, in preference order. */
-const CANDIDATE_PATHS: readonly string[] = [
-  // macOS ships an .app bundle whose binary is NOT on PATH by default, which
-  // is why PATH-only discovery reports "not installed" on a machine that has it.
-  '/Applications/Blender.app/Contents/MacOS/Blender',
-  '/usr/local/bin/blender',
-  '/usr/bin/blender',
-  '/snap/bin/blender',
-  'C:\\Program Files\\Blender Foundation\\Blender\\blender.exe',
-];
-
-function isExecutable(candidate: string): boolean {
-  try {
-    accessSync(candidate, constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** Scan PATH for a bare `blender` executable. */
-function fromSearchPath(): string | undefined {
-  const raw = process.env.PATH;
-  if (!raw) return undefined;
-  const exeNames = process.platform === 'win32' ? ['blender.exe'] : ['blender'];
-  for (const dir of raw.split(path.delimiter)) {
-    if (!dir) continue;
-    for (const name of exeNames) {
-      const candidate = path.join(dir, name);
-      if (isExecutable(candidate)) return candidate;
-    }
-  }
-  return undefined;
-}
+import { discoverBlenderExecutable, inspectToolSelection, toolSelectionMessages } from '../installation/tool-config.js';
 
 /**
  * Find Blender, honouring an explicit override first.
@@ -58,11 +24,7 @@ function fromSearchPath(): string | undefined {
  * build) must be able to say which one, and guessing wrong is worse than asking.
  */
 export function findBlender(env: NodeJS.ProcessEnv = process.env): string | undefined {
-  const override = env.BLENDER_PATH?.trim();
-  if (override) return isExecutable(override) ? override : undefined;
-  const onPath = fromSearchPath();
-  if (onPath) return onPath;
-  return CANDIDATE_PATHS.find((candidate) => isExecutable(candidate));
+  return discoverBlenderExecutable(env);
 }
 
 export function requireBlender(env: NodeJS.ProcessEnv = process.env): string {
@@ -74,7 +36,7 @@ export function requireBlender(env: NodeJS.ProcessEnv = process.env): string {
       'Install it from https://www.blender.org/download/, or set BLENDER_PATH to the executable — ' +
       'on macOS that is /Applications/Blender.app/Contents/MacOS/Blender, which is deliberately ' +
       'not on PATH. Every other non-Blender operation in this harness works without Blender.',
-    { details: { checked: ['BLENDER_PATH', 'PATH', ...CANDIDATE_PATHS] } },
+    { details: { checked: ['BLENDER_PATH', 'saved tool selection', 'PATH', 'standard installation paths'] } },
   );
 }
 
@@ -155,6 +117,12 @@ export async function runBlenderScript(
   if (activeBlenderProcesses >= 1) throw new AssetPipelineError('INVALID_STATE',
     'A Blender process is already running in this service; retry after it completes', { retryable: true });
   const executable = settings.blenderPath ?? requireBlender();
+  const selected = inspectToolSelection('blender');
+  let resolvedExecutable: string | undefined;
+  try { resolvedExecutable = realpathSync(executable); } catch { /* actionable spawn error below for unconfigured direct test executable */ }
+  if (selected.source !== 'none' && (!selected.available || selected.identity?.resolvedPath !== resolvedExecutable)) {
+    throw new AssetPipelineError('CONFIG_MISSING', toolSelectionMessages[selected.code === 'verified' ? 'moved' : selected.code]);
+  }
   const isolatedHome = mkdtempSync(path.join(os.tmpdir(), 'game-dev-blender-'));
 
   activeBlenderProcesses++;

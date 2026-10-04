@@ -1,0 +1,53 @@
+name: CLI installation or first-run failure
+description: Report a failed install or free sample step, even if the CLI cannot start.
+title: "[Install] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Start with [the canonical install guide](https://github.com/theisegoria/game-development-studio/blob/main/docs/install.md). The npm registry name is unpublished; use the verified GitHub tarball. Review and redact everything you share. Do not attach credentials, assets or raw private logs.
+  - type: input
+    id: platform
+    attributes:
+      label: OS, version and architecture
+      placeholder: Windows 11 x64; macOS 26 arm64; Ubuntu x64
+    validations:
+      required: true
+  - type: input
+    id: release
+    attributes:
+      label: CLI release or source revision
+      description: Include artifact filename and locally verified SHA-256 if downloaded. A failed CLI need not provide game-dev output.
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: Node and npm versions
+      description: Run node --version and npm --version (npm.cmd in PowerShell), or state which command is missing.
+    validations:
+      required: true
+  - type: textarea
+    id: failed-step
+    attributes:
+      label: Failed command, exit code and reviewed error
+      description: Include the first failed step and what you expected. Replace private path components with placeholders.
+    validations:
+      required: true
+  - type: textarea
+    id: discovery
+    attributes:
+      label: Command discovery and prior installation
+      description: Redacted type -a game-dev, or Get-Command game-dev -All / where.exe game-dev. Does the explicit prefix launcher work? Does a prior version appear first?
+  - type: textarea
+    id: report
+    attributes:
+      label: Optional reviewed support report
+      description: CLI 1.4.0 or newer can preview game-dev support report --workflow generic-capture --json. Inspect the allowlist report before choosing to share. Do not paste unreviewed doctor output.
+  - type: checkboxes
+    id: review
+    attributes:
+      label: Review before sharing
+      options:
+        - label: I reviewed this report and removed secrets, private assets and identifying paths.
+          required: true

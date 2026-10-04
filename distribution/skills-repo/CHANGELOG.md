@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.0
+
+- Aligns verified GitHub release installation, Windows/POSIX instructions and the
+  compiler-free generic capture route with Studio 1.4.0.
+- Documents capability-discovered production templates, guided forms, graph
+  reasons, persistent optional-tool configuration and reviewed support reports.
+- Documents source/settings-bound renderer 2.2 material/UV/animation review,
+  optional Basis CPU decoding, sampled playback, comparison overlays and fresh
+  recipe/package approval. Inspect the installed schemas before constructing requests.
+- Preserves per-invocation write/spend/process approvals and explicit review limits.
+  The ZIP contains five declarative skills, no executable CLI or provider client.
+
 ## 1.3.1
 
 - Aligns the canonical skills export with the native optional-dependency process

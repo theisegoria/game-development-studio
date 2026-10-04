@@ -100,7 +100,10 @@ struct CatalogParityTests {
         guard case let .array(operations)? = envelope.data["localOperations"] else {
             Issue.record("Missing runtime operations"); return
         }
-        #expect(RoadmapToolSchemas.all.count == 41)
+        #expect(!RoadmapToolSchemas.all.isEmpty)
+        for name in ["list_production_templates", "plan_production_template", "save_production_template", "set_production_review"] {
+            #expect(RoadmapToolSchemas.all[name] != nil, "Missing shipped guided schema \(name)")
+        }
         for (name, schema) in RoadmapToolSchemas.all {
             let spec = try #require(CommandCatalog.byRegistryTool[name])
             let operation = try #require(operations.first { $0["name"]?.stringValue == name })

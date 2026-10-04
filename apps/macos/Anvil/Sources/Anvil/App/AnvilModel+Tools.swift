@@ -2,6 +2,26 @@ import AnvilKit
 import Foundation
 
 extension AnvilModel {
+    /// Buffered reads only. Mutations still pass through RunStore and a current human grant.
+    func inspectProductionTool(_ name: String, request: JSONValue) async throws -> JSONValue {
+        guard ["list_production_templates", "plan_production_template", "plan_production_recipe"].contains(name) else {
+            throw GameDevCLIClientError.invalidInvocation("Unsupported production inspection.")
+        }
+        let result = try await execute(CLIInvocation(
+            arguments: ["tool", "call", name, "--request", "-", "--output-dir", outputDirectory.path, "--json"],
+            standardInput: try RoadmapToolRequest(value: request).data,
+            expectedOperation: "tool.\(name)"), timeout: .seconds(60))
+        guard result.envelope.ok else { throw GameDevCLIClientError.invalidInvocation(result.envelope.summary) }
+        return result.envelope.data
+    }
+
+    func inspectOptionalTools() async throws -> JSONValue {
+        let result = try await execute(CLIInvocation(
+            arguments: ["tool", "list", "--json"], expectedOperation: "tool.list"), timeout: .seconds(30))
+        guard result.envelope.ok else { throw GameDevCLIClientError.invalidInvocation(result.envelope.summary) }
+        return result.envelope.data
+    }
+
     /// Only the UI's current click supplies a grant; no ledger or saved run can supply one.
     func runRoadmapTool(_ spec: CommandSpec, request: RoadmapToolRequest,
                         grant: ApprovalGrant?, paidOperation: String?) async throws -> RunID {

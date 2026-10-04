@@ -9,6 +9,11 @@ Drive the local `game-dev` CLI and finish with a verified canonical package when
 
 Read [references/commands.md](references/commands.md) for command shapes and lifecycle handoffs, including CLI 1.3.0+ standalone CPU compression, convex collision parts, recipes and families.
 
+When installed capabilities expose guided production templates, use their typed
+forms or high-level `workflow` commands as the default. Read the planned inputs,
+outputs and next-step evidence before each authorized invocation. Raw JSON is
+an advanced fallback; a saved workflow never grants authority to run later steps.
+
 ## Workflow
 
 1. Run capability discovery and the relevant doctor checks. Inspect existing source bytes before requesting paid generation.
