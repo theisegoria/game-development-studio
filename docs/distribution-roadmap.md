@@ -1,7 +1,7 @@
 # Distribution readiness and first-run evidence
 
 The baseline is the compiled, checksum-verified GitHub CLI tarball documented
-in [Install Game Development Studio](install.md), release **1.4.0**. Updates
+in [Install Game Development Studio](install.md), release **1.5.0**. Updates
 remain manual. Its release workflow requires exact compiled artifact checks
 before the release is published; source-packed checks are recorded separately.
 
@@ -9,7 +9,7 @@ before the release is published; source-packed checks are recorded separately.
 
 | Channel | Prepared implementation | Remaining acceptance gate |
 | --- | --- | --- |
-| GitHub CLI tarball | Existing compiled JS package, release SHA-256 manifest, manual install and rollback, compiler-free installed-artifact verifier | Source matrix passed on all six Windows/Linux/macOS Node 22/24 lanes at `9e146810`; exact 1.4.0 bytes must pass the release matrix before publication |
+| GitHub CLI tarball | Existing compiled JS package, release SHA-256 manifest, manual install and rollback, compiler-free installed-artifact verifier | Source matrix passed on all six Windows/Linux/macOS Node 22/24 lanes at `9e146810`; exact 1.5.0 bytes must pass the release matrix before publication |
 | npm registry | Existing package metadata, publish roster, runtime license inventory and prepublish gates; source tarball exercises the same package | Existing authenticated publisher access; no account or credentials created, and no npm publication is performed by the GitHub release workflow |
 | Windows bundled Node | User-prefix npm installation and `.cmd` launchers avoid administrator/policy changes; release 1.4.0 fixes direct `.mjs` sample launch | Measure remaining Node/PATH setup failures before adding a verified bundled runtime and legal inventory; no new bundle justified yet |
 | Anvil macOS ad-hoc ZIP | Existing closed runtime, binary-only packaging, checksum manifests and provenance verification; hosted source archive passed at `9e146810` | Exact release staging/extraction/signature/runtime verification must pass; native interaction and clean-Mac Gatekeeper acceptance remain unproven |
@@ -41,7 +41,7 @@ the GitHub release API JSON and download that release's tarball and manifest:
 
 ```sh
 node scripts/verify-first-run.mjs \
-  --artifact /absolute/theisegoria-game-development-studio-1.4.0.tgz \
+  --artifact /absolute/theisegoria-game-development-studio-1.5.0.tgz \
   --checksums /absolute/SHA256SUMS.txt \
   --release-metadata /absolute/release.json \
   --report /absolute/NEW-first-run-report.json

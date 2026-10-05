@@ -1,8 +1,8 @@
 # Install Game Development Studio
 
-This is the canonical CLI install guide for release **1.4.0**. The compiled
+This is the canonical CLI install guide for release **1.5.0**. The compiled
 tarball and `SHA256SUMS.txt` are published on
-[GitHub Releases](https://github.com/theisegoria/game-development-studio/releases/tag/v1.4.0).
+[GitHub Releases](https://github.com/theisegoria/game-development-studio/releases/tag/v1.5.0).
 The public npm registry package remains unpublished. Install the downloaded
 tarball with npm; installing its registry name does not work. The skills/plugin
 ZIP contains instructions and does not install the CLI.
@@ -21,7 +21,7 @@ administrator access. Keep the tarball and checksum file for a later reinstall.
 set -eu
 node --version
 npm --version
-version=1.4.0
+version=1.5.0
 release="https://github.com/theisegoria/game-development-studio/releases/download/v$version"
 package="theisegoria-game-development-studio-$version.tgz"
 curl --fail --location "$release/$package" --output "$package"
@@ -61,7 +61,7 @@ policies without changing the policy or using an administrator shell.
 $ErrorActionPreference = 'Stop'
 node --version
 npm.cmd --version
-$version = '1.4.0'
+$version = '1.5.0'
 $release = "https://github.com/theisegoria/game-development-studio/releases/download/v$version"
 $package = "theisegoria-game-development-studio-$version.tgz"
 Invoke-WebRequest "$release/$package" -OutFile $package
@@ -152,8 +152,8 @@ your actual releases; `verifyGitHub: true` reads public GitHub release metadata:
 ```json
 {
   "installedVersion": "PRIOR_VERSION",
-  "targetVersion": "1.4.0",
-  "artifact": "/absolute/theisegoria-game-development-studio-1.4.0.tgz",
+  "targetVersion": "1.5.0",
+  "artifact": "/absolute/theisegoria-game-development-studio-1.5.0.tgz",
   "checksums": "/absolute/current/SHA256SUMS.txt",
   "rollbackArtifact": "/absolute/PRIOR_CLI_TARBALL.tgz",
   "rollbackChecksums": "/absolute/prior/SHA256SUMS.txt",

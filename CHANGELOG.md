@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.5.0
+
+Game Development Studio 1.5.0 turns the harness from "what changed" into "where,
+when and why to look": per-pass frame time, flicker and popping within a run,
+validation errors diffed against a good run, commit bisection, live sessions with
+a running engine, and a pull-request visual gate for engine repositories.
 
 - **Swift and Rust probe packages.** `probe/Package.swift` (`import GDProbe`)
   and `probe/rust` (crate `gdprobe`) wrap the same C SDK over one ABI: runs,
@@ -67,6 +72,15 @@
 - Performance summaries enforce one measurement ceiling across all of a run's
   telemetry and profile files, and no longer spread a file's measurements into
   a single call, which overflowed the stack at the per-file ceiling.
+
+Distribution remains the checksum-verified GitHub CLI tarball and skills ZIP; the
+npm registry package remains unpublished, and the optional Anvil ZIP remains
+ad-hoc signed and non-notarized. Live sessions are never evidence: they form
+hypotheses that sealed runs prove. Span timings, diagnostics and bisection
+verdicts are what the engine recorded on the machine that ran it, not
+target-hardware measurements or proof of cause. The Rust crate is compiled and
+tested in CI only. No paid provider call, engine integration or unattended
+update is added.
 
 ## 1.4.0
 

@@ -16,7 +16,10 @@ struct GameDevCLIClientTests {
         let result = try await client.execute(
             CLIInvocation(arguments: ["-c", script, literal]),
             credentials: [:],
-            timeout: .seconds(5)
+            // Generous: this is the suite's first python3 launch, which on a
+            // fresh hosted runner can exceed 5s. The test is about literal
+            // arguments, not speed; the timeout tests below cover timing.
+            timeout: .seconds(30)
         )
 
         guard case let .array(arguments)? = result.envelope.data["arguments"] else {

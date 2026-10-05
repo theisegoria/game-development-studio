@@ -86,6 +86,8 @@ await editText('distribution/macos-app-repo/README.md', `CLI ${current} and`, `C
 // Current distribution labels change; the historical provider floor does not.
 await editText('distribution/skills-repo/README.md', `skills bundle **${current}**`, `skills bundle **${next}**`);
 await editText('distribution/skills-repo/README.md', `--ref v${current}`, `--ref v${next}`);
+await editText('distribution/skills-repo/README.md', `releases/tag/v${current}`, `releases/tag/v${next}`);
+await editText('distribution/skills-repo/README.md', `CLI ${current} GitHub release`, `CLI ${next} GitHub release`);
 await editText('distribution/skills-repo/README.md', `game-development-studio-plugin-${current}.zip`, `game-development-studio-plugin-${next}.zip`);
 await editText('distribution/skills-repo/PLUGIN_README.md', `CLI ${current} GitHub release`, `CLI ${next} GitHub release`);
 await editText('distribution/skills-repo/PLUGIN_README.md', `/v${current}`, `/v${next}`);

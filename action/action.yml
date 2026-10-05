@@ -44,7 +44,7 @@ inputs:
     default: 'false'
   version:
     description: Game Development Studio release to install (checksum-verified from GitHub Releases).
-    default: 1.4.0
+    default: 1.5.0
   cli:
     description: Path to an existing game-dev CLI entry point. Skips the release install (used by this repository's own tests).
     default: ''

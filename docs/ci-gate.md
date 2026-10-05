@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 22
       - id: gate
-        uses: theisegoria/game-development-studio/action@v1.4.0
+        uses: theisegoria/game-development-studio/action@v1.5.0
         with:
           scenario: capture
           request: scenarios/main-view.json   # optional, relative to the project

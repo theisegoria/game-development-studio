@@ -126,9 +126,9 @@ Keychain boundaries, commands, local-bundle status, and exact evidence limits.
 
 ## Install
 
-The CLI source is public. Release **1.4.0** provides a compiled Node.js package
-(`theisegoria-game-development-studio-1.4.0.tgz`) and SHA-256 manifest through
-[GitHub Releases](https://github.com/theisegoria/game-development-studio/releases/tag/v1.4.0).
+The CLI source is public. Release **1.5.0** provides a compiled Node.js package
+(`theisegoria-game-development-studio-1.5.0.tgz`) and SHA-256 manifest through
+[GitHub Releases](https://github.com/theisegoria/game-development-studio/releases/tag/v1.5.0).
 It requires a separately installed Node.js 22.5+ runtime; it is not a standalone
 Windows EXE/MSI. The skills plugin ZIP does not install `game-dev`.
 
@@ -418,7 +418,7 @@ every pull request is captured against its base commit on the same runner,
 compared beyond the measured noise floor, and summarised with heatmaps.
 
 ```yaml
-- uses: theisegoria/game-development-studio/action@v1.4.0
+- uses: theisegoria/game-development-studio/action@v1.5.0
   with:
     scenario: capture
 ```

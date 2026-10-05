@@ -14,14 +14,14 @@ conversation.
 
 The CLI source is public at
 [game-development-studio](https://github.com/theisegoria/game-development-studio).
-The [CLI 1.4.0 GitHub release](https://github.com/theisegoria/game-development-studio/releases/tag/v1.4.0)
+The [CLI 1.5.0 GitHub release](https://github.com/theisegoria/game-development-studio/releases/tag/v1.5.0)
 provides a compiled Node.js package (`.tgz`) and SHA-256 manifest. It requires
 Node.js 22.5+ and is not a standalone Windows installer. The public npm registry
 package remains unpublished. This plugin's ZIP installs skills only.
 
-Follow the [canonical install guide](https://github.com/theisegoria/game-development-studio/blob/v1.4.0/docs/install.md)
-and [first capture](https://github.com/theisegoria/game-development-studio/blob/v1.4.0/docs/quickstart.md).
-The [Windows installation and PATH guide](https://github.com/theisegoria/game-development-studio/blob/v1.4.0/docs/windows-install.md)
+Follow the [canonical install guide](https://github.com/theisegoria/game-development-studio/blob/v1.5.0/docs/install.md)
+and [first capture](https://github.com/theisegoria/game-development-studio/blob/v1.5.0/docs/quickstart.md).
+The [Windows installation and PATH guide](https://github.com/theisegoria/game-development-studio/blob/v1.5.0/docs/windows-install.md)
 covers release-tarball verification, PowerShell commands, and source-build fallback.
 The manifest verifies the downloaded package bytes; no Windows code-signing
 certificate or EXE/MSI is supplied. Installing the plugin alone cannot add the
