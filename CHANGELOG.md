@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Commit bisection.** `game-dev bisect plan|run` and the `plan_bisect` /
+  `run_bisect` MCP tools find the first commit at which a scenario changed
+  visually beyond the good commit's measured noise floor, or crossed a metric
+  limit. Each probe is built with the adapter's new optional `build` script in
+  its own temporary worktree, captured and sealed. Failed builds are skipped
+  and reported as a range; ends that do not reproduce stop the search; refs
+  that could be read as options are refused; worktrees are always removed.
 - **Live sessions.** The AI can talk to a running engine: snapshots, free-text
   state queries answered from the engine's own scene graph, pause and exact
   frame stepping. The C SDK gains `gdprobe_session.c` (`open`, a non-blocking

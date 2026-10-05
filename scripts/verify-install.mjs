@@ -36,6 +36,8 @@ const EXPECTED_TOOLS = [
   'live_session_control',
   'end_live_session',
   'promote_live_session',
+  'plan_bisect',
+  'run_bisect',
   'plan_asset_package',
   'plan_vendor_admission',
   'show_catalog_asset',

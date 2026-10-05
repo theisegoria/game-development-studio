@@ -156,6 +156,9 @@ export const FREE_TOOLS: ReadonlySet<string> = new Set([
   'live_session_control',
   'end_live_session',
   'promote_live_session',
+  // Bisection: no spend; running it is gated as execution.
+  'plan_bisect',
+  'run_bisect',
 ]);
 
 export function isSpendingTool(tool: string): boolean {

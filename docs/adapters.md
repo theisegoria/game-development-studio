@@ -190,6 +190,18 @@ manifest can contain:
   and `measuredBy`
 - adapter evidence flags and explanatory notes
 
+### Declare how to build, for bisection
+
+`run_bisect` checks out each commit it probes and builds it before capturing.
+It runs only what the adapter declares, at that commit:
+
+```json
+"build": { "executable": "scripts/build.sh", "arguments": ["--release"], "timeoutSeconds": 600 }
+```
+
+The script must live inside the project (it can call `make`, `cargo` or
+`xcodebuild`). A build that fails marks that commit as skipped, not bad.
+
 ### Say how a number was measured
 
 A GPU timestamp query and a counter the engine incremented look identical as

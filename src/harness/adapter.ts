@@ -52,12 +52,12 @@ export interface ScenarioRunPlan {
   evidenceCeiling: string;
 }
 
-function pathInside(root: string, target: string): boolean {
+export function pathInside(root: string, target: string): boolean {
   const relative = path.relative(root, target);
   return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
-async function assertRegularUnsymbolic(target: string, description: string): Promise<void> {
+export async function assertRegularUnsymbolic(target: string, description: string): Promise<void> {
   const stats = await fs.lstat(target).catch(() => undefined);
   if (!stats) throw invalidState(`${description} does not exist`, { path: target });
   if (stats.isSymbolicLink()) throw invalidState(`${description} must not be a symbolic link`, { path: target });

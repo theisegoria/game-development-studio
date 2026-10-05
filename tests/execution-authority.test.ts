@@ -186,3 +186,20 @@ describe('live sessions start a process too', () => {
     expect(isError).toBe(true);
   });
 });
+
+describe('bisection builds and runs project code at every probe', () => {
+  it('refuses without execution authority before touching the repository', async () => {
+    const { isError, payload } = await tools.call('run_bisect', {
+      project: projectRoot,
+      scenario: 'capture',
+      parameters: parameters(),
+      good: 'HEAD~1',
+      bad: 'HEAD',
+      criterion: { kind: 'visual' },
+    });
+
+    expect(isError).toBe(true);
+    expect((payload.details as { missingGrants: string[] }).missingGrants).toEqual(['execution']);
+    expect(await runsCreated()).toBe(0);
+  });
+});

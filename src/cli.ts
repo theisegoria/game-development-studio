@@ -40,6 +40,7 @@ import { analyzeFrameSequence } from './harness/temporal.js';
 import { listRunDiagnostics } from './harness/diagnostics.js';
 import { breakdownRunPerformance } from './harness/spans.js';
 import { LiveSession, promoteSession } from './harness/session.js';
+import { planBisect, runBisect, type BisectCriterion } from './harness/bisect.js';
 import { analyzeRunCapture, compareRunVisuals } from './harness/visual.js';
 import { compareRunPerformance, summarizeRunPerformance } from './harness/performance.js';
 import { createOptimizationGoal, evaluateOptimizationGoal } from './harness/goals.js';
@@ -103,6 +104,8 @@ Usage:
   game-dev scenario list --project PATH [--json]
   game-dev scenario plan <scenario-id> --project PATH [--request PARAMS.json] [--json]
   game-dev scenario run <scenario-id> --project PATH [--request PARAMS.json] [--confirm]
+  game-dev bisect plan <scenario-id> <good-ref> <bad-ref> --project PATH --criterion CRITERION.json [--request PARAMS.json] [--json]
+  game-dev bisect run <scenario-id> <good-ref> <bad-ref> --project PATH --criterion CRITERION.json [--request PARAMS.json] [--allow-gpu] [--confirm]
   game-dev session run <scenario-id> --project PATH --script STEPS.json [--request PARAMS.json] [--allow-gpu] [--confirm]
                     [--allow-gpu] [--allow-performance] [--jsonl]
   game-dev capture list [--limit N] [--json]
@@ -324,6 +327,7 @@ function capabilities(runtime: GameDevRuntime): Record<string, unknown> {
       'package',
       'scenario',
       'session',
+      'bisect',
       'capture',
       'visual',
       'optimization',
@@ -572,6 +576,30 @@ async function dispatch(
 
   if (family === 'adapter' && action === 'sample') {
     return { operation: 'adapter.sample', data: await createSampleProject(requireFlag(parsed, 'project'), booleanFlag(parsed, 'confirm')) };
+  }
+
+  if (family === 'bisect' && (action === 'plan' || action === 'run')) {
+    const plan = await planBisect({
+      projectRoot: path.resolve(requireFlag(parsed, 'project')),
+      scenarioId: requirePositional(parsed, 2, 'scenario id'),
+      good: requirePositional(parsed, 3, 'good ref'),
+      bad: requirePositional(parsed, 4, 'bad ref'),
+      parameters: await readRequest(parsed),
+      criterion: JSON.parse(await readFile(path.resolve(requireFlag(parsed, 'criterion')), 'utf8')) as BisectCriterion,
+      runsRoot: runtime.config.runsDir,
+    });
+    if (action === 'plan' || !booleanFlag(parsed, 'confirm')) {
+      return { operation: `bisect.${action}`, data: { ...plan, dryRun: true } as unknown as Record<string, unknown> };
+    }
+    if (plan.requiredAuthorizations.includes('gpu') && !booleanFlag(parsed, 'allow-gpu')) {
+      throw invalidInput('this scenario requires separate explicit GPU authorization (--allow-gpu)');
+    }
+    return {
+      operation: 'bisect.run',
+      data: await runBisect({
+        plan, runsRoot: runtime.config.runsDir, workRoot: path.join(runtime.config.dataRoot, 'bisect'), allowGpu: booleanFlag(parsed, 'allow-gpu'),
+      }) as unknown as Record<string, unknown>,
+    };
   }
 
   if (family === 'session' && action === 'run') {
@@ -1504,6 +1532,7 @@ function needsDurableJob(runtime: GameDevRuntime, parsed: ParsedArguments): bool
   if (family === 'skill' && action === 'install' && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'scenario' && action === 'run') return true;
   if (family === 'session' && action === 'run' && booleanFlag(parsed, 'confirm')) return true;
+  if (family === 'bisect' && action === 'run' && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'workflow' && ['create', 'step', 'review', 'recover'].includes(action ?? '') && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'tool' && ['configure', 'clear'].includes(action ?? '') && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'support' && action === 'report' && stringFlag(parsed, 'output') !== undefined && booleanFlag(parsed, 'confirm')) return true;

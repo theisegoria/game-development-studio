@@ -540,6 +540,32 @@ extension CommandCatalog {
             createsDurableJob: true
         ),
         CommandSpec(
+            id: "bisect.plan",
+            path: ["bisect", "plan"],
+            title: "Plan a bisection",
+            summary: "List the commits between good and bad and what a bisection would build and capture.",
+            arguments: [
+                .positional("scenario", "Scenario"), .positional("good", "Good ref"), .positional("bad", "Bad ref"),
+                .flag("project", "Project", kind: .directory, required: true),
+                .flag("criterion", "Criterion", kind: .jsonRequest, required: true),
+                .flag("request", "Scenario parameters", kind: .jsonRequest)
+            ],
+            route: .scenarios
+        ),
+        CommandSpec(
+            id: "bisect.run",
+            path: ["bisect", "run"],
+            title: "Find the commit that broke it",
+            summary: "Build and capture commits between good and bad to find the first one that meets the criterion.",
+            arguments: [
+                .positional("scenario", "Scenario"), .positional("good", "Good ref"), .positional("bad", "Bad ref"),
+                .flag("project", "Project", kind: .directory, required: true),
+                .flag("criterion", "Criterion", kind: .jsonRequest, required: true),
+                .flag("request", "Scenario parameters", kind: .jsonRequest)
+            ],
+            authorities: [.confirm, .allowGPU], lane: .workspaceWrite, route: .scenarios
+        ),
+        CommandSpec(
             id: "session.run",
             path: ["session", "run"],
             title: "Run a live session script",

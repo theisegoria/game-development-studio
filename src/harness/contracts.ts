@@ -231,6 +231,20 @@ export const adapterManifestSchema = z.object({
   version: z.string().min(1).max(64),
   description: z.string().min(1).max(1200).optional(),
   scenarios: z.array(scenarioSchema).min(1).max(128),
+  /**
+   * How to build the engine from a fresh checkout, for commit bisection.
+   *
+   * A project-contained script (which may call make, cargo or xcodebuild),
+   * declared in the manifest the repository owns, so what runs at every
+   * bisected commit is reviewable in version control and never a command
+   * string a caller -- or a model -- supplied.
+   */
+  build: z.object({
+    executable: relativePathSchema,
+    arguments: z.array(z.string().max(4096)).max(256).default([]),
+    workingDirectory: workingDirectorySchema.default('.'),
+    timeoutSeconds: z.number().int().min(1).max(3600).default(600),
+  }).strict().optional(),
 }).strict().superRefine((value, context) => {
   const ids = value.scenarios.map((scenario) => scenario.id);
   if (new Set(ids).size !== ids.length) {

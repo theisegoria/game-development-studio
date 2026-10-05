@@ -90,6 +90,7 @@ server's environment plus a confirmation per run; the plan needs nothing.
 | `game-dev scenario plan` | `plan_scenario_run` |
 | `game-dev scenario run` | `run_scenario` |
 | `game-dev capture verify` | `verify_capture_run` |
+| `game-dev bisect run` | `plan_bisect`, then `run_bisect` — find the commit that changed the picture or crossed a metric limit |
 | `game-dev capture diagnostics` | `list_run_diagnostics` — validation errors grouped by message, placed in frames, and diffed against a baseline run |
 | `game-dev visual analyze` | `analyze_capture_run` — the frames come back as images |
 | `game-dev visual compare` | `compare_capture_visuals` — the heatmaps come back as images |

@@ -130,6 +130,14 @@ noise floor. Pass that record's path as `noiseFloor` to
 both the threshold and its own measured noise. A high floor is a finding in
 itself: it names where the renderer is non-deterministic.
 
+`plan_bisect` and `run_bisect` find the commit that broke something. Given a
+good and a bad ref, each probe is checked out into its own temporary worktree,
+built with the adapter's `build` script (declared in the repository, never
+passed as an argument), captured and sealed, and judged against the good
+commit's own capture beyond its noise floor, or against a metric limit.
+Commits whose build fails are skipped and the answer becomes a range.
+`run_bisect` needs the same authority as `run_scenario`.
+
 Live sessions let the AI talk to a running engine. `start_live_session`
 launches the scenario executable under the same authority as `run_scenario`,
 and the engine joins over a Unix socket only this user can reach, presenting a

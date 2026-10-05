@@ -21,6 +21,22 @@ import { analyzeFrameSequence } from '../harness/temporal.js';
 import { listRunDiagnostics } from '../harness/diagnostics.js';
 import { breakdownRunPerformance } from '../harness/spans.js';
 import { LiveSession, promoteSession, SessionRegistry, type SessionRecord } from '../harness/session.js';
+import { planBisect, runBisect } from '../harness/bisect.js';
+
+const bisectCriterion = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('visual'),
+    threshold: z.number().int().min(0).max(255).default(0),
+    antialiasTolerancePixels: z.number().int().min(0).max(4).default(0),
+  }).strict(),
+  z.object({
+    kind: z.literal('metric'),
+    metric: z.string().min(1).max(160),
+    statistic: z.enum(['min', 'max', 'mean', 'median', 'p95', 'p99']).default('median'),
+    above: z.number().finite().optional(),
+    below: z.number().finite().optional(),
+  }).strict(),
+]).describe('visual: the probe differs from the good commit beyond its noise floor. metric: a statistic crosses `above` or `below`.');
 import { promises as fsPromises } from 'node:fs';
 
 // One registry per process: sessions are addressed by id across tool calls,
@@ -180,6 +196,59 @@ export function registerHarnessTools(server: ToolRegistrar, ctx: ToolContext): v
         allowPerformance: granted('performance'),
       });
       return ok(result as unknown as Record<string, unknown>);
+    }),
+  );
+
+  const bisectShape = {
+    project: projectPath,
+    scenario: z.string().min(1),
+    parameters: scenarioParameters,
+    good: z.string().min(1).max(200).describe('A commit or ref where the scenario looked right.'),
+    bad: z.string().min(1).max(200).describe('A later commit or ref where it does not.'),
+    criterion: bisectCriterion,
+  };
+
+  server.registerTool(
+    'plan_bisect',
+    {
+      title: 'Plan a search for the commit that broke it',
+      description:
+        'FREE, runs nothing. Resolves good and bad to commits, lists the first-parent commits between them, '
+        + 'and says how many captures a bisection would take, which build script each commit would run (from '
+        + 'the adapter\'s `build`, never from arguments) and what authority it needs.',
+      inputSchema: bisectShape,
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    guard(ctx.logger, 'plan_bisect', async (args) => ok(await planBisect({
+      projectRoot: args.project, good: args.good, bad: args.bad, scenarioId: args.scenario,
+      parameters: args.parameters, criterion: args.criterion, runsRoot: ctx.config.runsDir,
+    }) as unknown as Record<string, unknown>)),
+  );
+
+  server.registerTool(
+    'run_bisect',
+    {
+      title: 'Find the commit that broke the render or the frame time',
+      description:
+        'Binary-searches the history between a good and a bad commit. Each probe is checked out into its own '
+        + 'temporary worktree, built with the adapter\'s build script, captured and sealed as a run, and judged '
+        + 'against the good commit\'s own capture (twice, for a noise floor) or a metric limit. Commits whose '
+        + 'build fails are skipped and the answer becomes a range. Needs the same server-side authority as '
+        + 'run_scenario, because it builds and runs project code at every probe. Worktrees are always removed.',
+      inputSchema: bisectShape,
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    guard(ctx.logger, 'run_bisect', async (args) => {
+      assertExecutionAuthority([]);
+      const plan = await planBisect({
+        projectRoot: args.project, good: args.good, bad: args.bad, scenarioId: args.scenario,
+        parameters: args.parameters, criterion: args.criterion, runsRoot: ctx.config.runsDir,
+      });
+      // Timing is never admitted from a bisection probe; only GPU authority applies.
+      assertExecutionAuthority(plan.requiredAuthorizations.filter((authority) => authority === 'gpu'));
+      return ok(await runBisect({
+        plan, runsRoot: ctx.config.runsDir, workRoot: path.join(ctx.config.dataRoot, 'bisect'), allowGpu: granted('gpu'),
+      }) as unknown as Record<string, unknown>);
     }),
   );
 
