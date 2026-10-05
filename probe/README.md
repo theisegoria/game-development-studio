@@ -121,6 +121,26 @@ performance summary, and an optimisation goal that requires a hardware
 measurement will refuse a metric of unknown provenance rather than chase a
 number nothing measured.
 
+## Talk to the engine while it runs
+
+Compile `gdprobe_session.c` too, and call two functions in your loop:
+
+```c
+gdprobe_session *session = gdprobe_session_open(NULL);   /* NULL outside the harness */
+gdprobe_session_handlers handlers = { my_snapshot, my_state_query };
+while (running) {
+  if (session) gdprobe_session_poll(session, &handlers, NULL, frame);
+  if (!session || gdprobe_session_should_advance(session)) render_next_frame();
+}
+```
+
+Under `game-dev session run` or the `start_live_session` MCP tool, the AI can
+then take snapshots, ask `my_state_query` about objects in your scene graph,
+and pause or step frame by frame. `poll` never blocks. The harness names the
+snapshot file and the SDK refuses any other name; pixels never cross the
+socket. Nothing a session produces is evidence: it is how a hypothesis is
+formed, and a scenario run is how it is proved. POSIX only.
+
 ## Record where the frame time went
 
 A single `frame_time` says a frame got slower, not which part. Record spans

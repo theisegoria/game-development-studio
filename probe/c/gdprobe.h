@@ -340,6 +340,54 @@ gdprobe_status gdprobe_run_end(gdprobe_run *run);
    or to abandon a capture deliberately. Safe with NULL. */
 void gdprobe_run_discard(gdprobe_run *run);
 
+/* ------------------------------------------------------------------ sessions
+ *
+ * Live sessions: the AI asks a RUNNING engine questions. Compile
+ * gdprobe_session.c as well to use them (POSIX only; on other platforms
+ * gdprobe_session_open reports GDPROBE_NOT_ATTACHED).
+ *
+ * A session is not a capture. Nothing it produces is sealed or counts as
+ * evidence; it is for forming a hypothesis, which a scenario run then proves.
+ * Under `game-dev session` the harness supplies a socket and a one-time token;
+ * outside it, gdprobe_session_open returns NULL with GDPROBE_NOT_ATTACHED and
+ * the engine runs normally.
+ *
+ * Call gdprobe_session_poll once per loop iteration. It never blocks: it
+ * answers whatever requests have arrived and returns. Render the next frame
+ * only when gdprobe_session_should_advance says so, which is how pause and
+ * step work without the SDK owning your loop.
+ */
+
+typedef struct gdprobe_session gdprobe_session;
+
+typedef struct gdprobe_session_handlers {
+  /*
+   * Hand over the pixels of the most recent frame as 8-bit RGBA. The pointer
+   * must stay valid until this callback returns; the SDK writes the PNG before
+   * returning. NULL to refuse snapshots.
+   */
+  gdprobe_status (*snapshot)(void *user, const unsigned char **pixels,
+                             uint32_t *width, uint32_t *height, size_t *row_stride);
+  /*
+   * Answer a free-text question about engine state ("object 7", "camera",
+   * "lights") by writing ONE JSON value into `out`, NUL-terminated, at most
+   * `capacity` bytes. Answer from your scene graph: this is how the AI learns
+   * why something is invisible. NULL to refuse queries.
+   */
+  gdprobe_status (*state_query)(void *user, const char *query, char *out, size_t capacity);
+} gdprobe_session_handlers;
+
+gdprobe_session *gdprobe_session_open(gdprobe_status *out_status);
+gdprobe_status gdprobe_session_poll(gdprobe_session *session,
+                                    const gdprobe_session_handlers *handlers,
+                                    void *user,
+                                    int32_t frame_index);
+/* 1 when the engine should render its next frame: not paused, or stepping. */
+int gdprobe_session_should_advance(gdprobe_session *session);
+/* 1 once the harness has said goodbye or the connection dropped. */
+int gdprobe_session_closed(const gdprobe_session *session);
+void gdprobe_session_close(gdprobe_session *session);
+
 #ifdef __cplusplus
 }
 #endif

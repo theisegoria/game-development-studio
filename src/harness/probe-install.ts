@@ -22,7 +22,7 @@ function packagedProbeRoot(): string {
 }
 
 /** The closed set of files an install writes. Nothing else is copied. */
-export const PROBE_SDK_FILES = ['gdprobe.h', 'gdprobe.c'] as const;
+export const PROBE_SDK_FILES = ['gdprobe.h', 'gdprobe.c', 'gdprobe_session.c'] as const;
 
 export interface ProbeInstallResult {
   schema: 'game_dev.probe_install.v1';
@@ -32,6 +32,8 @@ export interface ProbeInstallResult {
   reused: boolean;
   files: Array<{ name: string; path: string; bytes: number; sha256: string; existed: boolean }>;
   compile: string;
+  /** Only for engines that use live sessions; POSIX. */
+  sessionCompile: string;
   evidenceCeiling: string;
 }
 
@@ -122,8 +124,9 @@ export async function installProbeSdk(options: {
     reused: allIdentical,
     files,
     compile: `cc -std=c99 -Wall -Wextra -Werror -c ${path.join(relative, 'gdprobe.c')}`,
+    sessionCompile: `cc -std=c99 -Wall -Wextra -Werror -c ${path.join(relative, 'gdprobe_session.c')}`,
     evidenceCeiling:
-      'Installing the probe SDK copies two C source files into the project. It compiles nothing, ' +
+      'Installing the probe SDK copies its C source files into the project. It compiles nothing, ' +
       'links nothing, and proves nothing about the engine that will include them.',
   };
 }

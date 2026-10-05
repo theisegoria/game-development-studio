@@ -130,6 +130,16 @@ noise floor. Pass that record's path as `noiseFloor` to
 both the threshold and its own measured noise. A high floor is a finding in
 itself: it names where the renderer is non-deterministic.
 
+Live sessions let the AI talk to a running engine. `start_live_session`
+launches the scenario executable under the same authority as `run_scenario`,
+and the engine joins over a Unix socket only this user can reach, presenting a
+one-time token. `live_session_snapshot` returns the current frame as an image,
+`live_session_query` asks the engine about its own scene graph ("object 7"),
+`live_session_control` pauses, steps and resumes, and `end_live_session`
+stops it. A session is never evidence: `sess_` ids are refused by
+`verify_capture_run`, and `promote_live_session` turns what it found into a
+scenario plan that a sealed run then proves.
+
 `performance_breakdown` turns spans into an answer: each pass's own time,
 its share of the frame, and with a `baseline` the passes that grew. Spans come
 from `gdprobe_span_record` or from a Chrome/Perfetto JSON trace (`traceEvents`)

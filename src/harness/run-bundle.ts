@@ -97,7 +97,7 @@ interface ProcessOutcome {
   spawnError?: Error;
 }
 
-function safeChildEnvironment(plan: ScenarioRunPlan): NodeJS.ProcessEnv {
+export function safeChildEnvironment(plan: ScenarioRunPlan): NodeJS.ProcessEnv {
   const inheritedNames = [
     'PATH', 'HOME', 'TMPDIR', 'LANG', 'LC_ALL', 'DEVELOPER_DIR', 'SDKROOT',
     'TERM',
@@ -583,6 +583,12 @@ export async function resolveRunPath(runsRoot: string, reference: string): Promi
 
 export async function verifyRunBundle(runPathInput: string): Promise<RunExecutionResult> {
   const runPath = await fs.realpath(runPathInput);
+  // A live session can never verify: it was never sealed, and a record that
+  // verifies at one moment and not the next would look like evidence. Refused
+  // by name, so the reason is the answer rather than a missing run.json.
+  if (path.basename(runPath).startsWith('sess_')) {
+    throw invalidInput('a live session is not a sealed run and is never evidence; promote it to a scenario run and capture that', { path: runPath });
+  }
   const manifestPath = path.join(runPath, 'run.json');
   const stats = await fs.lstat(manifestPath).catch(() => undefined);
   if (!stats || stats.isSymbolicLink() || !stats.isFile()) throw invalidState('run bundle has no regular run.json manifest');

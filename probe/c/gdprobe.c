@@ -263,11 +263,23 @@ static int write_chunk(FILE *out, const char *type, const unsigned char *data, s
  * `rows` supplies each scanline, which lets the caller hand over padded source
  * data without copying it first.
  */
+/* Internal, shared with gdprobe_session.c; not part of the public API. */
+int gdprobe__write_png_rgba(const char *path, uint32_t width, uint32_t height,
+                            const unsigned char *pixels, size_t row_stride);
+
 static int write_png_rgba(const char *path,
                           uint32_t width,
                           uint32_t height,
                           const unsigned char *pixels,
                           size_t row_stride) {
+  return gdprobe__write_png_rgba(path, width, height, pixels, row_stride);
+}
+
+int gdprobe__write_png_rgba(const char *path,
+                            uint32_t width,
+                            uint32_t height,
+                            const unsigned char *pixels,
+                            size_t row_stride) {
   FILE *out = fopen(path, "wb");
   if (!out) return -1;
 

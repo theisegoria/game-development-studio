@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArguments, assertKnownFlags, booleanFlag, readRequest, stringFlag, type ParsedArguments } from './cli/arguments.js';
 import { isDirectInvocation } from './util/entrypoint.js';
@@ -38,6 +39,7 @@ import { measureRunStability } from './harness/stability.js';
 import { analyzeFrameSequence } from './harness/temporal.js';
 import { listRunDiagnostics } from './harness/diagnostics.js';
 import { breakdownRunPerformance } from './harness/spans.js';
+import { LiveSession, promoteSession } from './harness/session.js';
 import { analyzeRunCapture, compareRunVisuals } from './harness/visual.js';
 import { compareRunPerformance, summarizeRunPerformance } from './harness/performance.js';
 import { createOptimizationGoal, evaluateOptimizationGoal } from './harness/goals.js';
@@ -101,6 +103,7 @@ Usage:
   game-dev scenario list --project PATH [--json]
   game-dev scenario plan <scenario-id> --project PATH [--request PARAMS.json] [--json]
   game-dev scenario run <scenario-id> --project PATH [--request PARAMS.json] [--confirm]
+  game-dev session run <scenario-id> --project PATH --script STEPS.json [--request PARAMS.json] [--allow-gpu] [--confirm]
                     [--allow-gpu] [--allow-performance] [--jsonl]
   game-dev capture list [--limit N] [--json]
   game-dev capture verify <run-id|path> [--json]
@@ -320,6 +323,7 @@ function capabilities(runtime: GameDevRuntime): Record<string, unknown> {
       'vendor',
       'package',
       'scenario',
+      'session',
       'capture',
       'visual',
       'optimization',
@@ -568,6 +572,56 @@ async function dispatch(
 
   if (family === 'adapter' && action === 'sample') {
     return { operation: 'adapter.sample', data: await createSampleProject(requireFlag(parsed, 'project'), booleanFlag(parsed, 'confirm')) };
+  }
+
+  if (family === 'session' && action === 'run') {
+    // A one-shot CLI cannot hold a session across invocations, so it runs a
+    // script of steps in one: [{"op":"pause"},{"op":"snapshot"},{"op":"query","query":"object 7"}].
+    const adapter = await loadAdapter(path.resolve(requireFlag(parsed, 'project')));
+    const scenarioId = requirePositional(parsed, 2, 'scenario id');
+    const plan = await planScenarioRun({
+      adapter, scenarioId, runsRoot: runtime.config.runsDir, parameters: await readRequest(parsed),
+    });
+    const scriptPath = path.resolve(requireFlag(parsed, 'script'));
+    const script = JSON.parse(await readFile(scriptPath, 'utf8')) as unknown;
+    if (!Array.isArray(script) || script.length === 0 || script.length > 200) {
+      throw invalidInput('the session script must be a JSON array of 1 to 200 steps');
+    }
+    if (!booleanFlag(parsed, 'confirm')) {
+      return {
+        operation: 'session.run',
+        data: { schema: 'game_dev.session_plan.v1', dryRun: true, plan, steps: script.length, note: 'add --confirm to launch the engine' },
+      };
+    }
+    if (plan.requiredAuthorizations.includes('gpu') && !booleanFlag(parsed, 'allow-gpu')) {
+      throw invalidInput('this scenario requires separate explicit GPU authorization (--allow-gpu)');
+    }
+    const session = await LiveSession.start({ adapter, plan, sessionsRoot: path.join(runtime.config.dataRoot, 'sessions') });
+    const results: Array<Record<string, unknown>> = [];
+    try {
+      for (const [index, raw] of script.entries()) {
+        const step = (raw ?? {}) as { op?: unknown; query?: unknown; frames?: unknown };
+        let result: unknown;
+        if (step.op === 'snapshot') result = await session.snapshot();
+        else if (step.op === 'query' && typeof step.query === 'string') result = await session.query(step.query);
+        else if (step.op === 'pause') result = await session.pause();
+        else if (step.op === 'resume') result = await session.resume();
+        else if (step.op === 'step') result = await session.step(typeof step.frames === 'number' ? step.frames : 1);
+        else throw invalidInput('unknown session step', { index, op: step.op });
+        results.push({ index, op: step.op, result });
+      }
+    } finally {
+      await session.end('script finished');
+    }
+    return {
+      operation: 'session.run',
+      data: {
+        schema: 'game_dev.session_script_result.v1',
+        record: session.record,
+        results,
+        promoted: await promoteSession({ record: session.record, adapter, runsRoot: runtime.config.runsDir }),
+      },
+    };
   }
 
   if (family === 'scenario' && ['list', 'plan', 'run'].includes(action ?? '')) {
@@ -1449,6 +1503,7 @@ function needsDurableJob(runtime: GameDevRuntime, parsed: ParsedArguments): bool
   if (family === 'probe' && action === 'install' && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'skill' && action === 'install' && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'scenario' && action === 'run') return true;
+  if (family === 'session' && action === 'run' && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'workflow' && ['create', 'step', 'review', 'recover'].includes(action ?? '') && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'tool' && ['configure', 'clear'].includes(action ?? '') && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'support' && action === 'report' && stringFlag(parsed, 'output') !== undefined && booleanFlag(parsed, 'confirm')) return true;

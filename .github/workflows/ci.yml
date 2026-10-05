@@ -112,6 +112,11 @@ jobs:
       - name: Compile the SDK and example under -std=c99 -Wall -Wextra -Werror
         run: cc -std=c99 -Wall -Wextra -Werror probe/c/gdprobe.c probe/examples/minimal/main.c -o /tmp/gdprobe-minimal
 
+      # The live-session half is POSIX sockets: GCC's -Wformat-truncation sees
+      # bounds clang does not, so compile it on both runners too.
+      - name: Compile the live-session SDK under the same flags
+        run: cc -std=c99 -Wall -Wextra -Werror -c probe/c/gdprobe_session.c -o /tmp/gdprobe_session.o
+
       - name: Run the example outside the harness (must exit 0 and do nothing)
         run: /tmp/gdprobe-minimal
 

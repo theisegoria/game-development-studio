@@ -150,3 +150,39 @@ describe('capability authority is separate from execution authority', () => {
     expect(await runsCreated()).toBe(1);
   }, 30_000);
 });
+
+describe('live sessions start a process too', () => {
+  async function sessionsCreated(): Promise<number> {
+    return fs.readdir(path.join(work, '.game-dev', 'sessions')).then((names) => names.length, () => 0);
+  }
+
+  it('refuses without execution authority, and launches nothing', async () => {
+    const { isError, payload } = await tools.call('start_live_session', {
+      project: projectRoot,
+      scenario: 'capture',
+      parameters: parameters(),
+    });
+
+    expect(isError).toBe(true);
+    expect((payload.details as { missingGrants: string[] }).missingGrants).toEqual(['execution']);
+    expect(await sessionsCreated()).toBe(0);
+  });
+
+  it('still demands GPU authority for a GPU scenario when execution is granted', async () => {
+    process.env.GAME_DEV_MCP_ALLOW_EXECUTION = '1';
+    const { isError, payload } = await tools.call('start_live_session', {
+      project: projectRoot,
+      scenario: 'gpu-capture',
+      parameters: parameters(),
+    });
+
+    expect(isError).toBe(true);
+    expect((payload.details as { missingGrants: string[] }).missingGrants).toEqual(['gpu']);
+    expect(await sessionsCreated()).toBe(0);
+  });
+
+  it('addresses only session ids the harness could have minted', async () => {
+    const { isError } = await tools.call('live_session_query', { session: '../../etc', query: 'x' });
+    expect(isError).toBe(true);
+  });
+});

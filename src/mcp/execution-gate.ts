@@ -9,7 +9,7 @@ import { ROADMAP_MUTATION_TOOLS } from '../commands/mutation-policy.js';
  * `readOnlyHint: false` is true of many harmless local writes and this list
  * must mean exactly one thing: this call starts a process.
  */
-export const EXECUTION_TOOLS: ReadonlySet<string> = new Set(['run_scenario']);
+export const EXECUTION_TOOLS: ReadonlySet<string> = new Set(['run_scenario', 'start_live_session']);
 
 /**
  * Tools that write into the user's project rather than the tool's workspace.

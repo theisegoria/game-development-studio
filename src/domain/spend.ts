@@ -149,6 +149,13 @@ export const FREE_TOOLS: ReadonlySet<string> = new Set([
   'analyze_frame_sequence',
   'list_run_diagnostics',
   'performance_breakdown',
+  // Live sessions: no spend. Starting one is gated as execution, not money.
+  'start_live_session',
+  'live_session_snapshot',
+  'live_session_query',
+  'live_session_control',
+  'end_live_session',
+  'promote_live_session',
 ]);
 
 export function isSpendingTool(tool: string): boolean {

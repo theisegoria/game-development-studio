@@ -540,6 +540,19 @@ extension CommandCatalog {
             createsDurableJob: true
         ),
         CommandSpec(
+            id: "session.run",
+            path: ["session", "run"],
+            title: "Run a live session script",
+            summary: "Launch the engine, run snapshot/query/pause/step steps against it, and promote the result. Never evidence.",
+            arguments: [
+                .positional("scenario", "Scenario"),
+                .flag("project", "Project", kind: .directory, required: true),
+                .flag("script", "Session steps", kind: .jsonRequest, required: true),
+                .flag("request", "Scenario parameters", kind: .jsonRequest)
+            ],
+            authorities: [.confirm, .allowGPU], lane: .workspaceWrite, route: .scenarios
+        ),
+        CommandSpec(
             id: "capture.diagnostics",
             path: ["capture", "diagnostics"],
             title: "Group validation errors",

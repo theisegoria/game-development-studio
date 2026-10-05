@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **Live sessions.** The AI can talk to a running engine: snapshots, free-text
+  state queries answered from the engine's own scene graph, pause and exact
+  frame stepping. The C SDK gains `gdprobe_session.c` (`open`, a non-blocking
+  per-frame `poll`, `should_advance`). The harness listens on a Unix socket in
+  a fresh `0700` directory, requires a one-time token, accepts one connection
+  and stops listening, names every snapshot file itself and decodes it before
+  reporting. MCP: `start_live_session` (gated like `run_scenario`),
+  `live_session_snapshot`, `live_session_query`, `live_session_control`,
+  `end_live_session`, `promote_live_session`; CLI: `game-dev session run` with
+  a script of steps. Sessions are never evidence: `sess_` records carry an
+  all-false evidence block and `verify_capture_run` refuses them by name;
+  promotion produces a scenario plan for a sealed run.
 - **Where the frame time went.** Spans with parents and a clock domain arrive
   as `game_dev.telemetry_event.v2` lines (C SDK: `gdprobe_span_reserve` /
   `gdprobe_span_record`) or as a Chrome/Perfetto JSON trace in a capture's

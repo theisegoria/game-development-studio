@@ -75,7 +75,7 @@ export const KNOWN_FLAGS: ReadonlySet<string> = new Set([
   'kind', 'label', 'manifest', 'max-seconds', 'min-reversals', 'name', 'noise-floor', 'output', 'output-dir', 'package-version',
   'executable', 'sha256',
   'workflow', 'expected-version',
-  'plan-hash', 'recipe-id', 'fingerprint', 'reviewer', 'reason', 'session-root', 'preview', 'project', 'query', 'request', 'spend-limit-cents', 'stat',
+  'plan-hash', 'recipe-id', 'fingerprint', 'reviewer', 'reason', 'session-root', 'preview', 'project', 'query', 'request', 'script', 'spend-limit-cents', 'stat',
   'status', 'target', 'threshold', 'valid', 'version', 'warmup-frames', 'with',
 ]);
 
