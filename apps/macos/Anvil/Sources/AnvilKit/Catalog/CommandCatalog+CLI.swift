@@ -540,6 +540,14 @@ extension CommandCatalog {
             createsDurableJob: true
         ),
         CommandSpec(
+            id: "capture.diagnostics",
+            path: ["capture", "diagnostics"],
+            title: "Group validation errors",
+            summary: "Group a run's validation and debug messages, and name what is new since a baseline.",
+            arguments: [.positional("run", "Run"), .flag("baseline", "Baseline run")],
+            route: .scenarios
+        ),
+        CommandSpec(
             id: "capture.verify",
             path: ["capture", "verify"],
             title: "Verify a run bundle",
@@ -575,6 +583,20 @@ extension CommandCatalog {
             createsDurableJob: true
         ),
 
+        CommandSpec(
+            id: "visual.sequence", path: ["visual", "sequence"],
+            title: "Find flicker and popping",
+            summary: "Read one run's frames in order for flicker, popping and uneven frame pacing.",
+            arguments: [
+                .positional("run", "Run"),
+                .flag("kind", "Attachment kind"),
+                .flag("label", "Attachment label"),
+                .flag("threshold", "Threshold", kind: .integer(minimum: 0, maximum: 255)),
+                .flag("min-reversals", "Reversals to count as flicker", kind: .integer(minimum: 1, maximum: 64)),
+                .flag("output", "Output directory", kind: .directory)
+            ],
+            lane: .workspaceWrite, route: .visual
+        ),
         CommandSpec(
             id: "visual.stability", path: ["visual", "stability"],
             title: "Measure capture stability", summary: "Measure the noise floor across repeated captures.",
@@ -639,6 +661,14 @@ extension CommandCatalog {
 
         // MARK: - Performance
 
+        CommandSpec(
+            id: "performance.breakdown",
+            path: ["performance", "breakdown"],
+            title: "Break down frame time",
+            summary: "Show each pass's own time from spans or a trace, and which passes grew since a baseline.",
+            arguments: [.positional("run", "Run"), .flag("baseline", "Baseline run")],
+            route: .performance
+        ),
         CommandSpec(
             id: "performance.summarize",
             path: ["performance", "summarize"],

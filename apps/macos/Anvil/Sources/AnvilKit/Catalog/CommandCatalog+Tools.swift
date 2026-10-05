@@ -385,6 +385,15 @@ extension CommandCatalog {
         // MARK: - Existing asset and harness operations
         tool("measure_run_stability", title: "Measure capture stability",
              summary: "Measure the noise floor across repeated captures.", lane: .workspaceWrite, route: .visual),
+        tool("analyze_frame_sequence", title: "Find flicker and popping",
+             summary: "Read one run's frames in order for flicker, popping and uneven frame pacing.",
+             lane: .workspaceWrite, route: .visual),
+        tool("list_run_diagnostics", title: "Group validation errors",
+             summary: "Group a run's validation and debug messages, and name what is new since a baseline.",
+             route: .scenarios),
+        tool("performance_breakdown", title: "Break down frame time",
+             summary: "Show each pass's own time from spans or a trace, and which passes grew since a baseline.",
+             route: .performance),
         tool(
             "preview_asset_prompt",
             title: "Preview a prompt",
