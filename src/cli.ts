@@ -36,6 +36,7 @@ import { createSampleProject, installAdapterTemplate, listAdapterTemplates } fro
 import { installProbeSdk } from './harness/probe-install.js';
 import { measureRunStability } from './harness/stability.js';
 import { analyzeFrameSequence } from './harness/temporal.js';
+import { listRunDiagnostics } from './harness/diagnostics.js';
 import { analyzeRunCapture, compareRunVisuals } from './harness/visual.js';
 import { compareRunPerformance, summarizeRunPerformance } from './harness/performance.js';
 import { createOptimizationGoal, evaluateOptimizationGoal } from './harness/goals.js';
@@ -102,6 +103,7 @@ Usage:
                     [--allow-gpu] [--allow-performance] [--jsonl]
   game-dev capture list [--limit N] [--json]
   game-dev capture verify <run-id|path> [--json]
+  game-dev capture diagnostics <run-id|path> [--baseline <run-id|path>] [--json]
   game-dev visual analyze <run-id|path> [--json]
   game-dev visual compare <baseline-run> <candidate-run> [--threshold 0..255] [--aa-tolerance 0..4] [--noise-floor STABILITY.json]
   game-dev visual stability <run> <run> [<run>...] --output NEW_DIRECTORY [--json]
@@ -1109,6 +1111,18 @@ async function dispatch(
 
   if (family === 'capture' && action === 'list') {
     return { operation: 'capture.list', data: await listRuns(runtime.config.runsDir, positiveIntegerFlag(parsed, 'limit', 100)) };
+  }
+
+  if (family === 'capture' && action === 'diagnostics') {
+    const runPath = await resolveRunPath(runtime.config.runsDir, requirePositional(parsed, 2, 'run id or path'));
+    const baseline = stringFlag(parsed, 'baseline');
+    return {
+      operation: 'capture.diagnostics',
+      data: await listRunDiagnostics({
+        runPath,
+        ...(baseline ? { baselineRunPath: await resolveRunPath(runtime.config.runsDir, baseline) } : {}),
+      }) as unknown as Record<string, unknown>,
+    };
   }
 
   if (family === 'capture' && action === 'verify') {

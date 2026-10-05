@@ -130,6 +130,11 @@ noise floor. Pass that record's path as `noiseFloor` to
 both the threshold and its own measured noise. A high floor is a finding in
 itself: it names where the renderer is non-deterministic.
 
+`list_run_diagnostics` groups the validation-layer reports, GL debug
+messages and engine assertions a run recorded, with handles and numbers
+normalised away, and with a `baseline` names the groups that are new since it.
+It only sees what the engine routes into `gdprobe_diagnostic`.
+
 `analyze_frame_sequence` looks at one run's frames in order, for the bugs no
 still frame shows: pixels whose brightness keeps reversing direction
 (z-fighting, shimmering, an unstable temporal filter), objects that appear,

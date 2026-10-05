@@ -242,6 +242,39 @@ gdprobe_status gdprobe_emit_measured(gdprobe_run *run,
  * Getting this right matters: the harness groups by aggregation, and a p99
  * pooled with raw samples produces a median of a mixed bag.
  */
+/*
+ * Severity of a diagnostic message. Validation layers and debug callbacks
+ * distinguish these, and so does the harness when it asks "what is new since
+ * the last good run": a new error is a finding, a new info line usually not.
+ */
+typedef enum gdprobe_severity {
+  GDPROBE_SEVERITY_INFO = 0,
+  GDPROBE_SEVERITY_WARNING,
+  GDPROBE_SEVERITY_ERROR
+} gdprobe_severity;
+
+/*
+ * Record one diagnostic message: a validation-layer report, a GL_KHR_debug
+ * callback, a shader compile warning, your own assertion.
+ *
+ * Route your API's debug callback here instead of (or as well as) stderr. The
+ * harness groups identical messages -- handles and numbers normalised away --
+ * links each group to the frames it occurred in, and diffs a run against its
+ * baseline, so "a new validation error appeared in this change" is a direct
+ * answer rather than a search through logs.
+ *
+ * `source` names the reporter ("vulkan-validation", "gl-debug", "engine").
+ * `message_id` is the reporter's stable id when it has one (Vulkan's
+ * pMessageIdName, a GL id), else NULL. `message` is truncated at 4000 bytes.
+ * `frame_index` may be -1 for messages outside any frame, such as at setup.
+ */
+gdprobe_status gdprobe_diagnostic(gdprobe_run *run,
+                                  const char *source,
+                                  gdprobe_severity severity,
+                                  const char *message_id,
+                                  const char *message,
+                                  int32_t frame_index);
+
 gdprobe_status gdprobe_measure(gdprobe_run *run,
                                const char *metric,
                                double value,

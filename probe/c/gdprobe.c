@@ -593,21 +593,18 @@ gdprobe_status gdprobe_emit(gdprobe_run *run,
   return gdprobe_emit_measured(run, category, name, value, unit, frame_index, GDPROBE_MEASURED_UNKNOWN);
 }
 
-gdprobe_status gdprobe_emit_measured(gdprobe_run *run,
-                                     const char *category,
-                                     const char *name,
-                                     double value,
-                                     const char *unit,
-                                     int32_t frame_index,
-                                     gdprobe_measured_by measured_by) {
-  if (!run || !category || !name || !unit) return GDPROBE_ERR_ARGUMENT;
-  if (!run->telemetry) {
-    char path[GDPROBE_MAX_PATH];
-    if (!format_bounded(path, sizeof path, "%s/telemetry.jsonl", run->run_dir)) { set_error(run, "telemetry path is too long"); return GDPROBE_ERR_LIMIT; }
-    run->telemetry = fopen(path, "wb");
-    if (!run->telemetry) { set_error(run, "cannot open telemetry.jsonl"); return GDPROBE_ERR_IO; }
-  }
+/* Open telemetry.jsonl on first use. */
+static gdprobe_status open_telemetry(gdprobe_run *run) {
+  if (run->telemetry) return GDPROBE_OK;
+  char path[GDPROBE_MAX_PATH];
+  if (!format_bounded(path, sizeof path, "%s/telemetry.jsonl", run->run_dir)) { set_error(run, "telemetry path is too long"); return GDPROBE_ERR_LIMIT; }
+  run->telemetry = fopen(path, "wb");
+  if (!run->telemetry) { set_error(run, "cannot open telemetry.jsonl"); return GDPROBE_ERR_IO; }
+  return GDPROBE_OK;
+}
 
+/* Everything up to and including the event name; the caller writes the rest. */
+static void write_event_head(gdprobe_run *run, const char *category, const char *name, int32_t frame_index) {
   FILE *out = run->telemetry;
   fputs("{\"schema\":\"game_dev.telemetry_event.v1\",\"runId\":", out);
   write_json_string(out, run->run_id);
@@ -623,6 +620,63 @@ gdprobe_status gdprobe_emit_measured(gdprobe_run *run,
   fputs(",\"name\":", out);
   write_json_string(out, name);
   if (frame_index >= 0) fprintf(out, ",\"frameIndex\":%d", frame_index);
+}
+
+gdprobe_status gdprobe_diagnostic(gdprobe_run *run,
+                                  const char *source,
+                                  gdprobe_severity severity,
+                                  const char *message_id,
+                                  const char *message,
+                                  int32_t frame_index) {
+  if (!run || !source || !message) return GDPROBE_ERR_ARGUMENT;
+  gdprobe_status opened = open_telemetry(run);
+  if (opened != GDPROBE_OK) return opened;
+
+  /* Bounded, and never cut inside a UTF-8 sequence: back up over
+     continuation bytes so the harness reads text, not a broken code point. */
+  char bounded[4001];
+  size_t length = strlen(message);
+  if (length > 4000) {
+    length = 4000;
+    while (length > 0 && ((unsigned char) message[length] & 0xC0) == 0x80) length -= 1;
+  }
+  memcpy(bounded, message, length);
+  bounded[length] = '\0';
+
+  static const char *const severities[] = { "info", "warning", "error" };
+  const char *severity_name = (severity >= GDPROBE_SEVERITY_INFO && severity <= GDPROBE_SEVERITY_ERROR)
+    ? severities[severity] : "error";
+
+  FILE *out = run->telemetry;
+  write_event_head(run, "diagnostic", "message", frame_index);
+  fputs(",\"attributes\":{\"source\":", out);
+  write_json_string(out, source);
+  fputs(",\"severity\":", out);
+  write_json_string(out, severity_name);
+  if (message_id && message_id[0]) {
+    fputs(",\"message_id\":", out);
+    write_json_string(out, message_id);
+  }
+  fputs(",\"message\":", out);
+  write_json_string(out, bounded);
+  fputs("}}\n", out);
+  run->telemetry_written = 1;
+  return GDPROBE_OK;
+}
+
+gdprobe_status gdprobe_emit_measured(gdprobe_run *run,
+                                     const char *category,
+                                     const char *name,
+                                     double value,
+                                     const char *unit,
+                                     int32_t frame_index,
+                                     gdprobe_measured_by measured_by) {
+  if (!run || !category || !name || !unit) return GDPROBE_ERR_ARGUMENT;
+  gdprobe_status opened = open_telemetry(run);
+  if (opened != GDPROBE_OK) return opened;
+
+  FILE *out = run->telemetry;
+  write_event_head(run, category, name, frame_index);
   fprintf(out, ",\"value\":%.10g,\"unit\":", value);
   write_json_string(out, unit);
   /* The reserved attribute. Written only when known: the harness reads

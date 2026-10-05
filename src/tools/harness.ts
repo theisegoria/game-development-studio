@@ -18,6 +18,7 @@ import { loadAdapter, planScenarioRun, serializableAdapterSnapshot } from '../ha
 import { executeScenarioRun } from '../harness/run-bundle.js';
 import { measureRunStability } from '../harness/stability.js';
 import { analyzeFrameSequence } from '../harness/temporal.js';
+import { listRunDiagnostics } from '../harness/diagnostics.js';
 import { invalidInput } from '../util/errors.js';
 import { compareRunPerformance, summarizeRunPerformance } from '../harness/performance.js';
 import { resolveRunPath, verifyRunBundle } from '../harness/run-bundle.js';
@@ -329,6 +330,30 @@ export function registerHarnessTools(server: ToolRegistrar, ctx: ToolContext): v
       }));
       return ok(record, visuals);
     }),
+  );
+
+  server.registerTool(
+    'list_run_diagnostics',
+    {
+      title: 'Group a run\'s validation errors and say what is new',
+      description:
+        'FREE, local, read-only. Groups the diagnostic messages a sealed run recorded -- validation '
+        + 'layer reports, GL debug callbacks, engine assertions -- by source, severity and message '
+        + '(handles and numbers normalised away), and places each group in its frames. Give a '
+        + 'baseline run to get the groups introduced and resolved since it: usually the fastest '
+        + 'route from "the change broke rendering" to the line that says why. An empty list only '
+        + 'means nothing was recorded; the engine must route its callback into gdprobe_diagnostic.',
+      inputSchema: {
+        run: runReference,
+        baseline: runReference.optional()
+          .describe('An earlier run of the same scenario to diff against, e.g. the last good one.'),
+      },
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    guard(ctx.logger, 'list_run_diagnostics', async (args) => ok(await listRunDiagnostics({
+      runPath: await resolve(args.run),
+      ...(args.baseline !== undefined ? { baselineRunPath: await resolve(args.baseline) } : {}),
+    }))),
   );
 
   server.registerTool(

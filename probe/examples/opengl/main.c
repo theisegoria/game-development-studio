@@ -81,10 +81,17 @@ static unsigned int debug_messages = 0;
 #ifndef __APPLE__
 static void GLAPIENTRY on_debug_message(GLenum source, GLenum type, GLuint id, GLenum severity,
                                         GLsizei length, const GLchar *message, const void *user) {
-  (void) source; (void) type; (void) id; (void) length; (void) user;
+  (void) source; (void) type; (void) length;
   if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
   debug_messages += 1;
   fprintf(stderr, "gl debug: %s\n", message);
+  if (user) {
+    char message_id[32];
+    snprintf(message_id, sizeof message_id, "gl-%u", (unsigned) id);
+    gdprobe_diagnostic((gdprobe_run *) user, "gl-debug",
+                       severity == GL_DEBUG_SEVERITY_HIGH ? GDPROBE_SEVERITY_ERROR : GDPROBE_SEVERITY_WARNING,
+                       message_id, message, -1);
+  }
 }
 #endif
 
@@ -234,7 +241,8 @@ int main(int argc, char **argv) {
   if (has_gl_extension("GL_KHR_debug")) {
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(on_debug_message, NULL);
+    /* The run is the user parameter: messages are recorded structurally. */
+    glDebugMessageCallback(on_debug_message, run);
   }
 #endif
 

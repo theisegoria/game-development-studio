@@ -82,11 +82,18 @@ static uint32_t validation_messages = 0;
 static VKAPI_ATTR VkBool32 VKAPI_CALL on_debug_message(
     VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT types,
     const VkDebugUtilsMessengerCallbackDataEXT *data, void *user) {
-  (void) types; (void) user;
+  (void) types;
   if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
     validation_messages += 1;
     /* stderr is captured into the sealed run, so the text is not lost. */
     fprintf(stderr, "validation: %s\n", data->pMessage);
+    /* And recorded structurally, so the harness can group it, place it and
+       say whether it is new since the baseline. The run is the user data. */
+    if (user) {
+      gdprobe_diagnostic((gdprobe_run *) user, "vulkan-validation",
+                         severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT ? GDPROBE_SEVERITY_ERROR : GDPROBE_SEVERITY_WARNING,
+                         data->pMessageIdName, data->pMessage, -1);
+    }
   }
   return VK_FALSE;
 }
@@ -147,7 +154,7 @@ int main(int argc, char **argv) {
     VkDebugUtilsMessengerCreateInfoEXT messenger_info = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, NULL, 0,
       VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
       VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-      on_debug_message, NULL };
+      on_debug_message, run };
     if (create) create(instance, &messenger_info, NULL, &messenger);
   }
 

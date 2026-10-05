@@ -31,6 +31,17 @@ export const HARDWARE_MEASUREMENT_PROVENANCE: ReadonlySet<MeasurementProvenance>
   'gpu_timestamp_query', 'pipeline_statistics_query', 'driver_report',
 ]);
 export const MEASURED_BY_ATTRIBUTE = 'measured_by' as const;
+
+/**
+ * Reserved attributes of a `category: diagnostic` message event: a validation
+ * layer report, a debug callback, an engine assertion. `severity` and
+ * `message` must be present together and well-formed, because a diagnostic the
+ * harness cannot classify would be silently dropped from exactly the "what is
+ * new since the baseline" answer it exists to give.
+ */
+export const DIAGNOSTIC_SEVERITIES = ['info', 'warning', 'error'] as const;
+export type DiagnosticSeverity = (typeof DIAGNOSTIC_SEVERITIES)[number];
+export const DIAGNOSTIC_MESSAGE_LIMIT = 4096;
 export const GAME_DEV_PERFORMANCE_SUMMARY_SCHEMA = 'game_dev.performance_summary.v2' as const;
 export const GAME_DEV_PERFORMANCE_COMPARISON_SCHEMA = 'game_dev.performance_comparison.v2' as const;
 export const GAME_DEV_VISUAL_COMPARISON_SCHEMA = 'game_dev.visual_comparison.v1' as const;
@@ -413,6 +424,16 @@ export const telemetryEventSchema = z.object({
 }).strict().superRefine((value, context) => {
   if ((value.value === undefined) !== (value.unit === undefined)) {
     context.addIssue({ code: z.ZodIssueCode.custom, message: 'value and unit must appear together' });
+  }
+  const severity = value.attributes.severity;
+  const message = value.attributes.message;
+  if (value.category === 'diagnostic' && (severity !== undefined || message !== undefined)) {
+    if (!DIAGNOSTIC_SEVERITIES.includes(severity as DiagnosticSeverity)) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: `attributes.severity must be one of ${DIAGNOSTIC_SEVERITIES.join(', ')}` });
+    }
+    if (typeof message !== 'string' || message.length === 0 || message.length > DIAGNOSTIC_MESSAGE_LIMIT) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: `attributes.message must be a string of 1 to ${DIAGNOSTIC_MESSAGE_LIMIT} characters` });
+    }
   }
   const measuredBy = value.attributes[MEASURED_BY_ATTRIBUTE];
   if (measuredBy !== undefined && !measurementProvenanceSchema.safeParse(measuredBy).success) {

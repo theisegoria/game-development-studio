@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Structured diagnostics.** Validation-layer reports, GL debug messages and
+  engine assertions are recorded as `category: diagnostic` events with
+  reserved `severity`, `message`, `source` and `message_id` attributes. The C
+  SDK gains `gdprobe_diagnostic()`, and the Vulkan and OpenGL examples route
+  their callbacks into it. `game-dev capture diagnostics` and the
+  `list_run_diagnostics` MCP tool group messages with handles and numbers
+  normalised away, place them in frames, and with a baseline name what is new.
 - **Temporal analysis within a run.** `game-dev visual sequence` and the
   `analyze_frame_sequence` MCP tool read one run's frames in order and report
   flicker (pixels whose brightness reverses direction repeatedly, with a
