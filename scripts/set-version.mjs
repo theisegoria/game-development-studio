@@ -52,6 +52,9 @@ async function editText(relative, from, to) {
 await editJson('package.json', (d) => { d.version = next; });
 await editJson('package-lock.json', (d) => { d.version = next; d.packages[''].version = next; });
 await editText('src/version.ts', `GAME_DEV_VERSION = '${current}'`, `GAME_DEV_VERSION = '${next}'`);
+// The Action installs this release by default; a stale default pins every
+// pull-request gate to an old CLI without anyone noticing.
+await editText('action/action.yml', `default: ${current}`, `default: ${next}`);
 await editJson('skills/manifest.json', (d) => { d.version = next; });
 await editJson('.codex-plugin/plugin.json', (d) => { d.version = next; });
 

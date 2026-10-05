@@ -411,6 +411,18 @@ source assets, and vendored assets remain subject to their own terms and
 licenses.
 
 
+## Catch visual regressions in pull requests
+
+Add the [visual regression gate](docs/ci-gate.md) to your engine's repository:
+every pull request is captured against its base commit on the same runner,
+compared beyond the measured noise floor, and summarised with heatmaps.
+
+```yaml
+- uses: theisegoria/game-development-studio/action@v1.4.0
+  with:
+    scenario: capture
+```
+
 ## Standalone production workflows (1.3)
 
 All new operations are discoverable through `game-dev capabilities --json` and

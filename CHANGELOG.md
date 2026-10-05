@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Pull-request visual regression gate.** A GitHub Action
+  (`theisegoria/game-development-studio/action`) captures a scenario on the
+  base commit and the head on the same runner, measures the base's own noise
+  floor, and fails the job when the head changed pixels beyond it. The job
+  summary carries the verdict, the plain-language summary, a per-attachment
+  table and heatmaps. No baseline files to commit. See `docs/ci-gate.md`.
 - The native Game Development Studio app gains a verified run library, an
   attachment viewer with comparison controls, raw-sample performance charts and
   histograms, package and durable-job libraries, and a view for reviewing

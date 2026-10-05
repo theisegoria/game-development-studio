@@ -1,0 +1,87 @@
+name: Game Development Studio visual regression gate
+description: >-
+  Capture a scenario on the pull request's base commit and on its head, measure
+  the base's own run-to-run noise, and fail when the head changed pixels beyond
+  that noise. Heatmaps and a plain-language summary land in the job summary.
+author: theisegoria
+branding:
+  icon: eye
+  color: purple
+
+inputs:
+  scenario:
+    description: Scenario id from the project's .game-dev/adapter.json.
+    required: true
+  project:
+    description: Path to the game project, relative to the repository root.
+    default: .
+  request:
+    description: Optional scenario parameters JSON file, relative to the project.
+    default: ''
+  build:
+    description: >-
+      Optional shell command run in the project before capturing, once for the
+      base checkout and once for the head (for example `make` or `cargo build --release`).
+    default: ''
+  base-ref:
+    description: Commit to compare against. Defaults to the pull request's base, else HEAD^.
+    default: ''
+  baseline-runs:
+    description: >-
+      How many times to capture the base. Two or more measures a per-pixel noise
+      floor so the renderer's own jitter is not reported as a regression.
+    default: '2'
+  threshold:
+    description: Per-channel difference (0..255) below which a pixel is not counted as changed.
+    default: '0'
+  fail-on:
+    description: "`change` fails the job when the head differs beyond the noise floor; `never` only reports."
+    default: change
+  allow-gpu:
+    description: >-
+      Pass --allow-gpu for scenarios that declare `gpu`. Hosted runners have no
+      GPU; use the software-raster lane there and keep this false.
+    default: 'false'
+  version:
+    description: Game Development Studio release to install (checksum-verified from GitHub Releases).
+    default: 1.4.0
+  cli:
+    description: Path to an existing game-dev CLI entry point. Skips the release install (used by this repository's own tests).
+    default: ''
+
+outputs:
+  verdict:
+    description: identical, within-tolerance, changed or incomparable.
+    value: ${{ steps.gate.outputs.verdict }}
+  report-dir:
+    description: Directory holding report.md, report.json and heatmap PNGs. Upload it with actions/upload-artifact.
+    value: ${{ steps.gate.outputs.report-dir }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install the game-dev CLI from a checksum-verified release
+      if: inputs.cli == ''
+      shell: bash
+      env:
+        GDS_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        node "$GITHUB_ACTION_PATH/install.mjs" "$GDS_VERSION" "$RUNNER_TEMP/gds-cli"
+        echo "GDS_CLI=$RUNNER_TEMP/gds-cli/lib/node_modules/@theisegoria/game-development-studio/dist/cli.js" >> "$GITHUB_ENV"
+
+    - name: Capture base and head, then compare
+      id: gate
+      shell: bash
+      env:
+        GDS_CLI_OVERRIDE: ${{ inputs.cli }}
+        GDS_SCENARIO: ${{ inputs.scenario }}
+        GDS_PROJECT: ${{ inputs.project }}
+        GDS_REQUEST: ${{ inputs.request }}
+        GDS_BUILD: ${{ inputs.build }}
+        GDS_BASE_REF: ${{ inputs.base-ref || github.event.pull_request.base.sha }}
+        GDS_BASELINE_RUNS: ${{ inputs.baseline-runs }}
+        GDS_THRESHOLD: ${{ inputs.threshold }}
+        GDS_FAIL_ON: ${{ inputs.fail-on }}
+        GDS_ALLOW_GPU: ${{ inputs.allow-gpu }}
+      run: node "$GITHUB_ACTION_PATH/run.mjs"

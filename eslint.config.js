@@ -33,7 +33,7 @@ export default tseslint.config(
   {
     // Standalone CLI scripts: stdout IS the interface here, unlike the server
     // where stdout belongs to the MCP transport and console would corrupt it.
-    files: ['scripts/**/*.mjs'],
+    files: ['scripts/**/*.mjs', 'action/**/*.mjs'],
     languageOptions: {
       globals: { console: 'readonly', process: 'readonly' },
     },

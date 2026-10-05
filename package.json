@@ -65,7 +65,7 @@
     "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json",
     "prepare": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "lint": "eslint src tests scripts",
+    "lint": "eslint src tests scripts action",
     "verify": "npm run build && node scripts/verify-install.mjs && node scripts/verify-plugin.mjs",
     "verify:plugin": "node scripts/verify-plugin.mjs",
     "verify:docs": "node scripts/check-install-docs.mjs",

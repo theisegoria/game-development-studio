@@ -34,6 +34,8 @@ describe('every surface states the same version', () => {
 
     expect(pkg.version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(GAME_DEV_VERSION).toBe(pkg.version);
+    // The GitHub Action installs this release by default.
+    expect(await readFile(path.join(root, 'action', 'action.yml'), 'utf8')).toContain(`default: ${pkg.version}`);
     expect(manifest.version).toBe(pkg.version);
     expect(plugin.version).toBe(pkg.version);
     expect(provenance.bundledRuntime.gameDevCli.version).toBe(pkg.version);
@@ -55,12 +57,13 @@ describe('every surface states the same version', () => {
   it('bumps the lockfile and both legal profiles in an isolated fixture', async () => {
     const fixture = await mkdtemp(path.join(os.tmpdir(), 'version-bump-'));
     try {
-      for (const relative of ['package.json', 'package-lock.json', 'src/version.ts', 'skills/manifest.json', '.codex-plugin/plugin.json', 'scripts/set-version.mjs', 'CHANGELOG.md', 'distribution/macos-app-repo', 'distribution/macos-ci-upstream-node', 'distribution/skills-repo/README.md', 'distribution/skills-repo/PLUGIN_README.md']) {
+      for (const relative of ['package.json', 'package-lock.json', 'src/version.ts', 'skills/manifest.json', '.codex-plugin/plugin.json', 'scripts/set-version.mjs', 'CHANGELOG.md', 'distribution/macos-app-repo', 'distribution/macos-ci-upstream-node', 'distribution/skills-repo/README.md', 'distribution/skills-repo/PLUGIN_README.md', 'action/action.yml']) {
         await mkdir(path.dirname(path.join(fixture, relative)), { recursive: true });
         await cp(path.join(root, relative), path.join(fixture, relative), { recursive: true });
       }
       const next = '9.8.7';
       execFileSync(process.execPath, [path.join(fixture, 'scripts/set-version.mjs'), next]);
+      expect(await readFile(path.join(fixture, 'action/action.yml'), 'utf8')).toContain(`default: ${next}`);
       const exportedReadme = await readFile(path.join(fixture, 'distribution/skills-repo/README.md'), 'utf8');
       expect(exportedReadme).toContain(`skills bundle **${next}**`);
       expect(exportedReadme).toContain(`--ref v${next}`);
