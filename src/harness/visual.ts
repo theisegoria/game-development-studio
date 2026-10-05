@@ -301,13 +301,13 @@ function edgeMagnitudeAt(plane: Float64Array, width: number, x: number, y: numbe
   return Math.hypot(gx, gy) / 1_442.5;
 }
 
-function objectIdAt(buffer: RasterImage, offset: number): number {
+export function objectIdAt(buffer: RasterImage, offset: number): number {
   return ((buffer.data[offset] ?? 0) << 16)
     | ((buffer.data[offset + 1] ?? 0) << 8)
     | (buffer.data[offset + 2] ?? 0);
 }
 
-function formatObjectId(objectId: number): string {
+export function formatObjectId(objectId: number): string {
   return `0x${objectId.toString(16).padStart(6, '0')}`;
 }
 

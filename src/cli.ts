@@ -35,6 +35,7 @@ import { executeScenarioRun, resolveRunPath, verifyRunBundle } from './harness/r
 import { createSampleProject, installAdapterTemplate, listAdapterTemplates } from './harness/templates.js';
 import { installProbeSdk } from './harness/probe-install.js';
 import { measureRunStability } from './harness/stability.js';
+import { analyzeFrameSequence } from './harness/temporal.js';
 import { analyzeRunCapture, compareRunVisuals } from './harness/visual.js';
 import { compareRunPerformance, summarizeRunPerformance } from './harness/performance.js';
 import { createOptimizationGoal, evaluateOptimizationGoal } from './harness/goals.js';
@@ -104,6 +105,7 @@ Usage:
   game-dev visual analyze <run-id|path> [--json]
   game-dev visual compare <baseline-run> <candidate-run> [--threshold 0..255] [--aa-tolerance 0..4] [--noise-floor STABILITY.json]
   game-dev visual stability <run> <run> [<run>...] --output NEW_DIRECTORY [--json]
+  game-dev visual sequence <run> [--kind color] [--label L] [--threshold 0..255] [--min-reversals N] [--output NEW_DIRECTORY] [--json]
                   [--output NEW_DIRECTORY] [--jsonl]
   game-dev performance summarize <run-id|path> [--warmup-frames N] [--json]
   game-dev performance compare <baseline-run> <candidate-run> [--stat median] [--json]
@@ -1156,6 +1158,26 @@ async function dispatch(
     };
   }
 
+  if (family === 'visual' && action === 'sequence') {
+    const runPath = await resolveRunPath(runtime.config.runsDir, requirePositional(parsed, 2, 'run id or path'));
+    const threshold = stringFlag(parsed, 'threshold');
+    const minReversals = stringFlag(parsed, 'min-reversals');
+    const output = stringFlag(parsed, 'output');
+    const analysis = await analyzeFrameSequence({
+      runPath,
+      ...(stringFlag(parsed, 'kind') ? { kind: stringFlag(parsed, 'kind') as string } : {}),
+      ...(stringFlag(parsed, 'label') ? { label: stringFlag(parsed, 'label') as string } : {}),
+      ...(threshold !== undefined ? { threshold: Number(threshold) } : {}),
+      ...(minReversals !== undefined ? { minReversals: Number(minReversals) } : {}),
+      ...(output ? { outputPath: path.resolve(output) } : {}),
+    });
+    return {
+      operation: 'visual.sequence',
+      data: analysis as unknown as Record<string, unknown>,
+      ...(analysis.flicker?.heatmapPath ? { artifacts: [{ path: analysis.flicker.heatmapPath, kind: 'flicker_heatmap' }] } : {}),
+    };
+  }
+
   if (family === 'visual' && action === 'stability') {
     const references = parsed.positionals.slice(2);
     if (references.length < 2) throw invalidInput('visual stability needs at least two run ids or paths');
@@ -1404,6 +1426,7 @@ function needsDurableJob(runtime: GameDevRuntime, parsed: ParsedArguments): bool
   if (family === 'support' && action === 'report' && stringFlag(parsed, 'output') !== undefined && booleanFlag(parsed, 'confirm')) return true;
   if (family === 'visual' && action === 'compare' && stringFlag(parsed, 'output') !== undefined) return true;
   if (family === 'visual' && action === 'stability') return true;
+  if (family === 'visual' && action === 'sequence' && stringFlag(parsed, 'output') !== undefined) return true;
   if (family === 'performance' && ['goal-create', 'goal-evaluate'].includes(action ?? '') && booleanFlag(parsed, 'confirm')) {
     return true;
   }

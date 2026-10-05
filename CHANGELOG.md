@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Temporal analysis within a run.** `game-dev visual sequence` and the
+  `analyze_frame_sequence` MCP tool read one run's frames in order and report
+  flicker (pixels whose brightness reverses direction repeatedly, with a
+  heatmap), popping (objects appearing, vanishing or halving between adjacent
+  frames) and frame pacing (alternating short/long frames the mean hides),
+  attributed to object ids where the run has an id buffer.
 - **Pull-request visual regression gate.** A GitHub Action
   (`theisegoria/game-development-studio/action`) captures a scenario on the
   base commit and the head on the same runner, measures the base's own noise

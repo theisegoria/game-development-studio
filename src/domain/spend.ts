@@ -145,6 +145,8 @@ export const FREE_TOOLS: ReadonlySet<string> = new Set([
   'credentials_status',
   // Noise measurement: local arithmetic over sealed runs, workspace-local output.
   'measure_run_stability',
+  // Temporal analysis: local arithmetic over one sealed run, workspace-local output.
+  'analyze_frame_sequence',
 ]);
 
 export function isSpendingTool(tool: string): boolean {

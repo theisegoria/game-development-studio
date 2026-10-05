@@ -17,6 +17,7 @@ import { analyzeRunCapture, compareRunVisuals, type RasterAnalysis } from '../ha
 import { loadAdapter, planScenarioRun, serializableAdapterSnapshot } from '../harness/adapter.js';
 import { executeScenarioRun } from '../harness/run-bundle.js';
 import { measureRunStability } from '../harness/stability.js';
+import { analyzeFrameSequence } from '../harness/temporal.js';
 import { invalidInput } from '../util/errors.js';
 import { compareRunPerformance, summarizeRunPerformance } from '../harness/performance.js';
 import { resolveRunPath, verifyRunBundle } from '../harness/run-bundle.js';
@@ -327,6 +328,57 @@ export function registerHarnessTools(server: ToolRegistrar, ctx: ToolContext): v
         label: `${attachment.identity}: noise floor, ${(attachment.unstablePixelRatio * 100).toFixed(2)}% of pixels unstable`,
       }));
       return ok(record, visuals);
+    }),
+  );
+
+  server.registerTool(
+    'analyze_frame_sequence',
+    {
+      title: 'Find flicker, popping and uneven pacing within one run',
+      description:
+        'FREE, local. Reads every frame of ONE sealed run in order and reports what no single frame '
+        + 'shows: pixels whose brightness keeps reversing direction (z-fighting, shimmering, an '
+        + 'unstable temporal filter), objects that appear, vanish or halve between adjacent frames '
+        + '(LOD pops, culling, streaming), and frame times that alternate short/long (stutter the '
+        + 'mean hides). Findings are attributed to object ids when the run has an object_id '
+        + 'attachment; the flicker heatmap comes back as an image. Needs 3+ frames for flicker.',
+      inputSchema: {
+        run: runReference,
+        kind: z.string().min(1).max(32).default('color')
+          .describe('Attachment kind to read across frames, e.g. color, albedo, depth preview.'),
+        label: z.string().min(1).max(64).optional()
+          .describe('Attachment label, when frames carry several attachments of one kind.'),
+        threshold: z.number().min(0).max(255).default(2)
+          .describe('Luminance steps (0..255) at or below this are not a direction change.'),
+        minReversals: z.number().int().min(1).max(64).default(2)
+          .describe('Direction reversals a pixel needs to count as flickering; 2 is up-down-up.'),
+        pacingMetric: z.string().min(1).max(128).default('performance.frame_time')
+          .describe('Per-frame metric to judge pacing by, as the performance summary names it.'),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    guard(ctx.logger, 'analyze_frame_sequence', async (args) => {
+      const runPath = await resolve(args.run);
+      const analysis = await analyzeFrameSequence({
+        runPath,
+        kind: args.kind,
+        ...(args.label !== undefined ? { label: args.label } : {}),
+        threshold: args.threshold,
+        minReversals: args.minReversals,
+        pacingMetric: args.pacingMetric,
+        // Derived, never caller-supplied: a model-chosen write path is an injection surface.
+        outputPath: path.join(ctx.config.dataRoot, 'sequences', `${path.basename(runPath)}__${Date.now()}`),
+      });
+      const visuals: VisualAttachment[] = analysis.flicker?.heatmapPath
+        ? [{
+          path: analysis.flicker.heatmapPath,
+          mimeType: 'image/png',
+          role: 'diff_heatmap',
+          colorimetry: 'srgb',
+          label: `flicker: ${(analysis.flicker.pixelRatio * 100).toFixed(2)}% of pixels reversed ${analysis.flicker.minReversals}+ times`,
+        }]
+        : [];
+      return ok(analysis, visuals);
     }),
   );
 

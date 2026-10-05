@@ -116,7 +116,7 @@ spending, no writes. Useful for exploratory sessions. The default is `all`.
 ## Capture and analysis over MCP
 
 The harness is on MCP: `verify_capture_run`, `analyze_capture_run`,
-`compare_capture_visuals`, `measure_run_stability`,
+`compare_capture_visuals`, `measure_run_stability`, `analyze_frame_sequence`,
 `summarize_run_performance`, `compare_run_performance`, `plan_scenario_run`
 and `run_scenario`, plus `render_asset_contact_sheet` for assets. Frames,
 heatmaps, noise floors, UV plots and texture thumbnails come back as images
@@ -129,6 +129,13 @@ noise floor. Pass that record's path as `noiseFloor` to
 `compare_capture_visuals` and a pixel counts as changed only when it exceeds
 both the threshold and its own measured noise. A high floor is a finding in
 itself: it names where the renderer is non-deterministic.
+
+`analyze_frame_sequence` looks at one run's frames in order, for the bugs no
+still frame shows: pixels whose brightness keeps reversing direction
+(z-fighting, shimmering, an unstable temporal filter), objects that appear,
+vanish or halve between adjacent frames, and frame times that alternate
+short/long. Findings are attributed to object ids when the run carries an
+`object_id` attachment.
 
 `run_scenario` starts a process the project declares, so it is gated twice.
 The handler refuses unless `GAME_DEV_MCP_ALLOW_EXECUTION=1` is in the server

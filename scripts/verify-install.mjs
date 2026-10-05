@@ -27,6 +27,7 @@ const EXPECTED_TOOLS = [
   'evaluate_optimization_goal',
   'list_catalog_assets',
   'measure_run_stability',
+  'analyze_frame_sequence',
   'plan_asset_package',
   'plan_vendor_admission',
   'show_catalog_asset',
