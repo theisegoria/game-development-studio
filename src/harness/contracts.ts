@@ -446,6 +446,49 @@ export const telemetryEventSchema = z.object({
 
 export type TelemetryEvent = z.infer<typeof telemetryEventSchema>;
 
+export const GAME_DEV_TELEMETRY_SPAN_SCHEMA = 'game_dev.telemetry_event.v2' as const;
+const decimalId = z.string().regex(/^[1-9]\d{0,19}$/);
+const decimalNs = z.string().regex(/^\d{1,20}$/);
+
+/**
+ * A timed span: one pass, one stage, one scope, with a parent.
+ *
+ * v1 events carry a value; they cannot say "the shadow pass took 3ms and
+ * contained these two cascades". v2 adds exactly what that needs and nothing
+ * more: an id, an optional parent id, a start and a duration as decimal
+ * strings (a nanosecond GPU clock exceeds 2^53), and the clock domain, since a
+ * GPU span and a CPU span cannot be nested in one another or summed together.
+ * v1 stays valid forever; a telemetry file may interleave both, sharing one
+ * strictly increasing sequence.
+ */
+export const telemetrySpanEventSchema = z.object({
+  schema: z.literal(GAME_DEV_TELEMETRY_SPAN_SCHEMA),
+  runId: identifier,
+  sequence: z.number().int().min(0),
+  kind: z.literal('span'),
+  spanId: decimalId,
+  parentSpanId: decimalId.optional(),
+  name: metricIdentifier,
+  frameIndex: z.number().int().min(0).optional(),
+  startNs: decimalNs,
+  durationNs: decimalNs,
+  clockDomain: z.enum(['gpu', 'cpu']),
+  attributes: z.record(z.union([z.string(), z.number().finite(), z.boolean(), z.null()])).default({}),
+}).strict().superRefine((value, context) => {
+  if (value.parentSpanId !== undefined && value.parentSpanId === value.spanId) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'a span cannot be its own parent' });
+  }
+  const measuredBy = value.attributes[MEASURED_BY_ATTRIBUTE];
+  if (measuredBy !== undefined && !measurementProvenanceSchema.safeParse(measuredBy).success) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `attributes.${MEASURED_BY_ATTRIBUTE} must be one of ${MEASUREMENT_PROVENANCE.join(', ')}`,
+    });
+  }
+});
+
+export type TelemetrySpanEvent = z.infer<typeof telemetrySpanEventSchema>;
+
 export const runArtifactSchema = z.object({
   path: relativePathSchema,
   kind: z.enum([

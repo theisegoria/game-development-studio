@@ -148,6 +148,7 @@ export const FREE_TOOLS: ReadonlySet<string> = new Set([
   // Temporal analysis: local arithmetic over one sealed run, workspace-local output.
   'analyze_frame_sequence',
   'list_run_diagnostics',
+  'performance_breakdown',
 ]);
 
 export function isSpendingTool(tool: string): boolean {

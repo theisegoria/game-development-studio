@@ -396,12 +396,14 @@ int main(int argc, char **argv) {
 
   /* ------------------------------------------------------------------ results */
   double pass_ns = -1;
+  double pass_start_ns = 0;
   if (timestamp_pool) {
     uint64_t stamps[4];
     VkResult got = vkGetQueryPoolResults(device, timestamp_pool, 0, 2, sizeof stamps, stamps, 16,
       VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
     if (got == VK_SUCCESS && stamps[1] != 0 && stamps[3] != 0 && stamps[2] >= stamps[0]) {
       pass_ns = (double) (stamps[2] - stamps[0]) * properties.limits.timestampPeriod;
+      pass_start_ns = (double) stamps[0] * properties.limits.timestampPeriod;
     }
   }
   uint64_t fragment_invocations = 0, clipped_primitives = 0;
@@ -450,6 +452,10 @@ int main(int argc, char **argv) {
   /* Every number says what measured it. */
   if (pass_ns >= 0) {
     gdprobe_emit_measured(run, "render", "pass.main.gpu_duration_ns", pass_ns, "ns", 0, GDPROBE_MEASURED_GPU_TIMESTAMP_QUERY);
+    /* The same pass as a span, so `performance breakdown` can place it. A real
+       engine records one per pass under a reserved frame span. */
+    gdprobe_span_record(run, gdprobe_span_reserve(run), 0, "main pass", 0, (uint64_t) pass_start_ns, (uint64_t) pass_ns,
+                        GDPROBE_CLOCK_GPU, GDPROBE_MEASURED_GPU_TIMESTAMP_QUERY);
   }
   if (statistics_valid) {
     gdprobe_emit_measured(run, "render", "pipeline_statistics.fragment_invocations", (double) fragment_invocations, "count", 0,

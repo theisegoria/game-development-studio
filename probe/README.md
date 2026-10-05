@@ -121,6 +121,26 @@ performance summary, and an optimisation goal that requires a hardware
 measurement will refuse a metric of unknown provenance rather than chase a
 number nothing measured.
 
+## Record where the frame time went
+
+A single `frame_time` says a frame got slower, not which part. Record spans
+with parents and the harness names the pass that grew:
+
+```c
+uint64_t frame = gdprobe_span_reserve(run);
+uint64_t shadows = gdprobe_span_reserve(run);
+/* ... resolve your timestamp queries ... */
+gdprobe_span_record(run, shadows, frame, "shadows", index, shadow_start, shadow_ns,
+                    GDPROBE_CLOCK_GPU, GDPROBE_MEASURED_GPU_TIMESTAMP_QUERY);
+gdprobe_span_record(run, frame, 0, "frame", index, frame_start, frame_ns,
+                    GDPROBE_CLOCK_GPU, GDPROBE_MEASURED_GPU_TIMESTAMP_QUERY);
+```
+
+`game-dev performance breakdown RUN --baseline GOOD_RUN` then reports each
+pass's own time and which grew. Already have a profiler that exports Chrome
+or Perfetto JSON? List that file in the capture's `profiles` and it is read
+the same way, with no SDK spans at all.
+
 ## Record validation errors, not just count them
 
 Route your graphics API's debug callback into `gdprobe_diagnostic`:

@@ -275,6 +275,40 @@ gdprobe_status gdprobe_diagnostic(gdprobe_run *run,
                                   const char *message,
                                   int32_t frame_index);
 
+/* Which clock a span was timed on. GPU and CPU spans never nest in each other. */
+typedef enum gdprobe_clock_domain {
+  GDPROBE_CLOCK_GPU = 0,
+  GDPROBE_CLOCK_CPU
+} gdprobe_clock_domain;
+
+/*
+ * Reserve a span id. Ids are SDK-owned and unique within the run, so a parent
+ * can be named before it is recorded: reserve the frame's id, record each pass
+ * with that parent as its timings resolve, then record the frame itself.
+ * Returns 0 only when `run` is NULL.
+ */
+uint64_t gdprobe_span_reserve(gdprobe_run *run);
+
+/*
+ * Record a timed span: a frame, a pass, a stage, a scope.
+ *
+ * `parent_id` is 0 for a root. Times are in nanoseconds on the named clock --
+ * for a GPU span, the resolved timestamp query values scaled by the device's
+ * timestamp period. The harness builds the tree, computes each span's own
+ * (self) time, and names the pass that grew between two runs, which is where
+ * "frame_time regressed" becomes an edit. `name` is cleaned to the metric
+ * identifier alphabet (spaces become `_`).
+ */
+gdprobe_status gdprobe_span_record(gdprobe_run *run,
+                                   uint64_t span_id,
+                                   uint64_t parent_id,
+                                   const char *name,
+                                   int32_t frame_index,
+                                   uint64_t start_ns,
+                                   uint64_t duration_ns,
+                                   gdprobe_clock_domain clock,
+                                   gdprobe_measured_by measured_by);
+
 gdprobe_status gdprobe_measure(gdprobe_run *run,
                                const char *metric,
                                double value,

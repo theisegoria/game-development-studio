@@ -12,7 +12,9 @@ import {
   HARDWARE_MEASUREMENT_PROVENANCE,
   MEASURED_BY_ATTRIBUTE,
   type MeasurementProvenance,
+  telemetrySpanEventSchema,
 } from './contracts.js';
+import { spansFromTrace, traceEventsOf } from './spans.js';
 import { canonicalJson } from '../packages/format.js';
 import { verifyRunBundle } from './run-bundle.js';
 import { describeComparison, describeSummary } from './describe-performance.js';
@@ -222,9 +224,33 @@ async function telemetryMeasurements(filePath: string, expectedRunId: string): P
       }
       continue;
     }
+    // A v2 span is also a measurement: `span.<clock>.<name>` in nanoseconds, so
+    // summaries, comparisons and goals see per-pass time with no extra wiring.
+    // It shares v1's sequence, which stays strictly increasing across both.
+    const span = telemetrySpanEventSchema.safeParse(value);
+    if (span.success) {
+      if (span.data.runId !== expectedRunId) {
+        throw invalidState('span telemetry event does not join the run identity', { filePath, line: index + 1 });
+      }
+      if (span.data.sequence <= lastSequence) {
+        throw invalidState('standard telemetry sequence is not strictly increasing', { filePath, line: index + 1 });
+      }
+      lastSequence = span.data.sequence;
+      measurements.push({
+        metric: `span.${span.data.clockDomain}.${span.data.name}`,
+        unit: 'ns',
+        value: Number(span.data.durationNs),
+        source: 'telemetry',
+        aggregation: 'sample',
+        measuredBy: (span.data.attributes[MEASURED_BY_ATTRIBUTE] as MeasurementProvenance | undefined) ?? 'unknown',
+        ...(span.data.frameIndex !== undefined ? { frameIndex: span.data.frameIndex } : {}),
+        artifact: path.basename(filePath),
+      });
+      continue;
+    }
     const foreign = foreignTelemetryMeasurements(value);
     if (foreign.length === 0) {
-      throw invalidInput('telemetry line is neither game_dev.telemetry_event.v1 nor a supported foreign event', {
+      throw invalidInput('telemetry line is neither game_dev.telemetry_event.v1/v2 nor a supported foreign event', {
         filePath,
         line: index + 1,
       });
@@ -275,6 +301,21 @@ async function profileMeasurements(filePath: string): Promise<Measurement[]> {
     value = JSON.parse(await fs.readFile(filePath, 'utf8'));
   } catch {
     return [];
+  }
+  // A Chrome/Perfetto trace has no unit-bearing keys, so flattening it found
+  // nothing: a profiler export the engine already had was silently ignored.
+  const events = traceEventsOf(value);
+  if (events) {
+    return spansFromTrace(events, 'profile:').slice(0, MAX_PROFILE_MEASUREMENTS).map((span) => ({
+      metric: `span.${span.clockDomain}.${span.name}`,
+      unit: 'ns',
+      value: span.durationNs,
+      source: 'profile' as const,
+      aggregation: 'sample' as const,
+      measuredBy: span.measuredBy,
+      ...(span.frameIndex !== undefined ? { frameIndex: span.frameIndex } : {}),
+      artifact: path.basename(filePath),
+    }));
   }
   const measurements: Measurement[] = [];
   flattenProfile(value, [], measurements);

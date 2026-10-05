@@ -117,7 +117,7 @@ spending, no writes. Useful for exploratory sessions. The default is `all`.
 
 The harness is on MCP: `verify_capture_run`, `analyze_capture_run`,
 `compare_capture_visuals`, `measure_run_stability`, `analyze_frame_sequence`,
-`summarize_run_performance`, `compare_run_performance`, `plan_scenario_run`
+`summarize_run_performance`, `performance_breakdown`, `compare_run_performance`, `plan_scenario_run`
 and `run_scenario`, plus `render_asset_contact_sheet` for assets. Frames,
 heatmaps, noise floors, UV plots and texture thumbnails come back as images
 the model can see.
@@ -129,6 +129,12 @@ noise floor. Pass that record's path as `noiseFloor` to
 `compare_capture_visuals` and a pixel counts as changed only when it exceeds
 both the threshold and its own measured noise. A high floor is a finding in
 itself: it names where the renderer is non-deterministic.
+
+`performance_breakdown` turns spans into an answer: each pass's own time,
+its share of the frame, and with a `baseline` the passes that grew. Spans come
+from `gdprobe_span_record` or from a Chrome/Perfetto JSON trace (`traceEvents`)
+listed in the capture's `profiles`, which most engines' profilers can already
+export.
 
 `list_run_diagnostics` groups the validation-layer reports, GL debug
 messages and engine assertions a run recorded, with handles and numbers

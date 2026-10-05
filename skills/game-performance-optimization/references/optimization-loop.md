@@ -54,6 +54,7 @@ The first form of each command is a dry run. Confirmed evaluation appends exactl
 | CLI | MCP tool |
 | --- | --- |
 | `game-dev performance summarize` | `summarize_run_performance` (takes `warmupFrames`) |
+| `game-dev performance breakdown` | `performance_breakdown` — per-pass self-time from spans or a Chrome/Perfetto trace; with a baseline, the passes that grew |
 | `game-dev performance compare` | `compare_run_performance` (reports `separability`) |
 | `game-dev performance goal-create` (dry run) | `plan_optimization_goal` |
 | `game-dev performance goal-create --confirm` | `create_optimization_goal` |

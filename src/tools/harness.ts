@@ -19,6 +19,7 @@ import { executeScenarioRun } from '../harness/run-bundle.js';
 import { measureRunStability } from '../harness/stability.js';
 import { analyzeFrameSequence } from '../harness/temporal.js';
 import { listRunDiagnostics } from '../harness/diagnostics.js';
+import { breakdownRunPerformance } from '../harness/spans.js';
 import { invalidInput } from '../util/errors.js';
 import { compareRunPerformance, summarizeRunPerformance } from '../harness/performance.js';
 import { resolveRunPath, verifyRunBundle } from '../harness/run-bundle.js';
@@ -405,6 +406,29 @@ export function registerHarnessTools(server: ToolRegistrar, ctx: ToolContext): v
         : [];
       return ok(analysis, visuals);
     }),
+  );
+
+  server.registerTool(
+    'performance_breakdown',
+    {
+      title: 'Show where frame time went, pass by pass',
+      description:
+        'FREE, local, read-only. Builds the span tree a sealed run recorded -- probe SDK spans '
+        + '(gdprobe_span_record) or a Chrome/Perfetto JSON trace in the capture\'s profiles -- and '
+        + 'reports each pass\'s own (self) time, its share of the frame, and the longest chain per '
+        + 'clock (GPU and CPU are never mixed). Give a baseline run to get the passes that grew or '
+        + 'shrank, largest first: this is how "frame_time regressed" becomes "cascade 2 grew 3ms".',
+      inputSchema: {
+        run: runReference,
+        baseline: runReference.optional()
+          .describe('An earlier run of the same scenario, e.g. before the change.'),
+      },
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    guard(ctx.logger, 'performance_breakdown', async (args) => ok(await breakdownRunPerformance({
+      runPath: await resolve(args.run),
+      ...(args.baseline !== undefined ? { baselineRunPath: await resolve(args.baseline) } : {}),
+    }))),
   );
 
   server.registerTool(

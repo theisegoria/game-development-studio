@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Where the frame time went.** Spans with parents and a clock domain arrive
+  as `game_dev.telemetry_event.v2` lines (C SDK: `gdprobe_span_reserve` /
+  `gdprobe_span_record`) or as a Chrome/Perfetto JSON trace in a capture's
+  `profiles`, which was previously ignored without a word. `game-dev
+  performance breakdown` and the `performance_breakdown` MCP tool report each
+  pass's self-time, share of frame and longest chain per clock, and with a
+  baseline name the passes that grew. Every span is also a
+  `span.<clock>.<name>` measurement, so summaries, comparisons and goals see
+  per-pass time too.
 - **Structured diagnostics.** Validation-layer reports, GL debug messages and
   engine assertions are recorded as `category: diagnostic` events with
   reserved `severity`, `message`, `source` and `message_id` attributes. The C

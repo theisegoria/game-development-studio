@@ -37,6 +37,7 @@ import { installProbeSdk } from './harness/probe-install.js';
 import { measureRunStability } from './harness/stability.js';
 import { analyzeFrameSequence } from './harness/temporal.js';
 import { listRunDiagnostics } from './harness/diagnostics.js';
+import { breakdownRunPerformance } from './harness/spans.js';
 import { analyzeRunCapture, compareRunVisuals } from './harness/visual.js';
 import { compareRunPerformance, summarizeRunPerformance } from './harness/performance.js';
 import { createOptimizationGoal, evaluateOptimizationGoal } from './harness/goals.js';
@@ -110,6 +111,7 @@ Usage:
   game-dev visual sequence <run> [--kind color] [--label L] [--threshold 0..255] [--min-reversals N] [--output NEW_DIRECTORY] [--json]
                   [--output NEW_DIRECTORY] [--jsonl]
   game-dev performance summarize <run-id|path> [--warmup-frames N] [--json]
+  game-dev performance breakdown <run-id|path> [--baseline <run-id|path>] [--json]
   game-dev performance compare <baseline-run> <candidate-run> [--stat median] [--json]
   game-dev performance goal-create <baseline-run> --project PATH --request GOAL.json [--confirm]
   game-dev performance goal-evaluate <goal.json> <candidate-run> [--confirm]
@@ -1205,6 +1207,18 @@ async function dispatch(
       operation: 'visual.stability',
       data: record as unknown as Record<string, unknown>,
       artifacts: [{ path: record.recordPath, kind: 'visual_stability' }],
+    };
+  }
+
+  if (family === 'performance' && action === 'breakdown') {
+    const runPath = await resolveRunPath(runtime.config.runsDir, requirePositional(parsed, 2, 'run id or path'));
+    const baseline = stringFlag(parsed, 'baseline');
+    return {
+      operation: 'performance.breakdown',
+      data: await breakdownRunPerformance({
+        runPath,
+        ...(baseline ? { baselineRunPath: await resolveRunPath(runtime.config.runsDir, baseline) } : {}),
+      }) as unknown as Record<string, unknown>,
     };
   }
 

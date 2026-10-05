@@ -61,6 +61,7 @@ struct gdprobe_run {
 
   FILE *telemetry;
   uint64_t sequence;
+  uint64_t next_span_id;
   int telemetry_written;
 
   gdprobe_backend backend;
@@ -660,6 +661,67 @@ gdprobe_status gdprobe_diagnostic(gdprobe_run *run,
   fputs(",\"message\":", out);
   write_json_string(out, bounded);
   fputs("}}\n", out);
+  run->telemetry_written = 1;
+  return GDPROBE_OK;
+}
+
+uint64_t gdprobe_span_reserve(gdprobe_run *run) {
+  if (!run) return 0;
+  run->next_span_id += 1;
+  return run->next_span_id;
+}
+
+gdprobe_status gdprobe_span_record(gdprobe_run *run,
+                                   uint64_t span_id,
+                                   uint64_t parent_id,
+                                   const char *name,
+                                   int32_t frame_index,
+                                   uint64_t start_ns,
+                                   uint64_t duration_ns,
+                                   gdprobe_clock_domain clock,
+                                   gdprobe_measured_by measured_by) {
+  if (!run || !name || span_id == 0 || span_id > run->next_span_id || parent_id == span_id || parent_id > run->next_span_id) {
+    if (run) set_error(run, "span ids must come from gdprobe_span_reserve, and a span cannot be its own parent");
+    return GDPROBE_ERR_ARGUMENT;
+  }
+  gdprobe_status opened = open_telemetry(run);
+  if (opened != GDPROBE_OK) return opened;
+
+  /* The harness's metric alphabet: anything else becomes '_', never dropped. */
+  char cleaned[121];
+  size_t length = 0;
+  for (const char *cursor = name; *cursor && length < sizeof cleaned - 1; cursor += 1) {
+    char c = *cursor;
+    int ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+      || c == '.' || c == '_' || c == ':' || c == '/' || c == '-';
+    if (length == 0 && !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))) continue;
+    cleaned[length++] = ok ? c : '_';
+  }
+  if (length == 0) { memcpy(cleaned, "unnamed", 8); length = 7; }
+  cleaned[length] = '\0';
+
+  FILE *out = run->telemetry;
+  fputs("{\"schema\":\"game_dev.telemetry_event.v2\",\"runId\":", out);
+  write_json_string(out, run->run_id);
+  /* One sequence for v1 and v2 lines: strictly increasing across the file. */
+  fprintf(out, ",\"sequence\":%llu", (unsigned long long) run->sequence);
+  run->sequence += 1;
+  fprintf(out, ",\"kind\":\"span\",\"spanId\":\"%llu\"", (unsigned long long) span_id);
+  if (parent_id != 0) fprintf(out, ",\"parentSpanId\":\"%llu\"", (unsigned long long) parent_id);
+  fputs(",\"name\":", out);
+  write_json_string(out, cleaned);
+  if (frame_index >= 0) fprintf(out, ",\"frameIndex\":%d", frame_index);
+  /* Decimal strings: a nanosecond GPU clock exceeds 2^53. */
+  fprintf(out, ",\"startNs\":\"%llu\",\"durationNs\":\"%llu\"",
+          (unsigned long long) start_ns, (unsigned long long) duration_ns);
+  fprintf(out, ",\"clockDomain\":\"%s\"", clock == GDPROBE_CLOCK_CPU ? "cpu" : "gpu");
+  if (measured_by == GDPROBE_MEASURED_UNKNOWN) {
+    fputs(",\"attributes\":{}}\n", out);
+  } else {
+    fputs(",\"attributes\":{\"measured_by\":", out);
+    write_json_string(out, measured_by_name(measured_by));
+    fputs("}}\n", out);
+  }
   run->telemetry_written = 1;
   return GDPROBE_OK;
 }
