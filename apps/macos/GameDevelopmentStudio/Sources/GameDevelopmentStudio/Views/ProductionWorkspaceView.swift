@@ -9,10 +9,10 @@ struct ProductionWorkspaceView: View {
     @State private var generatedName = ""
     @State private var spendLimitCents = 100
 
-    @SceneStorage("studio.production.assetPath") private var assetPath = ""
-    @SceneStorage("studio.production.packageName") private var packageName = ""
+    @AppStorage("studio.production.assetPath") private var assetPath = ""
+    @AppStorage("studio.production.packageName") private var packageName = ""
     @State private var packageVersion = "1.0.0"
-    @SceneStorage("studio.production.packageLicense") private var packageLicense = ""
+    @AppStorage("studio.production.packageLicense") private var packageLicense = ""
     @State private var approvalRequest: ApprovalRequest?
 
     var body: some View {

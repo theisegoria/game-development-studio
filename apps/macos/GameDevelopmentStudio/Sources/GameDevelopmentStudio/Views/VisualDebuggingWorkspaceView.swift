@@ -3,8 +3,8 @@ import SwiftUI
 struct VisualDebuggingWorkspaceView: View {
     @Environment(AppModel.self) private var model
 
-    @SceneStorage("studio.visual.projectPath") private var projectPath = ""
-    @SceneStorage("studio.visual.scenarioID") private var scenarioID = ""
+    @AppStorage("studio.visual.projectPath") private var projectPath = ""
+    @AppStorage("studio.visual.scenarioID") private var scenarioID = ""
     @State private var allowGPU = false
     @State private var allowPerformance = false
     @State private var plannedSignature: String?
@@ -12,9 +12,9 @@ struct VisualDebuggingWorkspaceView: View {
     @State private var plannedAdapterHash: String?
     @State private var comparisonOutput = ""
 
-    @SceneStorage("studio.visual.captureReference") private var captureReference = ""
-    @SceneStorage("studio.visual.baselineReference") private var baselineReference = ""
-    @SceneStorage("studio.visual.candidateReference") private var candidateReference = ""
+    @AppStorage("studio.visual.captureReference") private var captureReference = ""
+    @AppStorage("studio.visual.baselineReference") private var baselineReference = ""
+    @AppStorage("studio.visual.candidateReference") private var candidateReference = ""
     @State private var threshold = 0.0
     @State private var approvalRequest: ApprovalRequest?
 
@@ -32,7 +32,7 @@ struct VisualDebuggingWorkspaceView: View {
                         Picker("Scenario", selection: $scenarioID) {
                             Text("Select a scenario").tag("")
                             ForEach(scenarios) { Text($0.title).tag($0.id) }
-                        }
+                        }.labelsHidden()
                     }
                 }
                 .textFieldStyle(.roundedBorder)

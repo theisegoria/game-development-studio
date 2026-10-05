@@ -70,3 +70,28 @@ it('retains interrupted attempts and requires explicit recovery before a new eva
   expect(failed.attempts).toHaveLength(2);
   expect(failed.status).toBe('active');
 }, 20000);
+
+it('runs the sample through the current Node runtime without a global Node on PATH', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'studio-node-path-')); roots.push(root);
+  const project = path.join(root, 'game'); await createSampleProject(project, true);
+  const adapter = await loadAdapter(project);
+  const plan = await planScenarioRun({ adapter, scenarioId: 'capture', runsRoot: path.join(root, 'runs') });
+  const previous = process.env.PATH;
+  try {
+    process.env.PATH = '/usr/bin:/bin';
+    const result = await executeScenarioRun({ adapter, plan, confirm: true, allowGpu: false, allowPerformance: false });
+    expect(result.manifest.status).toBe('completed');
+  } finally { if (previous === undefined) delete process.env.PATH; else process.env.PATH = previous; }
+});
+
+it('the generic sample exposes inspectable failure and timeout outcomes', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'studio-sample-outcomes-')); roots.push(root);
+  const project = path.join(root, 'game'); await createSampleProject(project, true);
+  const adapter = await loadAdapter(project);
+  for (const [mode, status] of [['failure', 'failed'], ['timeout', 'timed_out']] as const) {
+    const request = { mode };
+    const plan = await planScenarioRun({ adapter, scenarioId: 'capture', runsRoot: path.join(root, 'runs'), parameters: request });
+    const result = await executeScenarioRun({ adapter, plan, request, confirm: true, allowGpu: false, allowPerformance: false });
+    expect(result.manifest.status).toBe(status);
+  }
+}, 10000);

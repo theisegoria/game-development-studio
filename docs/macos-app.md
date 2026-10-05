@@ -286,3 +286,25 @@ license and lock integrity. Missing or inconsistent license evidence stops the
 update. Review the resulting source notices; this inventory is not a legal
 compliance determination. Tests compare the complete production closure and
 upstream bytes, and staging verifies the package identities actually shipped.
+
+## Completion upgrade
+
+The native workspaces now include typed adapter parameters, a verified run
+library, attachment viewing and comparison controls, raw-sample charts and
+histograms, comparison diagnostics, and bounded external-agent sessions. Empty
+attachment and metric selections choose the first available item. Unsupported
+encodings, unmatched attachments, failed verification, unknown comparison
+controls, and separate aggregate measurements remain explicit.
+
+Paths and the selected workspace are saved as local preferences for relaunch.
+Approvals, credentials, and active execution permissions are not saved with
+navigation state. Results are retained independently per workspace during a
+session; changing output workspace clears derived library listings.
+
+Production includes durable job inspection and fresh-authorized resume. Library
+includes package selection, verification, local preview launch, and admission
+receipts. Paid operations remain optional and require fresh spend approval.
+
+See [optimization sessions](optimization-sessions.md) for the external-agent
+protocol and deterministic sample. The session chart uses the bound target;
+candidate patch application remains a separate user-reviewed operation.

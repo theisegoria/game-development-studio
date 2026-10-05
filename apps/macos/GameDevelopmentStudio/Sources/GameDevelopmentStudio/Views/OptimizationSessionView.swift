@@ -4,10 +4,10 @@ import Charts
 struct OptimizationSessionView: View {
     @Environment(AppModel.self) private var model
     let baseline: String
-    @SceneStorage("studio.optimization.project") private var project = ""
-    @SceneStorage("studio.optimization.scenario") private var scenario = "capture"
-    @SceneStorage("studio.optimization.directory") private var sessionDirectory = ""
-    @SceneStorage("studio.optimization.root") private var sessionRoot = ""
+    @AppStorage("studio.optimization.project") private var project = ""
+    @AppStorage("studio.optimization.scenario") private var scenario = "capture"
+    @AppStorage("studio.optimization.directory") private var sessionDirectory = ""
+    @AppStorage("studio.optimization.root") private var sessionRoot = ""
     @State private var metric = "render.frame_time"
     @State private var unit = "ms"
     @State private var target = 8.0
@@ -39,7 +39,7 @@ struct OptimizationSessionView: View {
     }
     private var signature: String { "\(project)|\(baseline)|\(sessionRoot)|\(model.outputDirectory)|\(model.cliExecutable)|\(String(describing: request))" }
     private var session: OptimizationSessionModel? {
-        ["optimization.evaluate", "optimization.status", "optimization.start", "optimization.stop", "optimization.recover"].compactMap { model.operationResults[$0] }.sorted { $0.receivedAt > $1.receivedAt }.first?.data.decoded(OptimizationSessionModel.self)
+        return ["optimization.evaluate", "optimization.status", "optimization.start", "optimization.stop", "optimization.recover"].compactMap { model.operationResults[$0] }.sorted { $0.receivedAt > $1.receivedAt }.compactMap { $0.data.decoded(OptimizationSessionModel.self) }.first { $0.directory == sessionDirectory }
     }
     var body: some View {
         MaterialCard(title: "Bounded agent optimization", systemImage: "scope") {
@@ -79,7 +79,7 @@ struct OptimizationSessionView: View {
                 Toggle("Hardware performance", isOn: $performance)
             }
             HStack {
-                Button("Evaluate Candidate…") { Task { await action("evaluate") } }
+                Button("Evaluate Candidate…") { Task { await action("evaluate") } }.disabled(session?.status != "active")
                 Button("Recover Interrupted Session…") { Task { await action("recover") } }
                 Button("Stop Session…") { Task { await action("stop") } }
             }.disabled(sessionDirectory.isEmpty || model.executionState.isRunning)
@@ -88,8 +88,8 @@ struct OptimizationSessionView: View {
                 Text("Agent checkout: \(session.checkout)").font(.caption).textSelection(.enabled)
                 if !session.attempts.isEmpty {
                     Chart(session.attempts) { attempt in
-                        if let value = attempt.value { PointMark(x: .value("Attempt", attempt.number), y: .value(unit, value)).foregroundStyle(by: .value("Status", attempt.status)) }
-                        RuleMark(y: .value("Target", target)).lineStyle(StrokeStyle(dash: [4]))
+                        if let value = attempt.value { PointMark(x: .value("Attempt", attempt.number), y: .value(session.plan.request.unit, value)).foregroundStyle(by: .value("Status", attempt.status)) }
+                        RuleMark(y: .value("Target", session.plan.request.target)).lineStyle(StrokeStyle(dash: [4]))
                     }.frame(height: 150)
                 }
                 ForEach(session.attempts) { attempt in

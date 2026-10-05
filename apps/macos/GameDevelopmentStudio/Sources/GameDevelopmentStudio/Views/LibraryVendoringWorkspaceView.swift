@@ -3,8 +3,8 @@ import SwiftUI
 struct LibraryVendoringWorkspaceView: View {
     @Environment(AppModel.self) private var model
 
-    @SceneStorage("studio.library.packageReference") private var packageReference = ""
-    @SceneStorage("studio.library.projectPath") private var projectPath = ""
+    @AppStorage("studio.library.packageReference") private var packageReference = ""
+    @AppStorage("studio.library.projectPath") private var projectPath = ""
     @State private var destination = "Assets/Vendor"
     @State private var plannedSignature: String?
     @State private var approvalRequest: ApprovalRequest?

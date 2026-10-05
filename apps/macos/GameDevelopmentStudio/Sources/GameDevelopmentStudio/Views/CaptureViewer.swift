@@ -42,8 +42,10 @@ struct CaptureAnalysisView: View {
                     .font(.caption).textSelection(.enabled)
                 if let ids = raster.uniqueSemanticIds { Text("\(ids) semantic IDs").font(.caption) }
             } else { Text("No supported PNG attachments.") }
+            if !analysis.unsupportedAttachments.isEmpty { Text("Unsupported attachments: \(analysis.unsupportedAttachments.joined(separator: ", "))").font(.caption) }
             EvidenceNote(text: analysis.evidenceCeiling)
         }
+        .task(id: analysis.runId) { selected = analysis.rasters.first?.id ?? "" }
     }
 }
 
@@ -104,8 +106,10 @@ struct VisualComparisonView: View {
                 Label("Missing attachments — baseline: \(comparison.unmatchedBaseline.joined(separator: ", ")); candidate: \(comparison.unmatchedCandidate.joined(separator: ", "))", systemImage: "exclamationmark.triangle")
             }
             if let output = comparison.outputPath { Text("Exported report and images: \(output)").font(.caption).textSelection(.enabled) }
+            if !comparison.unsupportedAttachments.isEmpty { Text("Unsupported attachments: \(comparison.unsupportedAttachments.joined(separator: ", "))").font(.caption) }
             EvidenceNote(text: comparison.evidenceCeiling)
         }
+        .task(id: comparison.baselineRunId + comparison.candidateRunId) { selected = comparison.pairs.first?.id ?? "" }
         .onChange(of: selected) { _, _ in zoom = 1; offset = .zero; dragOrigin = .zero }
     }
 }

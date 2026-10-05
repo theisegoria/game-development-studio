@@ -3,9 +3,9 @@ import SwiftUI
 struct PerformanceWorkspaceView: View {
     @Environment(AppModel.self) private var model
 
-    @SceneStorage("studio.performance.runReference") private var runReference = ""
-    @SceneStorage("studio.performance.baselineReference") private var baselineReference = ""
-    @SceneStorage("studio.performance.candidateReference") private var candidateReference = ""
+    @AppStorage("studio.performance.runReference") private var runReference = ""
+    @AppStorage("studio.performance.baselineReference") private var baselineReference = ""
+    @AppStorage("studio.performance.candidateReference") private var candidateReference = ""
     @State private var statistic = "median"
 
     private let statistics = ["min", "max", "mean", "median", "p95", "p99"]

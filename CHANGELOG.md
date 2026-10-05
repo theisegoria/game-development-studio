@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- The native Game Development Studio app gains a verified run library, an
+  attachment viewer with comparison controls, raw-sample performance charts and
+  histograms, package and durable-job libraries, and a view for reviewing
+  external-agent optimization sessions.
+- Optimization acceptance now refuses a candidate whose capture holds an
+  attachment nothing could read (neither PNG nor a binary raster with a
+  declared format), rather than passing it by omission. Analyses and
+  comparisons name such attachments in `unsupportedAttachments`.
+- Scenario processes find the Node runtime that launched the harness first on
+  `PATH`, so a project script using `/usr/bin/env node` works from the bundled
+  app without a second global Node install.
+- Performance summaries enforce one measurement ceiling across all of a run's
+  telemetry and profile files, and no longer spread a file's measurements into
+  a single call, which overflowed the stack at the per-file ceiling.
+
 ## 1.4.0
 
 - Makes the checksum-verified GitHub tarball the canonical install route, with

@@ -388,10 +388,18 @@ export async function summarizeRunPerformance(
       });
     }
     for (const relative of capture.manifest.telemetry) {
-      measurements.push(...await telemetryMeasurements(path.resolve(verified.runPath, relative), verified.manifest.runId));
+      // A loop, not push(...spread): a telemetry file may yield 250,000
+      // measurements, and spreading that many arguments overflows the stack.
+      for (const measurement of await telemetryMeasurements(path.resolve(verified.runPath, relative), verified.manifest.runId)) {
+        if (measurements.length >= MAX_TELEMETRY_LINES) throw invalidInput('run exceeds the combined measurement ceiling');
+        measurements.push(measurement);
+      }
     }
     for (const relative of capture.manifest.profiles) {
-      measurements.push(...await profileMeasurements(path.resolve(verified.runPath, relative)));
+      for (const measurement of await profileMeasurements(path.resolve(verified.runPath, relative))) {
+        if (measurements.length >= MAX_TELEMETRY_LINES) throw invalidInput('run exceeds the combined measurement ceiling');
+        measurements.push(measurement);
+      }
     }
   }
 

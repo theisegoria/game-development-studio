@@ -186,35 +186,36 @@ describe('closed CLI runtime payload', () => {
 
   it('refuses changed, added, unsafe, and symlinked payload entries', async () => {
     const source = await fixture();
+    const runtime = runtimeAt(path.join(await temporaryRoot(), 'mutations'));
+    await stage(source, runtime);
+    const payload = path.join(runtime, 'payload');
+    const cliPath = path.join(payload, 'app', 'dist', 'cli.js');
+    const original = await readFile(cliPath);
 
-    const changed = runtimeAt(path.join(await temporaryRoot(), 'changed'));
-    await stage(source, changed);
-    await writeFile(path.join(changed, 'payload', 'app', 'dist', 'cli.js'), 'console.log("changed");\n');
-    await expect(verify(changed)).rejects.toThrow(/does not match its roster/);
+    await writeFile(cliPath, 'console.log("changed");\n');
+    await expect(verify(runtime)).rejects.toThrow(/does not match its roster/);
+    await writeFile(cliPath, original);
 
-    const missing = runtimeAt(path.join(await temporaryRoot(), 'missing'));
-    await stage(source, missing);
-    await rm(path.join(missing, 'payload', 'app', 'dist', 'cli.js'));
-    await expect(verify(missing)).rejects.toThrow(/entry count differs/);
+    await rm(cliPath);
+    await expect(verify(runtime)).rejects.toThrow(/entry count differs/);
+    await writeFile(cliPath, original, { mode: 0o644 });
 
-    const added = runtimeAt(path.join(await temporaryRoot(), 'added'));
-    await stage(source, added);
-    await writeFixtureFile(path.join(added, 'payload'), 'app/dist/added.js', 'console.log("unexpected");\n');
-    await expect(verify(added)).rejects.toThrow(/entry count differs/);
+    const added = await writeFixtureFile(payload, 'app/dist/added.js', 'console.log("unexpected");\n');
+    await expect(verify(runtime)).rejects.toThrow(/entry count differs/);
+    await rm(added);
 
-    const unsafe = runtimeAt(path.join(await temporaryRoot(), 'unsafe'));
-    await stage(source, unsafe);
-    await writeFixtureFile(path.join(unsafe, 'payload'), 'app/.env', 'NOT_A_SECRET=fixture\n');
-    await expect(verify(unsafe)).rejects.toThrow(/environment files are not allowed/);
+    const unsafe = await writeFixtureFile(payload, 'app/.env', 'NOT_A_SECRET=fixture\n');
+    await expect(verify(runtime)).rejects.toThrow(/environment files are not allowed/);
+    await rm(unsafe);
 
-    const map = runtimeAt(path.join(await temporaryRoot(), 'map'));
-    await stage(source, map);
-    await writeFixtureFile(path.join(map, 'payload'), 'app/dist/cli.js.map', '{"version":3}\n');
-    await expect(verify(map)).rejects.toThrow(/source maps and TypeScript files are not allowed/);
+    const map = await writeFixtureFile(payload, 'app/dist/cli.js.map', '{"version":3}\n');
+    await expect(verify(runtime)).rejects.toThrow(/source maps and TypeScript files are not allowed/);
+    await rm(map);
 
-    const linked = runtimeAt(path.join(await temporaryRoot(), 'linked'));
-    await stage(source, linked);
-    await symlink('cli.js', path.join(linked, 'payload', 'app', 'dist', 'linked.js'));
-    await expect(verify(linked)).rejects.toThrow(/symlink/);
+    const linked = path.join(payload, 'app', 'dist', 'linked.js');
+    await symlink('cli.js', linked);
+    await expect(verify(runtime)).rejects.toThrow(/symlink/);
+    await rm(linked);
+    await expect(verify(runtime)).resolves.toMatchObject({ ok: true });
   }, 45_000);
 });

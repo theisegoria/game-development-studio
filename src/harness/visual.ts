@@ -53,6 +53,12 @@ export interface CaptureAnalysis {
    * never looked at by anything.
    */
   floatRasters: FloatRasterAnalysis[];
+  /**
+   * Attachments nothing here could read: neither PNG nor a binary raster
+   * with a declared format. Named so an acceptance gate can refuse a run
+   * whose evidence it never looked at, instead of passing it by omission.
+   */
+  unsupportedAttachments: string[];
   evidence: {
     sealedRunVerified: true;
     rasterBytesDecoded: true;
@@ -126,6 +132,8 @@ export interface VisualComparison {
    * large luminance shift means shading rather than geometry.
    */
   summary: string[];
+  /** Attachments in either run that nothing here could read; see CaptureAnalysis. */
+  unsupportedAttachments: string[];
   unmatchedBaseline: string[];
   unmatchedCandidate: string[];
   outputPath?: string;
@@ -219,6 +227,15 @@ function analyzeRaster(
   };
 }
 
+function unreadableAttachments(
+  frames: CaptureManifest['frames'],
+  prefix: string,
+): string[] {
+  return frames.flatMap((frame) => frame.attachments
+    .filter((attachment) => attachment.encoding !== 'png' && !(attachment.encoding === 'binary' && attachment.format))
+    .map((attachment) => `${prefix}${frame.index}:${attachment.kind}:${attachment.encoding}`));
+}
+
 export async function analyzeRunCapture(runPath: string): Promise<CaptureAnalysis> {
   const loaded = await loadCapture(runPath);
   const rasters: RasterAnalysis[] = [];
@@ -255,6 +272,7 @@ export async function analyzeRunCapture(runPath: string): Promise<CaptureAnalysi
     scenarioId: loaded.scenarioId,
     rasters,
     floatRasters,
+    unsupportedAttachments: unreadableAttachments(loaded.manifest.frames, ''),
     evidence: {
       sealedRunVerified: true,
       rasterBytesDecoded: true,
@@ -685,6 +703,7 @@ export async function compareRunVisuals(options: {
     pairs,
     verdict: 'changed',
     summary: [],
+    unsupportedAttachments: [baseline, candidate].flatMap((run) => unreadableAttachments(run.manifest.frames, `${run.runId}:`)),
     unmatchedBaseline: [...baselineAttachments.keys()].filter((key) => !candidateAttachments.has(key)).sort(),
     unmatchedCandidate: [...candidateAttachments.keys()].filter((key) => !baselineAttachments.has(key)).sort(),
     ...(outputPath ? { outputPath } : {}),

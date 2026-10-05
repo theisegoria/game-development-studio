@@ -76,6 +76,10 @@ describe('game-dev adapter, capture, visual, and performance CLI', () => {
       expect.objectContaining({ id: 'genome-game', manifestRelativePath: 'adapters/genome-game/adapter.json' }),
     ]));
 
+    const stale = await run(['scenario', 'run', 'capture', '--input', parameters, '--expected-adapter-sha256', 'stale-hash', '--confirm', ...common]);
+    expect(stale.payload.ok).toBe(false);
+    expect(stale.payload.error.message).toContain('adapter changed');
+
     const inspected = await run(['adapter', 'inspect', ...common]);
     expect(inspected.payload).toMatchObject({
       operation: 'adapter.inspect',

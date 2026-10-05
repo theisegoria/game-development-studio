@@ -108,6 +108,10 @@ function safeChildEnvironment(plan: ScenarioRunPlan): NodeJS.ProcessEnv {
     if (value !== undefined) environment[name] = value;
   }
 
+  // A bundled Studio runtime must not require a second global Node install for
+  // project-owned scripts using /usr/bin/env node. Keep other tools discoverable.
+  environment.PATH = [path.dirname(process.execPath), environment.PATH ?? ''].filter(Boolean).join(path.delimiter);
+
   // Declared by the adapter, already restricted to a hardcoded graphics
   // allowlist by the schema, and applied BEFORE the injected GAME_DEV_* names
   // so a manifest cannot redirect the harness's own contract surface.

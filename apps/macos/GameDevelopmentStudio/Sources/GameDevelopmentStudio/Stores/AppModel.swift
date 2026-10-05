@@ -17,7 +17,14 @@ public final class AppModel {
     public var inspectorPresented = true
 
     public var outputDirectory: String {
-        didSet { defaults.set(outputDirectory, forKey: PreferenceKey.outputDirectory) }
+        didSet {
+            defaults.set(outputDirectory, forKey: PreferenceKey.outputDirectory)
+            if oldValue != outputDirectory {
+                operationResults.removeValue(forKey: "capture.list")
+                operationResults.removeValue(forKey: "catalog.list")
+                operationResults.removeValue(forKey: "job.list")
+            }
+        }
     }
 
     public var cliExecutable: String {

@@ -447,3 +447,16 @@ These workflows do not integrate a game engine. CPU previews are static inspecti
 not final rendering or quality certification. Unsupported conversions remain explicit.
 Local fast tests use `npm test`; real Blender and GPU lanes require the opt-in
 switches documented above and run in CI for release validation.
+
+## Visual and performance completion upgrade
+
+The native companion provides run discovery, typed scenario parameters,
+attachment viewing, synchronized visual comparison, sample/distribution charts,
+and reviewable external-agent optimization sessions. Analysis v2 distinguishes
+raw samples from supplied aggregates and reports missing or incompatible data.
+
+Create a disposable generic project with
+`game-dev adapter sample --project NEW_DIRECTORY --confirm --json`.
+Read [the optimization session guide](docs/optimization-sessions.md) for the
+complete snapshot, build/test, capture, evaluation, and patch-review workflow.
+Synthetic samples demonstrate the workflow; they are not game-hardware results.
