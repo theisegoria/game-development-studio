@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Swift and Rust probe packages.** `probe/Package.swift` (`import GDProbe`)
+  and `probe/rust` (crate `gdprobe`) wrap the same C SDK over one ABI: runs,
+  frames, provenance, diagnostics, spans and live sessions. The Swift example
+  is driven through the harness in tests; the Rust crate is tested in CI.
 - **Commit bisection.** `game-dev bisect plan|run` and the `plan_bisect` /
   `run_bisect` MCP tools find the first commit at which a scenario changed
   visually beyond the good commit's measured noise floor, or crossed a metric

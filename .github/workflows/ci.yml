@@ -150,6 +150,16 @@ jobs:
       # the run attested for its own duration because it asserts the SDK's
       # CLAIM about provenance, not the runner's hardware. Nothing this job
       # produces is admitted anywhere else.
+      - name: Build and test the Swift probe package, then drive it through the harness
+        if: runner.os == 'macOS'
+        run: |
+          swift test --package-path probe
+          npx vitest run tests/probe-swift.test.ts --no-file-parallelism --reporter=default --reporter=json --outputFile=/tmp/swift.json
+          node -e "
+            const r = require('/tmp/swift.json');
+            if (r.numPassedTests < 1) { console.error('Swift probe test did not run'); process.exit(1); }
+          "
+
       - name: Drive the Metal example on the runner's GPU
         if: runner.os == 'macOS'
         run: |
@@ -173,6 +183,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libvulkan1
+      - name: Test the Rust probe crate (safe wrapper over the same C SDK)
+        run: cargo test --manifest-path probe/rust/Cargo.toml
       - name: Build the wgpu example against the C SDK
         run: cargo build --release --manifest-path probe/examples/wgpu/Cargo.toml
       - name: Run it outside the harness on lavapipe

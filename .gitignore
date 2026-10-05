@@ -42,3 +42,7 @@ probe/examples/*/gdprobe-*
 probe/examples/*/*.spv
 probe/examples/wgpu/target/
 probe/examples/wgpu/Cargo.lock
+probe/.build/
+probe/.swiftpm/
+probe/rust/target/
+probe/rust/Cargo.lock

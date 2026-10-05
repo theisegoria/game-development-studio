@@ -1,0 +1,13 @@
+[package]
+name = "gdprobe"
+version = "0.1.0"
+edition = "2021"
+description = "Safe Rust bindings to the Game Development Studio probe SDK (the same C implementation every language uses)."
+license = "MIT"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+[build-dependencies]
+cc = "1"

@@ -194,6 +194,12 @@ runs must be byte-identical under `visual compare --threshold 0` and
 fired: `rendererClass` software, no GPU or timing claim admitted. The gate
 does not skip when no compiler is present; it fails.
 
+## Swift and Rust
+
+Swift engines add `probe/` as a SwiftPM dependency and `import GDProbe`; Rust
+engines depend on `probe/rust` (crate `gdprobe`). Both wrap the same C
+sources, so every language writes the same bundle.
+
 ## Examples
 
 - `examples/minimal/` — a CPU-filled frame with two objects. No graphics API at
