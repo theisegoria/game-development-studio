@@ -217,7 +217,7 @@ public struct CLIInvocation: Equatable, Sendable, CustomStringConvertible, Custo
         "adapter", "asset", "capabilities", "capture", "catalog",
         "credentials", "doctor", "job", "launch", "migrate", "package",
         "performance", "provider", "scenario", "skill", "tool", "vendor",
-        "visual",
+        "visual", "optimization",
     ]
 
     private static func inferredGameDevOperation(from arguments: [String]) -> String? {

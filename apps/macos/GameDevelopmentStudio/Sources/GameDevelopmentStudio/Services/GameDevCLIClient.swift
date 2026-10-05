@@ -560,12 +560,14 @@ public struct GameDevCLIClient: GameDevCLIClientProtocol, Sendable {
         switch family {
         case "provider", "scenario":
             return family == "provider" || arguments.dropFirst().first == "run"
+        case "visual":
+            return arguments.contains("--output")
         case "package":
             return arguments.dropFirst().first == "build"
         case "asset":
             return arguments.dropFirst().first == "normalize"
                 || arguments.dropFirst().first == "preview-usdz"
-        case "catalog", "adapter", "vendor", "launch", "migrate", "performance", "skill":
+        case "catalog", "adapter", "vendor", "launch", "migrate", "performance", "skill", "optimization":
             return arguments.contains("--confirm")
         default:
             return false

@@ -298,6 +298,40 @@ struct AppModelTests {
         #expect(model.executionState.errorMessage == "The local process was terminated.")
     }
 
+    @Test("Scenario parameter payload is identical between plan and execution and adapter identity is bound")
+    func scenarioParameterBinding() async throws {
+        let client = RecordingCLIClient()
+        let model = makeModel(client: client)
+        let parameters: [String: JSONValue] = ["binary": .string("build/game"), "frames": .number(4)]
+        await model.planScenario(id: "capture", project: "/tmp/game", parameters: parameters)
+        await model.runScenario(id: "capture", project: "/tmp/game", allowGPU: false, allowPerformance: false,
+                                confirmed: true, parameters: parameters, expectedAdapterHash: "adapter-hash")
+        let records = await client.records()
+        #expect(records.count == 2)
+        #expect(records[0].invocation.standardInput == records[1].invocation.standardInput)
+        #expect(records[1].invocation.arguments.contains("--expected-adapter-sha256"))
+        #expect(records[1].invocation.arguments.contains("adapter-hash"))
+        #expect(records.allSatisfy { $0.credentials.isEmpty })
+    }
+
+    @Test("Workspace result selection restores independently without carrying approvals")
+    func workspaceResultIsolation() async throws {
+        let client = RecordingCLIClient()
+        let model = makeModel(client: client)
+        model.selectedWorkspace = .visualDebugging
+        await model.analyzeCapture(reference: "run-first")
+        let visual = try #require(model.latestResult)
+        model.selectedWorkspace = .performance
+        #expect(model.latestResult == nil)
+        await model.summarizePerformance(reference: "run-second")
+        let performance = try #require(model.latestResult)
+        #expect(visual.id != performance.id)
+        model.selectedWorkspace = .visualDebugging
+        #expect(model.latestResult?.id == visual.id)
+        model.selectedWorkspace = .performance
+        #expect(model.latestResult?.id == performance.id)
+    }
+
     private func makeModel(
         client: RecordingCLIClient,
         store: any CredentialStoring = InMemoryCredentialStore()
