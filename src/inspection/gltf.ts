@@ -16,7 +16,7 @@
  */
 
 import { promises as fs } from 'node:fs';
-import { KHRTextureBasisu } from '@gltf-transform/extensions';
+import { KHRLightsPunctual, KHRMaterialsClearcoat, KHRTextureBasisu } from '@gltf-transform/extensions';
 import { inspectKtx2, isKtx2, validateKtxDeclarations } from '../production/ktx2.js';
 import { NodeIO, getBounds } from '@gltf-transform/core';
 import type { Document, ILogger, Material, Primitive, Root, Texture } from '@gltf-transform/core';
@@ -161,7 +161,12 @@ export async function inspectGltf(filePath: string): Promise<AssetInspection> {
     // defect worth REPORTING, not a reason to abandon everything else we could
     // have said about the file. A missing buffer still throws, as it must —
     // without it there is no geometry to describe.
-    const io = new NodeIO().registerExtensions([KHRTextureBasisu]).setLogger(readerLog).setStrictResources(false);
+    // Reviewed, decoder-free extensions used by Blender exports. Keep codec
+    // extensions unregistered: inspection cannot decode Draco or meshopt.
+    const io = new NodeIO()
+      .registerExtensions([KHRLightsPunctual, KHRMaterialsClearcoat, KHRTextureBasisu])
+      .setLogger(readerLog)
+      .setStrictResources(false);
     const json = await io.readAsJSON(filePath);
     validateKtxDeclarations(json);
     document = await io.readJSON(json);
@@ -578,6 +583,10 @@ function texturesOf(root: Root, drawnMaterials: Material[], skippedExtensions: b
   for (const texture of root.listTextures()) {
     const materialParents = texture
       .listParents()
+      // Registered material extensions own their texture bindings. Follow the
+      // extension to its material so drawn clearcoat maps count, while maps on
+      // unused materials remain excluded.
+      .flatMap((parent) => parent.propertyType === 'Clearcoat' ? parent.listParents() : [parent])
       .filter((parent) => parent.propertyType === 'Material') as Material[];
     // No material parent at all is AMBIGUOUS: it is either bound through an
     // extension this reader skipped, or bound by nothing at all. The parsed
