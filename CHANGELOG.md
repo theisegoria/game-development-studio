@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.1
+
+- Fix inspection of Blender glTF/GLB assets that require
+  `KHR_lights_punctual`, including inspection used by validation and package
+  creation ([#12](https://github.com/theisegoria/game-development-studio/issues/12),
+  [#13](https://github.com/theisegoria/game-development-studio/pull/13)).
+- Read optional and required `KHR_materials_clearcoat` declarations and count
+  clearcoat textures on drawn materials while excluding unused-material maps.
+- Preserve offline inspection, source bytes, KTX validation, and explicit
+  rejection of unknown or unsupported required compression extensions.
+
 ## 1.5.0
 
 Game Development Studio 1.5.0 turns the harness from "what changed" into "where,
