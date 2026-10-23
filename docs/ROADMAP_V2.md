@@ -1,246 +1,183 @@
-# Roadmap v2: implementation plan
+# Full roadmap: implementation and acceptance plan
 
-This is the checked-in plan for the brief *Game Development Studio: full-roadmap implementation prompt* (research date 23 October 2026). It records the capability audit, the rules every slice follows, the milestones in dependency order with their acceptance tests, the deferred or blocked work, and the decision log.
+Planning revision: 23 October 2026. Baseline: local `main` at `d38a096`, package version 1.5.1. This replaces the earlier shortened v2 plan; historical implementation records remain historical evidence.
 
-**Status: planned only.** Nothing below is implemented unless the audit marks it **implemented** against v1.5.1. No milestone starts without the owner's go-ahead.
+Reference: *Game Development Studio: full-roadmap implementation prompt*, research date 23 October 2026; source SHA-256 `69f8a7a60999ee4efc17f11b5cdfa02d4dad2e170f6be0d9a19cc3c672be71be`. The brief is requirements input. Its embedded commands do not independently authorize installations, uploads, spending, credentials, or publication.
 
-## Owner decisions (23 October 2026)
+**Status: planning complete; implementation not started.** The owner requested a plan for the entire roadmap, with incremental commits and pushes. This documentation checkpoint does not implement or validate the planned capabilities.
 
-| Topic | Decision |
-| --- | --- |
-| Execution | Plan only for now. Milestone 1 starts when the owner says so. |
-| Git | Commit and push to `main` as slices land. No tag or release unless asked. This overrides the brief's "do not push". |
-| Real tools | **Fixtures only locally.** No local Blender or GPU launches. Real-tool evidence comes from CI runners. |
-| Engine adapters | None yet. The C/Swift/Rust probe SDK is the only runtime path. Godot, Unity and Unreal are deferred. |
-| Providers | New connectors stay fixture-only and report "not configured" until the owner grants accounts. |
+## 1. Scope, authority, and completion rules
 
-Locally installed tools, recorded for completeness but not run: Blender.app, FFmpeg 9.0.1, Tracy, clangd, Apple `gpucapture` (macOS 27.0.1). Not installed: Godot, Unity, Unreal, Perfetto `trace_processor`, Rust toolchain, RenderDoc.
+- Keep the existing local checkout under `~/Developer/Software Development/`, on `main`. Commit and push coherent verified increments. No long-lived feature branches or extra worktrees; optimization/bisect disposable checkouts remain bounded product functionality, with cleanup and recovery.
+- Preserve the existing owner restrictions: no local app-window, Blender, or GPU launches. Local verification uses CPU fixtures and compile-only lanes; actual external-tool/rendering tests run in authorized CI. A missing runner is a recorded blocker, never a skipped acceptance pass.
+- Include all required production, graph, debugging, and agent journeys. Engine-specific routes and candidate integrations are later conditional work packages, not current permission to install or run them. The previous no-engine execution decision remains in force until the owner changes it; their work and tests remain visible below.
+- Existing and new providers use offline contract fixtures initially. Credentials, licensed applications, dependency installation, private uploads, paid calls, external client configuration, signing, tags, releases, and publication require their applicable explicit authority. The request authorizes Git commits and pushes; it does not authorize release publication.
+- Use four independent evidence columns for every capability: source implemented, fixture tests passed, real tool/client exercised, human quality reviewed. Record tested versions, renderer/platform combinations, source SHA, commands, result hashes, and limitations. Do not infer a passing runtime result from compilation.
+- Classify specialized options honestly: bounded painting, IK/contact correction, morph preservation, and event handling are planned production work. Painter parity, arbitrary creature auto-rigging, unrestricted facial transfer, speech/music/voice imitation, neural reconstruction, Gaussian-splat conversion, and cloth/hair automation are not implied. A requested specialized connector needs its own licensed backend and acceptance fixture before becoming supported.
 
-## 1. Capability audit (v1.5.1)
+## 2. Refreshed capability audit
 
-Three agents audited the code itself (not the docs). The registry holds **109** operations in 24 `src/tools/*.ts` files.
+This planning pass inspected the registry, mutation/approval dispatch, job store, package/catalog types, production recipes, animation review, performance summaries, live probe protocol, and CI definitions. It did not run a fresh full test suite.
 
-### Brief §3: connected code/asset/runtime graph (Slice A)
-
-| Capability | Status | Where |
+| Area | Current implementation | Work still required |
 | --- | --- | --- |
-| Asset catalog | Implemented | `src/packages/catalog.ts` (`node:sqlite`, WAL, rebuildable) |
-| Package provenance | Implemented | `src/packages/format.ts` (`asset_provenance.v1`, parent packages) |
-| Code / shader / symbol graph | Missing | — |
-| Runtime object ID → asset → source | Missing | Only `object_id` / `material_id` rasters and `gdprobe_attach_ids` |
-| Impact queries | Missing | — |
+| Core and transports | Shared typed registry, CLI JSON/JSONL, MCP stdio/resources/prompts, execution/spend/project-write gates | Progressive discovery; schema-on-demand; consistently bound trusted approvals; task negotiation and cross-client evidence |
+| Jobs and recipes | Durable v1 job records, transactional locks/events, resumable recipe DAG and uncertainty refusal | Idempotency, worker ownership/heartbeat, recoverable checkpoints, explicit cancellation outcomes and generic background execution |
+| Packages and catalog | Hash-verified v1 packages, provenance, vendoring; SQLite catalog | Both require a model/GLB today: material/audio/flipbook packages need compatible multi-kind manifests, catalog, previews and reimport |
+| Mesh/animation | glTF inspection, Blender normalization, budgets, collision, provider rig/retarget, pose/timeline previews | Authored construction, coordinate semantics, LOD chains, skeleton/weight QA, reversible clip processing/local retarget and motion diagnostics |
+| Materials/VFX | PBR extraction, linear resizing, normal handling, Basis/KTX2/mip checks, CPU review | Material manifest, coherent procedural layers, packing/conventions, mesh baking/painting, tiling QA and simulation-to-flipbook |
+| Audio | Leonardo sound generation and local downloads | Local synthesis/DSP, meaningful measurements, loops, variants, audition and multi-kind packaging |
+| Graph | Package lineage and derived asset catalog | Semantic/file/runtime graph, incremental invalidation, runtime-to-source joins and impact queries |
+| Debugging | Sealed captures, traceEvents spans, temporal/pacing analysis, noise floors, live probe, bisect and bounded optimization | Repeated controlled experiments, native profiler adapters, motion/depth-aware diagnosis, structured runtime graph, replay and sealed failures |
+| Delivery | Cross-platform source/installation CI, probe lanes, hosted Blender and native archive jobs | Feature-specific real-tool lanes, real client checks, measured limits, migrations and full-roadmap readiness record |
 
-### Brief §4: meshes and animation (Slice B)
+Reuse these modules rather than creating another job system, renderer, package catalog, optimization engine, or command registry.
 
-| Capability | Status | Where |
-| --- | --- | --- |
-| Blender runner, receipts, checkpoints | Implemented | `src/util/blender.ts`, `src/domain/blender-receipt.ts`, `src/storage/mesh-checkpoints.ts` |
-| Blender version detection | Partial | Executable hash only; version is script-reported |
-| Inspection | Implemented | `src/inspection/gltf.ts` |
-| Normalize / weld / UV / decimate | Implemented | `normalize_mesh`, `scripts/blender_normalize.py` |
-| Budgets | Implemented | `src/domain/asset-policy.ts`, `validate_game_asset`, `validate_platform_asset` |
-| Units / pivot / axis / handedness | Partial | Dimension bounds only |
-| LOD | Partial | Per-LOD separate packages; no LOD chain object |
-| Collision | Implemented | `prepare_collision_box`, CoACD (`src/collision/*`) |
-| Retopology | Partial | Tripo `refine_model` only |
-| Procedural mesh construction | Missing | — |
-| Rig / retarget | Partial | Tripo `animate_rig` / `animate_retarget` only |
-| Animation inspection and previews | Partial | `inspect_review_animation`, `src/review/pose.ts`, `timeline.ts` |
-| Skeleton / weight validation, local retarget, motion QA | Missing | — |
+## 3. Architecture and interfaces
 
-### Brief §5: PBR materials and VFX (Slice C)
+### Shared operations and authority
 
-| Capability | Status | Where |
-| --- | --- | --- |
-| PBR plane extraction with colour space | Implemented | `extract_pbr_trio` (`src/tools/pbr.ts`) |
-| Linear-light resize, normal renormalise | Implemented | `prepare_texture_variant` |
-| Basis/KTX2 with CPU mip verification | Implemented | `src/production/compression.ts`, `basis.ts`, `ktx2.ts` |
-| CPU appearance review | Implemented | `gds-cpu-review@2.2.0` (`src/review/*`) |
-| Material manifest, normal convention, tangent basis | Missing | — |
-| Procedural material generation, tiling metrics | Missing | — |
-| Channel-packing target profiles | Missing | — |
-| Baking | Missing | Provider `bake` flag only |
-| Flipbooks / VFX | Missing | — |
+Extend the existing registry with family, capability, schema and authorization metadata; derive transport/native descriptions and enforce parity instead of adding more manually drifting operation lists. Preserve all existing commands, result/event envelopes, stable errors and readonly profiles. New contracts reject unknown parameters; legacy behavior changes require explicit compatibility tests.
 
-### Brief §6: audio (Slice D)
+Expose a compact intent workflow: discover recipes/operations, describe schema, plan, submit, status/result, inspect previews, revise explicit parameters, finalize, and separately plan project admission. Plans resolve defaults, units, hashes, backend/version, uploads, budget, bounds, expected outputs and authority needs. Ordinary recipes use a closed task vocabulary, never arbitrary scripts, shell, URLs, or filter expressions. Semantic revisions select documented parameter changes; ambiguous revisions return choices, not invented execution.
 
-| Capability | Status | Where |
-| --- | --- | --- |
-| Provider sound generation | Implemented | `generate_sound_effect` (Leonardo) |
-| Any DSP, analysis, loudness, loops, variation sets | Missing | — |
+Fingerprints bind exact inputs but are not human approval. Agent-controlled `confirm`/`approved` fields cannot authorize dispatch. Reuse trusted CLI/native-host and MCP approval contexts, audit every dispatch path, and refuse gated automation without an actual host-mediated human confirmation. Missing, declined, cancelled, malformed or timed-out approval fails closed. New asynchronous work pauses at any unapproved action; it cannot inherit paid authority from a recipe or a resumed client. Credentials stay outside arguments, artifacts and logs.
 
-### Brief §7: profiler and temporal depth (Slice E)
+### Storage, contracts, and migration
 
-| Capability | Status | Where |
-| --- | --- | --- |
-| Telemetry v1/v2 spans, `measured_by` | Implemented | `src/harness/contracts.ts` |
-| Chrome/Perfetto JSON `X` and `B`/`E` spans, breakdown | Implemented | `src/harness/spans.ts` |
-| Async (`b`/`e`/`n`) and flow events | Missing | — |
-| Separability (2 SE), warmup, control comparability | Implemented | `src/harness/performance.ts` |
-| Repeated alternating runs, effect size, CIs | Missing | — |
-| Required experiment metadata (driver, seed) | Partial | Free-form `adapterEvidence.hardware/build` |
-| Temporal flicker / popping / pacing | Implemented | `src/harness/temporal.ts` |
-| Motion/depth-aware temporal analysis | Missing | `motion` kind exists, unused |
-| `trace_processor`, Tracy, gpucapture | Missing | — |
+- Add explicit new versions for jobs and generalized packages while retaining v1 readers and mesh command outputs. Multi-kind packages cover mesh, animation, material, audio and flipbook, with typed artifact roles and a primary artifact rather than a mandatory GLB. Extend validation, review, catalog resources and vendoring together.
+- Persist resolved `asset_recipe.v1`, `material.v1`, `source_ledger.v1`, graph snapshot, normalized trace, experiment, replay and failure-bundle contracts. Use the existing `game_dev` namespace; exact declarations and golden schema fixtures land before consumers. Extend existing contracts when semantically compatible rather than manufacturing duplicate formats.
+- Keep sealed runs and original packages immutable. Migrate mutable workspace/job/catalog state only through inspectable plans, backups, atomic commits, schema-version checks, and tested rollback. Graph/catalog indexes remain rebuildable derived state; do not rewrite evidence to upgrade an index.
+- Content-address derived artifacts using input closure, recipe parameters, tool/version, target profile and color/coordinate semantics. Retain editable sources and variant lineage, avoid duplicate bytes, and never delete allegedly unused assets automatically.
+- Use bounded readers/workers/traversals with explicit byte/pixel/frame/sample/time/output limits. Retain existing limits by default; each new operation declares limits in its plan and has oversize, timeout and cancellation tests.
 
-### Brief §8: reproducible gameplay (Slice F)
+### Durable execution
 
-| Capability | Status | Where |
-| --- | --- | --- |
-| Live sessions (snapshot, query, pause, step) | Implemented | `src/harness/session.ts`, `probe/c/gdprobe_session.c` |
-| Scene snapshots / deltas | Missing | Free-text `state_query` only |
-| Bisect | Implemented | `src/harness/bisect.ts` |
-| Input record/replay, state hashes, divergence | Missing | — |
-| Failure bundles | Partial | Run `failure{code,message}` and diagnostics diffs only |
+Extend the existing store and transaction machinery with plan-bound idempotency, exclusive worker claims, heartbeat/lease evidence, step checkpoints, terminal artifact manifests and provider reconciliation. Submission returns a durable handle before lengthy execution. A worker survives client disconnect; it never restarts an uncertain submission. Recovery requires explicit action after owner liveness checks and fresh authority for consequential work. Distinguish cancellation requested, local worker stopped, completed-before-cancel and remote outcome uncertain. MCP Tasks wrap these jobs only after negotiation; job-ID polling remains universal. The protocol still treats Tasks as experimental: https://modelcontextprotocol.io/specification/2025-11-25/basic/utilities/tasks.
 
-### Brief §9–10, §14: platform and agent API
+## 4. Delivery milestones
 
-| Capability | Status | Where |
-| --- | --- | --- |
-| One registry for CLI and MCP | Implemented | `src/commands/registry.ts`, `register.ts` |
-| Schemas in discovery | Partial | MCP `tools/list` only; `capabilities` lists argument names |
-| Progressive discovery | Missing | 109 flat tools |
-| Spend / execution / project-write gates | Implemented | `src/mcp/spend-gate.ts`, `execution-gate.ts` |
-| Production recipes (closed vocabulary) | Implemented | `src/production/recipes.ts` (18 operations) |
-| Intent-level asset API | Missing | — |
-| Durable jobs | Partial | `src/jobs/durable.ts`; no idempotency key, heartbeat, generic checkpoints |
-| MCP Tasks, Streamable HTTP | Missing | SDK 1.30.0, stdio only |
-| Migrations | Partial | `migrate legacy` only |
-| Licence handling | Partial | Per-package licence, unknown-licence block; no ledger or asset SBOM |
+Each milestone is several small commits, not one giant change. Every commit includes its affected core, registry/CLI/MCP path, schema/help/examples, skill updates, native compatibility and regression tests. A source checkpoint may precede a blocked real-tool test, but stays visibly unqualified.
 
-## 2. Rules for every slice
+### M0 — Baseline, coverage ledger and delivery safety
 
-1. **One registry.** Every operation is reachable by CLI and MCP, with these registrations:
-   - `src/tools/*`;
-   - `FREE_TOOLS` / `TOOL_COSTS` (`src/domain/spend.ts`);
-   - `EXECUTION_TOOLS` / `PROJECT_WRITE_TOOLS` (`src/mcp/execution-gate.ts`), and `ROADMAP_MUTATION_TOOLS` where relevant;
-   - `KNOWN_FLAGS` and a HELP line;
-   - `EXPECTED_TOOLS` (`scripts/verify-install.mjs`);
-   - the skill references;
-   - Anvil `CommandCatalog+Tools.swift` / `+CLI.swift` and `RoadmapToolSchemas.swift`.
+Verify the clean main history against GitHub, preserve existing local commits, and establish fresh CPU/type/lint/native baselines. Map every requirement in brief sections 3–14 to an owner milestone, acceptance test and evidence status. Record executable/client versions by safe discovery, without launching restricted tools. Freeze supported-version matrices when the corresponding integration is implemented; pin test binaries and official contract fixtures before advertising support.
 
-   `swift test --package-path apps/macos/Anvil` runs before every push.
-2. **Evidence.** Every result keeps an `evidenceCeiling` and `z.literal(false)` impossible-claim fields. Facts carry their origin: `measured`, `engine-reported`, `heuristic`, `synthetic`, `human-approved`. Prose says "consistent with", never "because".
-3. **Authority.** No model-writable approval input. Spend, execution and project writes keep the human-written ceiling plus per-call elicitation, and fail closed on decline, cancel, timeout or malformed answers. Every gated write has a free `plan_*` twin, and approval binds to the plan fingerprint.
-4. **Real tools run in CI, not locally.**
-   - Prefer pure-JS cores, which stay deterministic and fixture-testable: gltf-transform geometry, PNG/noise maths for materials, a WAV reader for audio analysis.
-   - Blender (existing `blender` job), FFmpeg (new job) and `trace_processor` (new job) run on hosted runners.
-   - `gpucapture` needs macOS 27; it is **blocked** until a runner or local authorisation exists.
-5. **Four statuses per item.** Source implemented · fixtures passed · real tool exercised · human quality review. Never collapse them into one "supported" mark.
-6. **Closed task vocabulary.** No arbitrary shell, Python, FFmpeg expression, URL or path as an asset-generation input. Any expert escape hatch is separately named and gated, and excluded from the normal recipes.
+**Gate:** no unassigned requirements; clear distinction between mandatory capabilities, candidate options, unsupported extensions and externally blocked validations. Commit/push the plan and audited baseline first.
 
-## 3. Milestones
+### M1 — Discovery, job substrate, packages and first useful recipe
 
-Dependency order: M1 → M2 → M3 → M5. M4 can run alongside M3 once the M1 job substrate exists. M6 closes.
+Implement registry discovery and schemas, generalized packages/catalog, source/license ledger and SBOM export, migrations, and durable execution before broad feature growth. Build one complete local crate recipe using existing glTF tooling: explicit dimensions/axes/pivot, LOD chain, box collision, target validation, CPU contact sheet and verified package. Store provenance graph-ready entity IDs immediately.
 
-### M1. Foundation and honest discovery
+**Gate:** crate succeeds without provider credentials; typed invalid-call recovery; altered backend/input/budget/upload invalidates approval; concurrent identical submissions produce one job; crash/reconnect/recovery creates no duplicate charge; package v1 remains readable and rollback restores prior mutable state.
 
-| Deliverable | Notes | Depends on |
-| --- | --- | --- |
-| `discover_operations`, `describe_operation` | Compact families, recipes, installed tool versions, providers, authority needs, cost basis; schema on demand. No tool removed. | — |
-| Source/licence ledger `game_dev.source_ledger.v1` | Executables, providers, downloaded assets, models: version, terms URL, acquisition date, entitlement, verification status. CycloneDX SBOM export. Unknown rights still block vendoring. | — |
-| Durable job substrate | Extend `DurableJobStore` with idempotency key, heartbeat, checkpoints, and the cancellation states requested / stopped / completed / outcome-uncertain. Adopt for Blender runs, recipe steps, bisect. MCP Tasks where negotiated; job ids otherwise. | — |
-| Intent-level asset API | `discover_asset_recipes`, `plan_asset`, `run_asset_plan`, `inspect_asset_result`, `revise_asset_plan`, `finalize_asset` over the recipe engine. Canonical `game_dev.asset_recipe.v1` with resolved defaults, units, ranges, enums; unknown parameters fail. | Job substrate |
-| Versioned migrations | `migrate workspace` with backup and rollback; catalog `user_version`. | — |
-| First recipe: procedural crate | Pure-JS glTF construction → normalise → LOD → box collision → validate → contact sheet → package. | Asset API |
+### M2 — Mesh, animation and target delivery
 
-**Acceptance**
+Extend Blender scripts through the existing bounded runner, using isolated job directories, factory settings, disabled embedded-script execution, JSON I/O, explicit tool identity and editable `.blend` outputs. Add parameterized props/modular geometry, selective repair, UV/tangent workflows, topology/error budgets, collision profiles, instancing preservation and coherent LOD chains. Treat open surfaces and mirrored/overlapping UVs according to declared intent. Preserve skin/morph/custom attributes or disclose export losses before execution.
 
-- `describe_operation` schemas equal MCP `tools/list`.
-- A changed provider, input asset, cost bound or upload destination invalidates approval.
-- Resubmission is idempotent, and a timeout causes no duplicate charge.
-- Migration rollback, interrupted write and adversarial path tests pass.
-- The crate journey completes in five calls or fewer with no provider configured.
+Add skeleton/bind-pose/weight validation; authored/imported clips; extraction, trim, loop, resample, smoothing and compression where supported; rest-pose-aware retarget maps; root motion and event preservation. Add reversible IK/contact correction and blend previews with measured trajectory changes. Foot sliding, penetration and continuity remain qualified diagnostics. Imported humanoid routes refuse unsupported anatomy.
 
-### M2. Local production baseline
+Add declarative target profiles and inspect-plan-reimport with additions/replacements/removals, override conflicts, stable target IDs, pre-write source drift checks and receipts/rollback.
 
-| Deliverable | Notes |
-| --- | --- |
-| Mesh finishing | Axis/unit/pivot/handedness conversion preserving negative scale; validation against declared intent (open surfaces, UV overlap); LOD chain object, optional `MSFT_lod`; per-platform budget profiles in `targets/`; density, normal and UV-island overlays in the CPU renderer. |
-| Animation | Skeleton, bind-pose and weight validation; pure-JS trim/loop/resample keeping quaternion sign continuity and events; retarget mapping profiles with rest-pose offsets; qualified discontinuity, foot-sliding and penetration diagnostics; non-humanoid input refused on humanoid routes. |
-| Materials | `game_dev.material.v1` (channel semantics, colour space, normal convention, tangent basis, physical scale, packing, provenance, licence); procedural generator where shared height/mask fields drive every map; periodic noise for tiling; named packing profiles; GL↔DX normal conversion; edge, tiling and mip metrics; sphere/plane/repeat/grazing-light previews; Blender high→low bake (CI only). |
-| VFX | Frame sequence → flipbook atlas with padding, premultiplication, playback metadata, through the existing recipe and package system. |
-| Audio | Pure-JS WAV analysis (peak, ~4× oversampled true peak, DC, silence, RMS, loop-seam discontinuity); procedural synthesis (noise, oscillators, envelopes); FFmpeg typed filter plans as an optional tool (CI only); variation sets; event-bank metadata. |
-| Agent journeys 1–4 | Crate, character (fixture humanoid), two-metre tileable stone with six variants, six stone footsteps. |
+**Gate:** complete crate and humanoid walk/idle packages; negative/nonuniform scales, handedness, instancing, UV seams/zero areas, skeleton mismatch, zero-length bones, quaternion sign changes, morph loss, root drift and sample-accurate event offsets tested. Blender round trips/render previews must run in CI.
 
-**Acceptance.** All the brief's difficult fixtures:
+### M3 — Materials, baking and VFX
 
-- **Materials:** incorrect gamma, normal Y inversion, channel-packed linear maps, mirrored UV seams, intentional overlaps, zero-area UVs, transparent edges, UV atlas bleed.
-- **Audio:** silent clips, impulses, sub-second sounds, clipping, DC offset, phase-inverted stereo, loop clicks, encoder padding, Unicode filenames.
-- **Animation:** rest-pose differences, zero-length bones, quaternion sign flips, loop seams, root drift, event offsets.
+Implement a versioned material manifest covering map semantics, color space, workflow, normal convention/tangent basis, physical scale, UVs/UDIM capability, packing, alpha, bit depth, provenance and rights. Build editable procedural layers/masks from shared fields so color/roughness/normal/height variants describe the same morphology. Support supplied maps, deliberate workflow conversions and bounded UV/surface brush/stencil edits with undoable checkpoints.
 
-### M3. Game understanding
+Add high-to-low mesh baking with cage/ray/UV/padding settings, seam/texel-density/tiling diagnostics, named packing profiles, normal conversion, mip/compression checks, and controlled sphere/plane/mesh/repeat/grazing-light previews. Export source map values independently of display transforms. Add decals/trim-sheet/atlas routes with tested semantics; unsupported material extensions or UDIM consumption get explicit refusals or reviewed fallbacks.
 
-| Deliverable | Notes |
-| --- | --- |
-| Graph store | `graph.sqlite3` through `node:sqlite`. Nodes and edges carry origin, extraction method, confidence, source hash, revision and validity scope. Incremental indexing, invalidation, rebuild, bounded traversal. Immutable capture provenance is kept apart from the mutable working-tree index. |
-| Importers | Files, manifests, packages, recipes, runs, captures, glTF internals (mesh → material → texture). SCIP index ingestion with a pure-JS protobuf reader; fixture indexes generated in CI by `scip-typescript` / `scip-clang`. Shader references from declared manifests. Text matches are never presented as semantic edges. |
-| Runtime bridge | `gdprobe_declare_object` seals a run-scoped object map. Live-session protocol v1.1 adds typed, paginated `scene_snapshot` and deltas. Run IDs join to assets only through the map. |
-| Queries | `query_impact` (what to recapture; definite vs possible), `trace_provenance` (runtime object → package → source revision). |
-| Engine profiles | Declarative axes, units, packing, mip and budgets; engine-neutral reimport preview with override-conflict reporting. |
+Extend recipes to seeded simulation/render-to-flipbook, frame atlas layout, padding, timing, alpha/premultiplication and available auxiliary buffers, with renderer/shader requirements recorded.
 
-**Acceptance.** Fixtures for modification, rename, removal, cycles, stale captures, ambiguous runtime IDs and interrupted updates; incremental results equal a clean rebuild; bounded queries return provenance and uncertainty.
+**Gate:** two-metre weathered-stone family with six coherent variants, an authored material and a complete flipbook package. Golden gamma/packing/normal tests; mirrored seams, intentional overlap, atlas bleed, transparency, displacement and mip stress cases; real baking/render/reimport fixtures on supported CI targets.
 
-### M4. Optional providers
+### M4 — Audio production and event banks
 
-| Deliverable | Notes |
-| --- | --- |
-| Tripo / Leonardo hardening | Audit pinned schemas against current docs; contract fixtures; no silent model-ID changes. |
-| Meshy, ElevenLabs, DeepMotion, Poly Haven, Substance SAT | Fixture-only connectors behind capability, authority and spend gates; "not configured" until accounts exist; outputs validated by the same local QA. |
+Implement bounded WAV inspection and deterministic DSP/synthesis first: layers, envelopes, seeded noise/oscillators, trim/fades, sample-rate/channel conversion, gain, DC/silence/clipping analysis, loops and attack/sustain/release. Add typed FFmpeg plans for supported codecs, loudness and true-peak methods, recording exact build/license and measurement applicability. Do not call oversampling or RMS an exact loudness/true-peak standard without method validation. Preserve transients by default; retain PCM masters, dither and codec-padding decisions.
 
-**Acceptance.** No provider call after a denial; uncertain outcomes are reconciled before any retry; a local cancel never claims provider work stopped.
+Add variation families, before/after and loop audition reels, diversity diagnostics, positional/stereo roles, and event-bank weights/nonrepeat/cooldown/concurrency metadata. Correlate runtime triggers/voices/animation cues only where an adapter observes them.
 
-### M5. Observe and improve
+**Gate:** six stone footsteps with metadata and audition; deterministic synthesis, sample-accurate edits, impulse/silence/short-clip/NaN/DC/clipping/phase-cancellation/Unicode/long-file fixtures; no unintended output clipping; one tested engine event-bank import in M7 before claiming runtime integration.
 
-| Deliverable | Notes |
-| --- | --- |
-| Trace normalisation | `game_dev.trace.v1`: spans, counters, thread/queue identity, inclusive/exclusive time, async and flow events; clock and unit mismatches refused. |
-| Native trace adapters | `trace_processor` (PerfettoSQL templates with the processor version recorded) and Tracy (`tracy-csvexport`); real lanes in CI. `gpucapture` / `gpudebug`: discovery and sealing only; real runs blocked. |
-| Controlled experiments | `plan_experiment` / `run_experiment`: alternating ABAB runs, required metadata (hardware, driver, seed, build, resolution), run-level bootstrap intervals and effect size, an inconclusive verdict. Optimisation goals may require one. |
-| Temporal depth | Motion-vector reprojection to separate camera and animation from flicker; ghosting and disocclusion signals; findings linked to graph entities. |
-| Replay | Probe replay API (inputs with timing, fixed-step policy, seed, per-frame state hash); `record_replay` / `run_replay` reporting the first divergence; a determinism claim only when the engine declares it and two runs verify it; `game_dev.failure_bundle.v1` linking live sessions, bisect and the graph. |
-| Agent journey 5 | From a selected visual artefact to object identity, provenance, affected shader and scenarios, replay and candidate comparison. |
+### M5 — Incremental source/asset/runtime graph
 
-**Acceptance.** Overlapping-trace tests; known-good and known-bad statistical fixtures; false-positive cases; deliberate divergence; downgrade for an unsupported engine; crash and cancellation recovery; bounded storage.
+Use existing `node:sqlite` infrastructure for adjacency, searchable metadata and transactional index generations. Import files/manifests/packages/recipes/glTF/captures first. Use SCIP for semantic indexes, initially TypeScript/JavaScript, followed by C/C++ with actual compilation database, C# and Python when their indexers are present. Consume official generated bindings or a reviewed schema decoder; do not invent semantic calls from text. LSP is optional interactive enrichment; syntax fallback is explicitly syntax-only. SCIP's format/indexer boundaries are documented at https://github.com/scip-code/scip.
 
-### M6. Production hardening
+Every edge carries extraction origin/method, confidence, source hash/revision, build scope and validity. Stage incremental updates transactionally, invalidate changed dependencies, handle rename/delete/generated files/cycles/unresolved edges, and expose stale or mixed revisions. Bounded queries return definite versus possible impact, provenance paths and suggested recapture scenarios.
 
-- Real Codex and Claude client matrix, with versions recorded and kept separate from protocol fixtures.
-- Streamable HTTP only if a client needs it.
-- Windows, Linux and macOS lanes.
-- Adversarial path, symlink, oversized-payload, subprocess, interrupted-write and secret-redaction tests.
-- Final documents: capability matrix, migration guide, executable examples, measured performance and storage limits, release-readiness report, release notes (prepared, not published).
+Extend the existing C/Swift/Rust probe protocol through negotiated capabilities for paginated scene snapshots/deltas and explicit runtime-to-asset/source maps. Runtime IDs are scoped to session/run/frame; reconnect cannot reuse stale mappings. Link capture pixel IDs to object, mesh/material, shader/source only when observed bindings exist.
 
-## 4. Status tracker
+**Gate:** incremental equals clean rebuild across dirty overlays, renames, deletes and interrupted writes; ambiguous runtime IDs, dynamic spawn/despawn/reload, cycles and missing maps remain honest; bounded queries retain evidence links. Benchmark representative small/medium/large fixture graphs before publishing limits.
 
-Updated as slices land. The columns are the four independent statuses from rule 5.
+### M6 — Optional production/library backends
 
-| Milestone | Source | Fixtures | Real tool (CI) | Human review |
+Harden current Tripo/Leonardo contracts and uncertain-outcome accounting first. Then add independently useful, capability-gated work packages in order: Poly Haven discovery/provenance, Meshy mesh/retexture/rig/actions, ElevenLabs SFX, DeepMotion account-enabled video motion, and licensed Substance published-parameter/bake routes. Each needs a pinned contract, backend doctor, create/status/download/cancel semantics where available, fixture coverage, output QA and a source/license/entitlement ledger entry.
+
+Mixamo is user-downloaded import and local retarget only; no unsupported login automation. Neural reconstruction, splats, cloth/hair, and specialized facial routes get separate qualified connectors only if selected, licensed and demonstrated; do not advertise nonexistent backends.
+
+**Gate:** denial yields zero external calls; timeout and repeated submission never blindly regenerate; local cancellation makes no remote-refund promise. Live tests remain blocked until the exact account, rights, upload and spend authority is supplied. Fixture-complete connectors are labelled accordingly, not production-verified.
+
+### M7 — Engine adapters and real import/runtime joins (conditional execution)
+
+Keep all three adapter work packages in the roadmap, while honoring the existing deferred-execution decision. Sequence Godot first, Unity second, Unreal third after engine work is authorized. Each reuses shared probe, graph, recipe, package and capture contracts; no parallel engine framework.
+
+Godot uses documented editor/debugger/resource UID/dependency APIs. Unity separates editor AssetDatabase GUID maps from the player probe and discovers available ProfilerRecorder counters; rendering support is pipeline-specific. Unreal separates editor Asset Registry/Python automation from a C++ runtime module and native Insights artifacts. Pin actual tested engine/renderer/build versions; preserve declared versus dynamic dependencies and missing counters.
+
+**Gate per engine:** fixture project with mesh, material, animation, nested scenes, dynamic spawn and audio events; import/reimport preserves overrides or reports conflict; editor/player evidence is distinct; sealed scenario and runtime object-to-source joins verify; unsupported render diagnostics are refused. Missing installs/licenses/runners block that engine's qualification, not independent core work.
+
+### M8 — Profilers, controlled experiments and temporal depth
+
+Extend current JSON trace import rather than duplicate it: async/flow events, counters, queues/threads, explicit clocks/units, overlap-aware inclusive/exclusive time and separate CPU submission/GPU execution/wall latency. Keep native traces and normalized derived artifacts. Add version-pinned Perfetto Trace Processor with fixed bounded query templates, then Tracy instrumentation/export and overhead/disabled-probe tests. Perfetto's SQL backend is documented at https://perfetto.dev/docs/analysis/trace-processor.
+
+Add separate constrained RenderDoc replay workers on supported graphics APIs; Metal uses Apple programmatic capture/Xcode fallback and feature-detected gpucapture/gpudebug. Add versioned xctrace template/export parsing where available. Never parse undocumented `.gputrace` internals as a stable API. Apple's documented gpucapture route requires macOS 27+, so macOS 26 remains an explicit fallback path: https://github.com/apple/game-porting-toolkit/blob/main/game-porting-skills/skills/using-gpucapture/SKILL.md.
+
+Implement planned repeated paired baseline/candidate experiments with alternating order, explicit scenario/assets/revision/hardware/driver/build/resolution/quality/seed/warmup/window controls, run-level effect/uncertainty and inconclusive results. Frames are not independent trials. Bind optimization acceptance to required controls, admitted measurement provenance, visual limits and goal direction.
+
+Extend temporal analysis with aligned motion/depth/camera/history/disocclusion evidence for flicker/popping/ghosting, deliberate-motion false positives, annotated sequences and graph links. Missing buffers reduce capability instead of synthesizing certainty.
+
+**Gate:** overlapping/async trace fixtures, clock mismatch refusals, known statistical coverage/noise/underpower cases, controlled temporal false positives, instrumented real profiler sample with nonempty artifacts and at least one evidence-limited real diagnosis on an authorized CI target. Unavailable GPU/platform lanes remain open blockers.
+
+### M9 — Replay, failure investigation and optimization journey
+
+Add adapter-negotiated input recording/replay and checkpoints over the existing probe/live path: input timing, fixed-step policy, seed, initial state, asset/build identities and per-frame state hashes. Report first divergence. Deterministic support requires an engine contract plus repeated agreeing executions; unsupported engines remain best-effort.
+
+Seal crash/assertion/collision/missing-asset/animation-transition failures with inputs, states, logs, frames, diagnostics and provenance. Connect promotion from live exploration, graph impact, replay, bisect and existing isolated optimization. Preserve source-path budgets, tests, capture authority, failure history and drift-checked review before applying patches.
+
+**Gate:** deliberate divergence, crash/cancellation/reconnect and bounded replay/storage; complete bug journey from selected artifact through observed identity/source/scenarios, replay and baseline/candidate evidence, with no fabricated diagnosis.
+
+### M10 — Cross-client/native delivery and release readiness
+
+For every previous milestone, surface relevant inspectors/plans/jobs/previews/graphs/diagnoses in Anvil and preserve legacy Studio compatibility. Keep native use optional. Update shared Swift schemas/catalog from the registry; use Foundation/compile-only tests locally. Native light/dark, keyboard, labels, resize, cancellation and error review needs an authorized remote interactive lane; lack of that lane remains explicit.
+
+Verify pinned actual Codex and Claude clients for discovery, schema use, resources, image/audio/file fallbacks, job lifecycle, disconnect/reconnect, errors and every approval outcome. Protocol fixtures are separate evidence. Keep stdio as default. Add loopback-authenticated, Origin-checked Streamable HTTP only for an established client need, using the same registry and gates; no public listener or deprecated SSE route.
+
+**Gate:** all five agent journeys are executable via CLI and MCP with compact high-level calls, explicit approvals and actionable recovery. Measure completion, calls, context bytes, latency, cancellation and unnecessary regeneration; target a small number of calls rather than concealing decisions. Pass Windows/Linux/macOS package-install lanes, migration/rollback/adversarial tests, runtime/provenance/SBOM checks and deterministic archive verification. Finish capability matrix, migrations, examples, measured limits, readiness report and prepared release notes. No public release is part of this plan.
+
+## 5. Verification, Git and backup cadence
+
+- Before each commit, review the scoped diff and run focused behavioral tests plus relevant schema/transport/native parity tests. Never commit generated outputs, captures, caches, credentials or unrelated changes. Feature gates land with functionality and refusal tests, not as unused stubs.
+- Before each pushed milestone, run `npm run typecheck`, `npm run lint`, `npm test`, `npm run verify`, `npm run verify:docs`, the relevant native suites, and installed-package/roster checks. Use existing CPU/mock selectors locally; publish every skipped optional lane. Run real-tool/platform CI against the pushed SHA, review failures, and fix them in the next small commit before dependent integration continues.
+- Keep both `swift test --package-path apps/macos/Anvil -j 2` and the retained Studio suite applicable; compile/test the probe's supported language bindings after protocol changes. Use existing archive/runtime/install scripts for exact candidate bytes, not a different development bundle.
+- Push normal fast-forward commits to `origin/main`; never force-push. Re-read remote state before every push. If concurrent work appears, preserve it, integrate without rewriting history, and rerun affected validation. Initial pending main commits differ from GitHub only in documentation; preserve and push their history with the plan checkpoint.
+- Update this plan's coverage/evidence ledger and changelog at every milestone. Report commit SHA, checks, CI evidence, blocker and next action. A blocker pauses only dependent work; it cannot justify marking the whole roadmap complete.
+- Maintain one current T7 backup at the existing project backup location, preserving full main history and referenced LFS objects. Check available space and backup-only refs/objects before replacement; preserve anything main does not contain. Follow the existing daily backup exclusions for build/dist/captures/caches/venvs/node_modules/DerivedData; no iCloud or dated snapshots. Verify backup main matches the final checkpoint. Do not relocate DailyWork or archived sessions.
+
+## 6. Tracking and exit criteria
+
+| Work | Source | Fixtures | Real tool/client | Human review |
 | --- | --- | --- | --- | --- |
-| M1 | not started | — | — | — |
-| M2 | not started | — | — | — |
-| M3 | not started | — | — | — |
-| M4 | not started | — | — | — |
-| M5 | not started | — | — | — |
-| M6 | not started | — | — | — |
+| M0 baseline and coverage | plan saved; audit partial | not rerun | not rerun | not requested |
+| M1 foundation | not started | not started | not started | not reviewed |
+| M2 mesh/animation | not started | not started | CI required | not reviewed |
+| M3 materials/VFX | not started | not started | CI required | not reviewed |
+| M4 audio | not started | not started | CI required | not reviewed |
+| M5 graph/probe | not started | not started | real indexer/probe required | not reviewed |
+| M6 optional backends | not started | not started | accounts/tools gated | not reviewed |
+| M7 engines | planned; execution deferred | not started | owner/tools/licenses gated | not reviewed |
+| M8 profiling/experiments | not started | not started | supported real target required | not reviewed |
+| M9 replay/investigation | not started | not started | supported real target required | not reviewed |
+| M10 delivery/readiness | not started | not started | real clients/native lane required | not reviewed |
 
-## 5. Deferred or blocked
+Implementation order: M0 → M1 → M2 → M3 → M4 → M5 → M8 → M9 → M10. M6 and conditional M7 can proceed independently after M1/M5 prerequisites. Relevant acceptance is integrated into each slice rather than postponed to M10.
 
-| Item | Blocked on | Remaining scope |
-| --- | --- | --- |
-| Godot / Unity / Unreal adapters | Owner decision (23 Oct) | Engine-specific import, runtime graph, audio-event correlation; fixture engine only meanwhile |
-| RenderDoc | Not installed; no Metal support | Vulkan/D3D/GL replay worker |
-| `gpucapture` real runs | Fixtures-only policy; no macOS 27 hosted runner | Real capture, texture extraction |
-| Substance SAT, DeepMotion, Meshy, ElevenLabs | Accounts, entitlements, terms | Live integration tests |
-| Mixamo | No supported automation API | Import of user-downloaded files only |
-| Photogrammetry, Gaussian splats, cloth/hair, painting parity, facial transfer | Out of initial scope, as the brief allows | Separate acceptance fixtures if taken up |
-
-## 6. Decision log
-
-| Decision | Reason | Rejected |
-| --- | --- | --- |
-| SQLite (`node:sqlite`) for the graph | Already a dependency through the catalog; no new native module; measured scale does not need more | A graph database |
-| SCIP as the durable code index | Compiler-accurate and language-agnostic; files are produced by user-installed indexers and read offline | LSP as a whole-repo index; text search as semantic edges |
-| Pure-JS geometry, material and audio cores | Deterministic, fixture-testable, keeps the npm package free of native code | Blender or FFmpeg as hard dependencies |
-| Real tools only in CI | Owner policy; protects the shared dev machine | Local Blender/GPU launches |
-| No engine adapter in v2 | Owner decision; the probe SDK already covers custom engines | Godot first |
+Completion requires every mandatory requirement mapped and satisfied at its declared evidence level. Optional integrations must be implemented and qualified for an explicitly supported combination or clearly recorded as unsupported/blocked with the exact prerequisite and remaining test. A fixture-only connector, a skipped real test or an inaccessible licensed engine cannot count as full production support. No claim of universal engine compatibility, aesthetic quality, causal speedup or target-hardware performance follows from a CPU preview or synthetic fixture.
