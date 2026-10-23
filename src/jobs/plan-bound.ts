@@ -71,7 +71,15 @@ export class PlanBoundJobStore {
       return JSON.parse(await handle.readFile('utf8')) as unknown;
     } finally { await handle.close(); }
   }
+  /** Readers share the writer transaction so state and its fsynced event are
+   * observed together. A dead writer's lock must be explicitly recovered first.
+   * Lock order is idempotency key -> job; no job transaction acquires a key lock.
+   */
   async get(id: string): Promise<PlanBoundJob> {
+    await safeAncestors(this.target(id));
+    return withTransaction(this.target(id), () => this.getUnlocked(id));
+  }
+  private async getUnlocked(id: string): Promise<PlanBoundJob> {
     const parsed = planBoundJobSchema.safeParse(await this.read(this.target(id)));
     if (!parsed.success || parsed.data.id !== id) throw invalidState('Corrupt v2 job');
     const job = parsed.data;
@@ -163,7 +171,7 @@ export class PlanBoundJobStore {
   private async update(id: string, action: (job: PlanBoundJob) => void): Promise<PlanBoundJob> {
     await safeAncestors(this.target(id));
     return withTransaction(this.target(id), async () => {
-      const job = await this.get(id); action(job); job.revision++; job.updatedAt = new Date().toISOString();
+      const job = await this.getUnlocked(id); action(job); job.revision++; job.updatedAt = new Date().toISOString();
       planBoundJobSchema.parse(job); await safeAncestors(this.target(id)); await atomicJson(this.target(id), job); this.emit(job); return job;
     });
   }

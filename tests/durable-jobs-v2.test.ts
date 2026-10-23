@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -152,10 +152,52 @@ describe('independent durable workers', () => {
       const record = path.join(dir, 'job-v2.json');
       await fs.rename(record, `${record}.original`);
       await fs.symlink(`${record}.original`, record);
-      await expect(store.get(job.id)).rejects.toThrow(/Unsafe/);
+      await expect(store.get(job.id)).rejects.toThrow(/Symlink/);
       const mapping = (await fs.readdir(root)).find(name => name.startsWith('key-') && name.endsWith('.json'))!;
       await fs.writeFile(path.join(root, mapping), '{broken');
       await expect(store.submit(input)).rejects.toThrow();
     } finally { await fs.rm(root, { recursive: true, force: true }); }
+  });
+});
+
+
+describe('coherent v2 status reads', () => {
+  it('waits for a writer between the atomic record replacement and event append', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'jobs-v2-read-coherence-'));
+    const realRename = fs.rename.bind(fs);
+    let release!: () => void;
+    let recordWritten!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const replaced = new Promise<void>(resolve => { recordWritten = resolve; });
+    let renameSpy: ReturnType<typeof vi.spyOn> | undefined;
+    try {
+      const store = await (await DurableJobStore.open(root)).planBound();
+      const job = await store.submit({ operation: 'tool.inspect', request: {}, plan: {}, idempotencyKey: 'coherent-reader' });
+      const target = path.join(await fs.realpath(root), job.id, 'job-v2.json');
+      renameSpy = vi.spyOn(fs, 'rename').mockImplementation(async (from, to) => {
+        await realRename(from, to);
+        if (String(to) === target) { recordWritten(); await gate; }
+      });
+      const writing = store.claim(job.id, job.binding);
+      await replaced;
+      let settled = false;
+      const reading = store.get(job.id).finally(() => { settled = true; });
+      await new Promise(resolve => setTimeout(resolve, 75));
+      expect(settled).toBe(false);
+      release();
+      const [written, read] = await Promise.all([writing, reading]);
+      expect(read).toEqual(written);
+      expect(read.status).toBe('running');
+      renameSpy.mockRestore();
+      renameSpy = undefined;
+      // Real interrupted evidence remains corrupt after ownership is released.
+      const legacy = await DurableJobStore.open(root);
+      await fs.writeFile(legacy.eventsPath(job.id), '');
+      await expect(store.get(job.id)).rejects.toThrow(/Interrupted or corrupt/);
+    } finally {
+      release();
+      renameSpy?.mockRestore();
+      await fs.rm(root, { recursive: true, force: true });
+    }
   });
 });
