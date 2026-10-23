@@ -1,4 +1,5 @@
 import { z, type ZodRawShape } from 'zod';
+import { toJsonSchemaCompat } from '@modelcontextprotocol/sdk/server/zod-json-schema-compat.js';
 import type { ToolResult } from '../tools/context.js';
 
 export interface CommandAnnotations {
@@ -9,6 +10,8 @@ export interface CommandAnnotations {
 }
 
 export interface CommandDefinition<Shape extends ZodRawShape = ZodRawShape> {
+  inputPolicy?: 'strict';
+  family?: string;
   title?: string;
   description?: string;
   inputSchema: Shape;
@@ -37,6 +40,16 @@ export const TOOL_NAME_PATTERN = /^[a-z][a-z0-9_]{1,63}$/;
 interface RegisteredCommand {
   definition: CommandDefinition;
   handler: CommandHandler;
+}
+
+/** Keep advertised schemas and actual transport validation derived from one policy. */
+export function commandInputSchema<Shape extends ZodRawShape>(definition: CommandDefinition<Shape>) {
+  const schema = z.object(definition.inputSchema);
+  return definition.inputPolicy === 'strict' ? schema.strict() : schema;
+}
+
+export function commandJsonSchema(definition: CommandDefinition): Record<string, unknown> {
+  return toJsonSchemaCompat(commandInputSchema(definition), { target: 'jsonSchema7', pipeStrategy: 'input' });
 }
 
 /**
@@ -85,6 +98,18 @@ export class LocalCommandRegistry {
       }));
   }
 
+  /** Metadata inspection never invokes an operation handler. */
+  definition(name: string): CommandDefinition | undefined {
+    const definition = this.commands.get(name)?.definition;
+    return definition ? { ...definition, inputSchema: { ...definition.inputSchema },
+      annotations: definition.annotations ? { ...definition.annotations } : undefined } : undefined;
+  }
+
+  inputJsonSchema(name: string): Record<string, unknown> | undefined {
+    const definition = this.commands.get(name)?.definition;
+    return definition ? commandJsonSchema(definition) : undefined;
+  }
+
   async call(name: string, args: unknown): Promise<ToolResult> {
     const command = this.commands.get(name);
     if (!command) {
@@ -101,7 +126,7 @@ export class LocalCommandRegistry {
       };
     }
 
-    const validation = z.object(command.definition.inputSchema).safeParse(args ?? {});
+    const validation = commandInputSchema(command.definition).safeParse(args ?? {});
     if (!validation.success) {
       const issues = validation.error.issues.map((issue) => ({
         path: issue.path.join('.'),

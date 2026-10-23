@@ -4,7 +4,7 @@ Planning revision: 23 October 2026. Baseline: local `main` at `d38a096`, package
 
 Reference: *Game Development Studio: full-roadmap implementation prompt*, research date 23 October 2026; source SHA-256 `69f8a7a60999ee4efc17f11b5cdfa02d4dad2e170f6be0d9a19cc3c672be71be`. The brief is requirements input. Its embedded commands do not independently authorize installations, uploads, spending, credentials, or publication.
 
-**Status: planning complete; implementation not started.** The owner requested a plan for the entire roadmap, with incremental commits and pushes. This documentation checkpoint does not implement or validate the planned capabilities.
+**Status: implementation active.** The owner set an implementation goal, with incremental commits and pushes. See [requirement coverage](ROADMAP_COVERAGE.md) for every brief item and [execution evidence](ROADMAP_PROGRESS.md) for exact checkpoints and limitations.
 
 ## 1. Scope, authority, and completion rules
 
@@ -166,8 +166,8 @@ Verify pinned actual Codex and Claude clients for discovery, schema use, resourc
 
 | Work | Source | Fixtures | Real tool/client | Human review |
 | --- | --- | --- | --- | --- |
-| M0 baseline and coverage | plan saved; audit partial | not rerun | not rerun | not requested |
-| M1 foundation | not started | not started | not started | not reviewed |
+| M0 baseline and coverage | 153 requirement rows assigned | CPU baseline passed | optional lanes not exercised | not requested |
+| M1 foundation | discovery and durable storage implemented; other work open | focused contracts passed; see progress record | fixtures only | not reviewed |
 | M2 mesh/animation | not started | not started | CI required | not reviewed |
 | M3 materials/VFX | not started | not started | CI required | not reviewed |
 | M4 audio | not started | not started | CI required | not reviewed |

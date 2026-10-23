@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add bounded operation-family discovery and input-schema lookup over CLI/MCP, including readonly profile filtering, strict new inputs, direct cost/authority metadata and native catalog coverage.
+- Add opt-in plan-bound durable job storage with idempotency, exclusive ownership, checkpoints, cancellation/uncertainty and explicit recovery; background execution remains in progress.
+
 ## 1.5.1
 
 - Fix inspection of Blender glTF/GLB assets that require

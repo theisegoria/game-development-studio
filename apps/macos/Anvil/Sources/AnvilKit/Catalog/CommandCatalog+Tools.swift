@@ -13,6 +13,10 @@ extension CommandCatalog {
     /// publishes the rate; `estimated` means it does not, and the ceiling is a refusal
     /// guard rather than an invoice.
     static let toolCommands: [CommandSpec] = [
+        tool("discover_operations", title: "Discover operation families",
+             summary: "Search bounded registry metadata without running tools or contacting providers.", route: .setup),
+        tool("describe_operation", title: "Describe an operation",
+             summary: "Inspect one operation's input schema, cost basis and authority requirements.", route: .setup),
         // MARK: - Spend and provider outcomes
         tool(
             "get_provider_history",

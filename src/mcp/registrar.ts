@@ -3,6 +3,8 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { z, ZodRawShape } from 'zod';
 import {
   TOOL_NAME_PATTERN,
+  commandInputSchema,
+  commandJsonSchema,
   type CommandCapability,
   type CommandDefinition,
   type ToolRegistrar,
@@ -57,6 +59,7 @@ export class McpToolRegistrar implements ToolRegistrar {
 
     const spendGated = this.gate.wrap(name, handler);
     const gated = this.execution ? this.execution.wrap(name, spendGated) : spendGated;
+    const inputSchema = commandInputSchema(definition);
 
     // The input schema is advertised so a client sees real types rather than
     // guessing from a name. One consequence worth stating: the SDK validates
@@ -68,7 +71,7 @@ export class McpToolRegistrar implements ToolRegistrar {
       {
         ...(definition.title !== undefined ? { title: definition.title } : {}),
         ...(definition.description !== undefined ? { description: definition.description } : {}),
-        inputSchema: definition.inputSchema,
+        inputSchema,
         ...(definition.annotations ? { annotations: definition.annotations } : {}),
       },
       // `ToolCallback<Shape>` is a conditional type over a generic parameter, so
@@ -86,7 +89,7 @@ export class McpToolRegistrar implements ToolRegistrar {
           content: result.content,
           ...(result.isError ? { isError: true } : {}),
         };
-      }) as ToolCallback<Shape>,
+      }) as ToolCallback<typeof inputSchema>,
     );
 
     // Registering then disabling, rather than skipping, keeps the tool present
@@ -105,6 +108,17 @@ export class McpToolRegistrar implements ToolRegistrar {
     return [...this.entries.keys()].sort();
   }
 
+  definition(name: string): CommandDefinition | undefined {
+    const definition = this.entries.get(name)?.definition;
+    return definition && this.permitted(definition) ? { ...definition, inputSchema: { ...definition.inputSchema },
+      annotations: definition.annotations ? { ...definition.annotations } : undefined } : undefined;
+  }
+
+  inputJsonSchema(name: string): Record<string, unknown> | undefined {
+    const definition = this.definition(name);
+    return definition ? commandJsonSchema(definition) : undefined;
+  }
+
   /**
    * Deliberately mirrors `LocalCommandRegistry.capabilities()` field for field,
    * so a test can assert the two are identical and catch drift between what the
@@ -112,6 +126,7 @@ export class McpToolRegistrar implements ToolRegistrar {
    */
   capabilities(): CommandCapability[] {
     return [...this.entries.entries()]
+      .filter(([, entry]) => this.permitted(entry.definition))
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([name, entry]) => ({
         name,

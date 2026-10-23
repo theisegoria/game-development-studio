@@ -47,6 +47,17 @@ game-dev mcp serve  # identical, via the CLI
 Both speak JSON-RPC on stdout, so neither prints a result envelope. Diagnostics
 go to stderr.
 
+## Progressive operation discovery
+
+Source builds after 1.5.1 add two read-only tools without removing existing tools:
+
+- `discover_operations`: filter by operation family or text query, with bounded `offset`/`limit` pagination and `nextOffset`.
+- `describe_operation`: retrieve one operation's input JSON Schema, direct cost basis and approval requirements from the same registry used by the CLI.
+
+For example, call `discover_operations` with `{ "family": "production", "limit": 10 }`, then `describe_operation` with `{ "name": "plan_production_recipe" }`. The schema equals that tool's advertised tools/list schema. Unknown arguments are rejected for these new tools, while legacy argument handling remains unchanged. The readonly profile also filters discovery and refuses description of hidden operations.
+
+The CLI reaches these operations through `game-dev tool call NAME --input JSON --json`. Discovery launches no handler, optional executable or provider. Configured provider names indicate credential presence, not verified access or entitlement; metadata grants no authority.
+
 ## Spending money over MCP
 
 The CLI's authority model is a human typing `--approve-spend

@@ -19,6 +19,9 @@ const NPM_INSTALL_FETCH_TIMEOUT_MS = 20_000;
 const NPM_INSTALL_TIMEOUT_MS = 60_000;
 
 const EXPECTED_TOOLS = [
+  'discover_operations',
+  'describe_operation',
+  'inspect_workspace_storage',
   'analyze_capture_run',
   'compare_capture_visuals',
   'build_asset_package',

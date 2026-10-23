@@ -61,6 +61,7 @@ Usage:
   game-dev credentials status [--json]
   game-dev tool call <name> [--request FILE|- | --input JSON] [--json|--jsonl]
   game-dev tool list [--json]
+    Use discover_operations and describe_operation through tool call for paged schemas.
   game-dev tool configure <blender|basisu|coacd-python> --executable ABSOLUTE_PATH
                     [--sha256 HASH] --confirm [--json]
   game-dev tool clear <blender|basisu|coacd-python> --confirm [--json]

@@ -2,6 +2,14 @@
 
 Guided forms, renderer 2.2, optional Basis appearance decoding and sampled playback require CLI 1.4.0 or newer. Inspect the installed CLI/MCP schemas before constructing requests; older versions do not expose all of these capabilities.
 
+## Progressive discovery (source checkpoint after CLI 1.5.1)
+
+Discover the installed capabilities before choosing operations. Newer source builds expose `discover_operations` and `describe_operation` over both CLI and MCP; check `capabilities` or MCP tools/list before using them against a released runtime.
+
+Use `discover_operations` with an optional `family` or `query`, `limit` (1–100), and `offset`; follow `nextOffset` for another page. Call `describe_operation` with `{ "name": "inspect_asset" }` for its actual input schema, direct cost basis and authority requirements. Both are read-only and launch no optional tool or provider. Unknown arguments fail explicitly. The MCP readonly profile returns only permitted operations, including on schema lookup.
+
+Configured provider names prove credential presence only. Discovery does not prove account entitlement, working API access, tool runtime behavior, or human approval. A cost estimate or operation fingerprint never grants execution or spend authority. Existing `list_optional_tools` inspects saved tool identities separately.
+
 ## Asset request to project admission
 
 1. Produce or locate source bytes with `$game-asset-production`.

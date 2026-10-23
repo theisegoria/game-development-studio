@@ -2,6 +2,7 @@
   "get_provider_history": {
     "type": "object",
     "properties": {},
+    "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
   "rate_provider_result": {
@@ -459,11 +460,13 @@
   "visual_regression_dashboard": {
     "type": "object",
     "properties": {},
+    "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
   "inspect_workspace_storage": {
     "type": "object",
     "properties": {},
+    "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
   "plan_workspace_retention": {
@@ -719,6 +722,7 @@
   "list_workspace_retention": {
     "type": "object",
     "properties": {},
+    "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
   "restore_workspace_retention": {
@@ -883,6 +887,7 @@
   "list_production_templates": {
     "type": "object",
     "properties": {},
+    "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
   "plan_production_template": {
@@ -2343,6 +2348,7 @@
   "diagnose_texture_compression": {
     "type": "object",
     "properties": {},
+    "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
   "compress_texture_variant": {
@@ -2444,6 +2450,7 @@
   "diagnose_collision_decomposition": {
     "type": "object",
     "properties": {},
+    "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
   "decompose_collision_mesh": {
@@ -2517,6 +2524,7 @@
   "list_optional_tools": {
     "type": "object",
     "properties": {},
+    "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
   "configure_optional_tool": {
@@ -2615,6 +2623,50 @@
     },
     "required": [
       "outputPath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "discover_operations": {
+    "type": "object",
+    "properties": {
+      "family": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "query": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160
+      },
+      "offset": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1000000,
+        "default": 0
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100,
+        "default": 25
+      }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "describe_operation": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{1,63}$"
+      }
+    },
+    "required": [
+      "name"
     ],
     "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"

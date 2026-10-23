@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { FREE_TOOLS } from '../domain/spend.js';
 import { atomicJson, withTransaction, recoverTransactionLock } from '../storage/transaction.js';
 
+import { PlanBoundJobStore } from './plan-bound.js';
+
 export const DURABLE_JOB_SCHEMA = 'game_dev.job.v1';
 
 export type DurableJobStatus =
@@ -77,6 +79,11 @@ export class DurableJobStore {
     await fs.mkdir(root, { recursive: true, mode: 0o700 });
     return new DurableJobStore(root);
   }
+
+  /** Explicit opt-in v2 access in the shared job identity namespace. */
+  async planBound(): Promise<PlanBoundJobStore> { return PlanBoundJobStore.open(this.root, { append: (id, event) => this.appendEvent(id, event), read: (id) => this.readEvents(id, { limit: 100_000 }), legacy: (id) => this.get(id) }); }
+
+  async listPlanBound(limit = 100): Promise<Awaited<ReturnType<PlanBoundJobStore['list']>>> { return (await this.planBound()).list(limit); }
 
   private directory(id: string): string {
     if (!JOB_ID.test(id)) throw invalidInput(`malformed durable job id: ${id}`);
@@ -319,6 +326,15 @@ export class DurableJobStore {
     for (const entry of entries) {
       if (!entry.isDirectory() || !JOB_ID.test(entry.name)) continue;
       try {
+        // V2 identities share this directory namespace but have explicit typed
+        // discovery. Do not misdiagnose their absent v1 record as corruption.
+        try {
+          await fs.lstat(path.join(this.directory(entry.name), 'job.json'));
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+          const v2 = await fs.lstat(path.join(this.directory(entry.name), 'job-v2.json'));
+          if (v2.isFile()) continue;
+        }
         jobs.push(await this.get(entry.name));
       } catch (error) {
         this.skipped.push({ id: entry.name, reason: error instanceof Error ? error.message : String(error) });
@@ -364,3 +380,6 @@ export class DurableJobStore {
 
 /** Shared structural validation for consumers of durable job metadata. */
 export { jobSchema as durableJobSchema };
+
+export { PlanBoundJobStore, planBoundJobSchema } from './plan-bound.js';
+export type { PlanBoundJob } from './plan-bound.js';

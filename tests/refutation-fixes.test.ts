@@ -21,6 +21,7 @@ import { JobStore } from '../src/storage/jobs.js';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { createGameDevRuntime } from '../src/runtime.js';
 
 const realFetch = globalThis.fetch;
 afterEach(() => {
@@ -363,9 +364,23 @@ describe('metadata cannot drift', () => {
 
   it('verify-install checks representative commands from every registered subsystem', async () => {
     const script = await fs.readFile(new URL('../scripts/verify-install.mjs', import.meta.url), 'utf8');
-    const registrationSource = await fs.readFile(new URL('../src/commands/register.ts', import.meta.url), 'utf8');
-    const registrations = registrationSource.match(/register\w+Tools\(registry, ctx\)/g) ?? [];
-    expect(registrations.length).toBeGreaterThan(5);
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'verify-subsystems-'));
+    try {
+      const { registry } = await createGameDevRuntime({ outputDir: root });
+      const families = new Map<string, string[]>();
+      for (const name of registry.names()) {
+        const family = registry.definition(name)?.family;
+        expect(family).toBeTruthy();
+        const operations = families.get(family!) ?? [];
+        operations.push(name);
+        families.set(family!, operations);
+      }
+      expect(families.size).toBeGreaterThan(5);
+      const expected = script.match(/const EXPECTED_TOOLS = \[([\s\S]*?)\];/)?.[1] ?? '';
+      for (const [family, operations] of families) {
+        expect(operations.some(name => expected.includes(`'${name}'`)), family).toBe(true);
+      }
+    } finally { await fs.rm(root, { recursive: true, force: true }); }
     for (const name of ['extract_pbr_trio', 'generate_sound_effect', 'normalize_mesh']) {
       expect(script).toContain(name);
     }

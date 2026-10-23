@@ -45,3 +45,5 @@ export { decompositionSchema, decomposeCollisionMesh, type DecompositionOptions 
 export { diagnoseCoacd, coacdEnvironmentSchema, type CoacdEnvironment } from './collision/process.js';
 export { retentionPlanSchema, type RetentionPlan } from './workspace/retention.js';
 export { verifyReleaseArtifact, planReleaseChange, type ReleaseEvidence, type ReleaseDistribution } from './installation/releases.js';
+
+export * from './commands/discovery.js';
