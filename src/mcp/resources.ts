@@ -28,6 +28,8 @@ import { readAssetPackage } from '../packages/format.js';
 import { resolveRunPath, verifyRunBundle } from '../harness/run-bundle.js';
 import { sha256 } from '../storage/filesystem.js';
 import { invalidInput, notFound } from '../util/errors.js';
+import { SourceLedger } from '../provenance/ledger.js';
+import { readSourceExport } from '../provenance/exports.js';
 import type { ToolContext } from '../tools/context.js';
 
 const RUN_ID = /^run_[a-z0-9_]{1,96}$/;
@@ -80,6 +82,39 @@ function requireExact(uri: URL, expected: string): void {
 
 export function registerEvidenceResources(server: McpServer, ctx: ToolContext): void {
   const runsDir = ctx.config.runsDir;
+  const sourceLedger = async () => SourceLedger.open(path.join(await fs.realpath(ctx.config.outputDir), '.provenance'));
+  const sourcesResource = server.registerResource('sources', 'game-dev://sources', {
+    title: 'Source evidence inventory', mimeType: 'application/json',
+    description: 'Bounded source identities and record references. Recorded declarations grant no independent rights verification or authority.',
+  }, async uri => {
+    requireExact(uri, 'game-dev://sources');
+    const inventory = await (await sourceLedger()).inventory();
+    return json(uri.href, { schema: 'game_dev.source_index.v1', revision: inventory.revision,
+      records: inventory.records.map(({ record, sha256: digest }) => ({ id: record.id, name: record.name, kind: record.kind,
+        version: record.version, sha256: digest, uri: `game-dev://sources/records/${record.id}/${digest}` })) });
+  });
+  const sourceRecordResource = server.registerResource('source-record',
+    new ResourceTemplate('game-dev://sources/records/{id}/{sha256}', { list: undefined }), {
+      title: 'Hash-bound source evidence record', mimeType: 'application/json',
+      description: 'Returns only the exact hash still present in the verified source ledger; stale references fail explicitly.',
+    }, async (uri, variables) => {
+      const id = String(variables.id), digest = String(variables.sha256);
+      if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$/.test(id) || !/^[a-f0-9]{64}$/.test(digest)) throw invalidInput('Invalid source record reference');
+      const inventory = await (await sourceLedger()).inventory();
+      const entry = inventory.records.find(item => item.record.id === id && item.sha256 === digest);
+      if (!entry) throw notFound('source evidence record', id);
+      return json(uri.href, entry);
+    });
+  const sourceExportResource = server.registerResource('source-export',
+    new ResourceTemplate('game-dev://sources/exports/{format}/{sha256}', { list: undefined }), {
+      title: 'Hash-verified source inventory export', mimeType: 'application/json',
+      description: 'An explicitly exported inventory or CycloneDX snapshot. Every read verifies the fixed local file against its content hash; older snapshots remain readable.',
+    }, async (uri, variables) => {
+      const format = String(variables.format);
+      if (format !== 'inventory' && format !== 'cyclonedx') throw invalidInput('Invalid source export format');
+      const bytes = await readSourceExport(path.join(await fs.realpath(ctx.config.outputDir), '.provenance'), format, String(variables.sha256));
+      return { contents: [{ uri: uri.href, mimeType: 'application/json', text: bytes.toString('utf8') }] };
+    });
 
   const runsResource = server.registerResource(
     'runs',
@@ -233,7 +268,8 @@ export function registerEvidenceResources(server: McpServer, ctx: ToolContext): 
     if (uri.href !== raw) throw invalidInput('resource URI must be canonical', { uri: raw });
     if (raw === 'game-dev://runs') return runsResource.readCallback(uri, extra);
     if (raw === 'game-dev://catalog') return catalogResource.readCallback(uri, extra);
-    for (const resource of [runResource, artifactResource, packageResource]) {
+    if (raw === 'game-dev://sources') return sourcesResource.readCallback(uri, extra);
+    for (const resource of [runResource, artifactResource, packageResource, sourceRecordResource, sourceExportResource]) {
       const variables = resource.resourceTemplate.uriTemplate.match(raw);
       if (variables) return resource.readCallback(uri, variables, extra);
     }

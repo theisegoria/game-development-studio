@@ -2627,6 +2627,584 @@
     "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
+  "plan_source_record": {
+    "type": "object",
+    "properties": {
+      "record": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.source_record.v1"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "executable",
+              "package",
+              "provider",
+              "asset",
+              "model",
+              "recipe_dependency"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "officialSource": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048,
+                "format": "uri"
+              },
+              {
+                "type": "string",
+                "pattern": "^urn:sha256:[a-f0-9]{64}$"
+              }
+            ]
+          },
+          "version": {
+            "$ref": "#/properties/record/properties/name"
+          },
+          "model": {
+            "$ref": "#/properties/record/properties/name"
+          },
+          "contentSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "acquiredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rights": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "unknown",
+                      "allowed",
+                      "denied"
+                    ]
+                  },
+                  "redistribution": {
+                    "type": "string",
+                    "enum": [
+                      "unknown",
+                      "allowed",
+                      "denied"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "$ref": "#/properties/record/properties/officialSource"
+                        },
+                        "sha256": {
+                          "$ref": "#/properties/record/properties/contentSha256"
+                        },
+                        "capturedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "origin": {
+                          "type": "string",
+                          "enum": [
+                            "user_assertion",
+                            "official_document",
+                            "license_file",
+                            "account_entitlement"
+                          ]
+                        },
+                        "note": {
+                          "$ref": "#/properties/record/properties/name"
+                        }
+                      },
+                      "required": [
+                        "url",
+                        "capturedAt",
+                        "origin"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 32
+                  },
+                  "attribution": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/properties/record/properties/name"
+                    },
+                    "maxItems": 32
+                  },
+                  "restrictions": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/properties/record/properties/name"
+                    },
+                    "maxItems": 32
+                  }
+                },
+                "required": [
+                  "status",
+                  "redistribution",
+                  "evidence",
+                  "attribution",
+                  "restrictions"
+                ],
+                "additionalProperties": false
+              },
+              "model": {
+                "$ref": "#/properties/record/properties/rights/properties/code"
+              },
+              "output": {
+                "$ref": "#/properties/record/properties/rights/properties/code"
+              }
+            },
+            "required": [
+              "code",
+              "model",
+              "output"
+            ],
+            "additionalProperties": false
+          },
+          "retention": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "unknown",
+                  "documented",
+                  "not_applicable"
+                ]
+              },
+              "description": {
+                "$ref": "#/properties/record/properties/name"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/properties/record/properties/rights/properties/code/properties/evidence/items"
+                },
+                "maxItems": 32
+              }
+            },
+            "required": [
+              "status",
+              "description",
+              "evidence"
+            ],
+            "additionalProperties": false
+          },
+          "entitlement": {
+            "type": "object",
+            "properties": {
+              "required": {
+                "type": "string",
+                "enum": [
+                  "unknown",
+                  "yes",
+                  "no"
+                ]
+              },
+              "description": {
+                "$ref": "#/properties/record/properties/name"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/properties/record/properties/rights/properties/code/properties/evidence/items"
+                },
+                "maxItems": 32
+              }
+            },
+            "required": [
+              "required",
+              "description",
+              "evidence"
+            ],
+            "additionalProperties": false
+          },
+          "verification": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "unverified",
+                  "evidence_reviewed"
+                ]
+              },
+              "reviewedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "note": {
+                "$ref": "#/properties/record/properties/name"
+              }
+            },
+            "required": [
+              "status",
+              "note"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "schema",
+          "id",
+          "kind",
+          "name",
+          "officialSource",
+          "version",
+          "acquiredAt",
+          "rights",
+          "retention",
+          "entitlement",
+          "verification"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "record"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "record_source_evidence": {
+    "type": "object",
+    "properties": {
+      "record": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.source_record.v1"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "executable",
+              "package",
+              "provider",
+              "asset",
+              "model",
+              "recipe_dependency"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "officialSource": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048,
+                "format": "uri"
+              },
+              {
+                "type": "string",
+                "pattern": "^urn:sha256:[a-f0-9]{64}$"
+              }
+            ]
+          },
+          "version": {
+            "$ref": "#/properties/record/properties/name"
+          },
+          "model": {
+            "$ref": "#/properties/record/properties/name"
+          },
+          "contentSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "acquiredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rights": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "unknown",
+                      "allowed",
+                      "denied"
+                    ]
+                  },
+                  "redistribution": {
+                    "type": "string",
+                    "enum": [
+                      "unknown",
+                      "allowed",
+                      "denied"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "$ref": "#/properties/record/properties/officialSource"
+                        },
+                        "sha256": {
+                          "$ref": "#/properties/record/properties/contentSha256"
+                        },
+                        "capturedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "origin": {
+                          "type": "string",
+                          "enum": [
+                            "user_assertion",
+                            "official_document",
+                            "license_file",
+                            "account_entitlement"
+                          ]
+                        },
+                        "note": {
+                          "$ref": "#/properties/record/properties/name"
+                        }
+                      },
+                      "required": [
+                        "url",
+                        "capturedAt",
+                        "origin"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 32
+                  },
+                  "attribution": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/properties/record/properties/name"
+                    },
+                    "maxItems": 32
+                  },
+                  "restrictions": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/properties/record/properties/name"
+                    },
+                    "maxItems": 32
+                  }
+                },
+                "required": [
+                  "status",
+                  "redistribution",
+                  "evidence",
+                  "attribution",
+                  "restrictions"
+                ],
+                "additionalProperties": false
+              },
+              "model": {
+                "$ref": "#/properties/record/properties/rights/properties/code"
+              },
+              "output": {
+                "$ref": "#/properties/record/properties/rights/properties/code"
+              }
+            },
+            "required": [
+              "code",
+              "model",
+              "output"
+            ],
+            "additionalProperties": false
+          },
+          "retention": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "unknown",
+                  "documented",
+                  "not_applicable"
+                ]
+              },
+              "description": {
+                "$ref": "#/properties/record/properties/name"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/properties/record/properties/rights/properties/code/properties/evidence/items"
+                },
+                "maxItems": 32
+              }
+            },
+            "required": [
+              "status",
+              "description",
+              "evidence"
+            ],
+            "additionalProperties": false
+          },
+          "entitlement": {
+            "type": "object",
+            "properties": {
+              "required": {
+                "type": "string",
+                "enum": [
+                  "unknown",
+                  "yes",
+                  "no"
+                ]
+              },
+              "description": {
+                "$ref": "#/properties/record/properties/name"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/properties/record/properties/rights/properties/code/properties/evidence/items"
+                },
+                "maxItems": 32
+              }
+            },
+            "required": [
+              "required",
+              "description",
+              "evidence"
+            ],
+            "additionalProperties": false
+          },
+          "verification": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "unverified",
+                  "evidence_reviewed"
+                ]
+              },
+              "reviewedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "note": {
+                "$ref": "#/properties/record/properties/name"
+              }
+            },
+            "required": [
+              "status",
+              "note"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "schema",
+          "id",
+          "kind",
+          "name",
+          "officialSource",
+          "version",
+          "acquiredAt",
+          "rights",
+          "retention",
+          "entitlement",
+          "verification"
+        ],
+        "additionalProperties": false
+      },
+      "expectedRevision": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "expectedSha256": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      }
+    },
+    "required": [
+      "record",
+      "expectedRevision",
+      "expectedSha256"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "inspect_source_ledger": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$"
+      },
+      "offset": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2000,
+        "default": 0
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100,
+        "default": 20
+      }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "export_source_ledger": {
+    "type": "object",
+    "properties": {
+      "format": {
+        "type": "string",
+        "enum": [
+          "inventory",
+          "cyclonedx"
+        ]
+      },
+      "expectedRevision": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "expectedSha256": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      }
+    },
+    "required": [
+      "format",
+      "expectedRevision",
+      "expectedSha256"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
   "discover_operations": {
     "type": "object",
     "properties": {

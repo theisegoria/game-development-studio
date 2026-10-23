@@ -99,6 +99,9 @@ content-addressed:
 | `game-dev://runs/{runId}/artifacts/{path}` | one artifact — a frame as `image/png`, telemetry as `application/x-ndjson`, a profile as JSON |
 | `game-dev://catalog` | every package built on this machine |
 | `game-dev://packages/{packageId}` | one package manifest, re-read from disk |
+| `game-dev://sources` | source and license evidence identities; source builds after 1.5.1 |
+| `game-dev://sources/records/{id}/{sha256}` | one exact current source record, re-verified against the ledger |
+| `game-dev://sources/exports/{format}/{sha256}` | a hash-verified exported inventory or CycloneDX snapshot |
 
 A URI is input the model controls, so two rules apply and both are tested.
 Run and package ids must match the pattern the harness mints, before anything
@@ -108,6 +111,11 @@ and its bytes are re-hashed against the roster first. A file planted in the
 run directory after sealing is refused even though it exists; an artifact whose
 bytes changed after sealing is refused even though the roster names it. Every
 read is also a verification.
+
+Source evidence has its own [plan, confirm, record and export workflow](source-evidence.md).
+Records remain declarations, never independent rights clearance. A superseded
+record reference fails; immutable exported snapshots remain readable if their
+bytes still verify.
 
 ## Prompts: the shipped skills, for every client
 

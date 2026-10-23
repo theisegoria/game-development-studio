@@ -47,3 +47,4 @@ export { retentionPlanSchema, type RetentionPlan } from './workspace/retention.j
 export { verifyReleaseArtifact, planReleaseChange, type ReleaseEvidence, type ReleaseDistribution } from './installation/releases.js';
 
 export * from './commands/discovery.js';
+export * from './provenance/ledger.js';

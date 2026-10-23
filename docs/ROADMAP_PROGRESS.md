@@ -34,3 +34,49 @@ All remaining M1 requirements, M2–M6 and M8–M10 remain open. Real optional t
 - The job review found that a lost idempotency mapping could permit a second identity after paid reservation. Submission now scans bounded existing identities under the key lock and refuses missing/ambiguous evidence; the new deletion-after-reservation regression passes.
 
 Generic background execution, source-ledger transport integration, generalized packages and crate orchestration remain unfinished. Unwired follow-on cores are not part of the first committed capability claim.
+
+## Source evidence checkpoint
+
+The `provenance` operation family now plans strict source records, saves exact
+reviewed hashes against ledger revisions, inspects bounded summaries/details, and
+exports inventory or CycloneDX snapshots. CLI and MCP share the same schemas and
+fresh mutation confirmation. Native catalog/schema entries and the installed
+package verifier include all four operations. Code, model and output rights stay
+independent. Unknown rights and user assertions never become legal clearance or
+execution authority.
+
+MCP resources expose the verified index, exact current records and immutable
+export snapshots. Stale record references fail explicitly; previously exported
+snapshots remain readable after ledger changes if their bytes still verify.
+Private path aliases, hard links, tampering and oversized evidence are refused.
+Read-only planning and inspection create no provenance files. This remains an
+explicit operator-maintained ledger: automatic dependency/release-byte population,
+account/terms revalidation and ledger-aware shipping admission are still open.
+
+Durable v2 status reads now share writer transactions, preventing a reader from
+mistaking the brief record/event update interval for interrupted evidence. The
+regression pauses a real record replacement and proves the reader waits; truly
+interrupted evidence remains refused. No background worker or silent capture
+resume is introduced.
+
+### Checkpoint validation
+
+- Typecheck, lint, documentation verification and scoped whitespace checks passed.
+- Five focused ledger/export/transport/durable suites passed 28 tests, including
+  separate mutation approval, stale plans, concurrent updates, lost-key refusal,
+  coherent reads, historical exports and tamper/path/size refusals.
+- Refreshed CPU suite: 121 files passed, two skipped; 1,127 tests passed, 30 skipped.
+  Excluded the macOS runtime-payload file and uncommitted procedural-crate tests.
+  Optional app/Blender/GPU/Basis/CoACD execution remained disabled. The suite used
+  local mock sockets and ordinary Swift caches outside the restrictive sandbox.
+- Anvil passed 126 tests in 11 suites; retained Studio passed 47 tests in four
+  suites. These are Foundation/process/catalog tests with no app window.
+- `npm run verify` passed: the disposable installed package exposed 115 local
+  operations across 25 CLI families and 115 MCP tools over clean stdio. Five
+  installed skills and the screenshot-free plugin export verified. Only declared
+  package dependencies were installed into the temporary consumer.
+
+Generalized packages, the complete crate recipe, generic background execution,
+actual client/native interactive review and real hardware/provider qualification
+remain open. See `docs/source-evidence.md` for the precise implemented workflow
+and evidence limits.

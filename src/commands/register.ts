@@ -21,6 +21,7 @@ import { registerLibraryTools } from '../tools/library.js';
 import { LocalCommandRegistry, type ToolRegistrar } from './registry.js';
 import type { OperationCatalog } from './discovery.js';
 import { registerDiscoveryTools } from '../tools/discovery.js';
+import { registerProvenanceTools } from '../tools/provenance.js';
 import { registerReviewTools } from '../tools/review.js';
 import { registerWorkspaceTools } from '../tools/workspace.js';
 import { registerProductionTools } from '../tools/production.js';
@@ -69,5 +70,6 @@ export function registerAssetCommands(registry: ToolRegistrar, ctx: ToolContext)
   registerProductionTools(family('production'), ctx);
   registerCollisionDecompositionTools(family('geometry'), ctx);
   registerInstallationTools(family('installation'), ctx);
+  registerProvenanceTools(family('provenance'), ctx);
   registerDiscoveryTools(forward, ctx, catalog);
 }

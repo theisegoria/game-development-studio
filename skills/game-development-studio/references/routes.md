@@ -10,6 +10,18 @@ Use `discover_operations` with an optional `family` or `query`, `limit` (1–100
 
 Configured provider names prove credential presence only. Discovery does not prove account entitlement, working API access, tool runtime behavior, or human approval. A cost estimate or operation fingerprint never grants execution or spend authority. Existing `list_optional_tools` inspects saved tool identities separately.
 
+Source builds after 1.5.1 also expose the `provenance` family. Plan an explicit
+`game_dev.source_record.v1` with `plan_source_record`, review its content hash and
+ledger revision, then separately confirm `record_source_evidence`. Inspect compact
+summaries or one record using `inspect_source_ledger`; use its exact export plan
+with a fresh confirmation for `export_source_ledger`. Only fixed local inventory
+and CycloneDX files are written. Returned resource URIs let clients read records
+and exported snapshots with hash verification. A changed record/revision needs a
+new plan. Unknown code/model/output rights stay separate and unknown; declarations
+grant no legal clearance or execution authority. Never put credentials, signed
+URLs or private paths into provenance. Automatic dependency population and shipping
+admission integration remain unfinished at this source checkpoint.
+
 ## Asset request to project admission
 
 1. Produce or locate source bytes with `$game-asset-production`.

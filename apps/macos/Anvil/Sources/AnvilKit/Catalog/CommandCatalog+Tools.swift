@@ -17,6 +17,16 @@ extension CommandCatalog {
              summary: "Search bounded registry metadata without running tools or contacting providers.", route: .setup),
         tool("describe_operation", title: "Describe an operation",
              summary: "Inspect one operation's input schema, cost basis and authority requirements.", route: .setup),
+        tool("plan_source_record", title: "Plan source evidence",
+             summary: "Review a source record and its current ledger revision before saving.", route: .setup),
+        tool("inspect_source_ledger", title: "Inspect source evidence",
+             summary: "Browse bounded provenance summaries and exact export plans.", route: .library),
+        tool("record_source_evidence", title: "Save source evidence",
+             summary: "Save the exact reviewed record; evidence grants no legal clearance or execution authority.",
+             lane: .workspaceWrite, route: .library, durable: true, authorities: [.confirm]),
+        tool("export_source_ledger", title: "Export source inventory",
+             summary: "Export a hash-bound inventory or CycloneDX document to the workspace.",
+             lane: .workspaceWrite, route: .library, durable: true, authorities: [.confirm]),
         // MARK: - Spend and provider outcomes
         tool(
             "get_provider_history",

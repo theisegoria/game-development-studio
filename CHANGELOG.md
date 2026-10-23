@@ -4,6 +4,8 @@
 
 - Add bounded operation-family discovery and input-schema lookup over CLI/MCP, including readonly profile filtering, strict new inputs, direct cost/authority metadata and native catalog coverage.
 - Add opt-in plan-bound durable job storage with idempotency, exclusive ownership, checkpoints, cancellation/uncertainty and explicit recovery; background execution remains in progress.
+- Add strict source/license evidence planning, revision-bound confirmed writes, bounded inspection and inventory/CycloneDX export through CLI/MCP, with hash-verified resources and native schema coverage. Rights remain documented declarations; automatic dependency population and shipping admission integration remain open.
+- Serialize durable v2 status reads with updates so a reader cannot observe a new record before its matching event is persisted.
 
 ## 1.5.1
 

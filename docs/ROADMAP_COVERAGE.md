@@ -4,7 +4,7 @@ Baseline: 23 October 2026. Source: owner-supplied `Game_Development_Studio_Full_
 
 ## Evidence policy and inspected baseline
 
-Every row is OPEN: source coverage is partial/reuse candidate, automated fixtures NOT RERUN, real tools/clients NOT EXERCISED, human review NOT PERFORMED in this audit. Existing paths are relevant anchors, not proof that the whole requirement exists. `src/production/recipes.ts` was inspected: v1 bounded step/checkpoint records exist, but its operation enum is mesh/provider oriented. `src/tools/audio.ts` was inspected: provider generation explicitly describes its live response as unverified; it is not a local DSP pipeline. `src/harness/spans.ts` was inspected: bounded complete/B/E JSON spans and CPU/GPU domains exist; this does not establish native processor/async support. `src/commands/registry.ts` was inspected: shared typed registration exists. Other listed paths were located in the source inventory, not exhaustively validated. No tools installed, apps/Blender/GPU launched, paid calls made, or tests run by this documentation audit.
+Every row started OPEN: source coverage was partial/reuse candidate, automated fixtures NOT RERUN, real tools/clients NOT EXERCISED, human review NOT PERFORMED in the initial audit. Subsequent row updates and [execution evidence](ROADMAP_PROGRESS.md) distinguish implemented clauses and rerun fixtures from the obligations still open. Existing paths are relevant anchors, not proof that the whole requirement exists. `src/production/recipes.ts` was inspected: v1 bounded step/checkpoint records exist, but its operation enum is mesh/provider oriented. `src/tools/audio.ts` was inspected: provider generation explicitly describes its live response as unverified; it is not a local DSP pipeline. `src/harness/spans.ts` was inspected: bounded complete/B/E JSON spans and CPU/GPU domains exist; this does not establish native processor/async support. `src/commands/registry.ts` was inspected: shared typed registration exists. Other listed paths were located in the source inventory, not exhaustively validated. No tools installed, apps/Blender/GPU launched, paid calls made, or tests run by that documentation audit.
 
 Required real Blender/GPU/native/client checks remain OPEN until authorized CI or remote interactive execution supplies artifacts and exact tested versions. Absence of entitlement can block conditional integration qualification, but cannot pass it. Shared delivery requirements apply to every milestone, not only M10. Section 10 numbered journeys additionally map crate M1/M2, character M2, material M3, sound M4, bug M5/M9; their metrics and transport checks map M10.
 
@@ -765,20 +765,20 @@ Commercial rights are a separate admission gate. Provider marketing pages are no
 For every executable, package, provider, downloaded asset, pretrained model, and recipe dependency, record: official source, exact version/model, license or terms URL, acquisition date, allowed use evidence, attribution, redistribution restrictions, provider data retention, account entitlement dependency, and verification status. Distinguish tool-code licensing from model-weight licensing and output rights. Unknown rights block vendoring into a shipping project by default, as existing policy already does.
 
 - Assignment: **M1**; required cross-cutting.
-- Existing anchors: `src/commands/registry.ts`, `src/production/recipes.ts`, `src/jobs/durable.ts`, `src/packages/format.ts`.
-- Related test anchors (not execution evidence): `tests/production-recipes.test.ts`, `tests/durable-jobs.test.ts`, `tests/authorized-dispatch.test.ts`.
+- Existing anchors: `src/provenance/ledger.ts`, `src/tools/provenance.ts`, `src/mcp/resources.ts`, `src/packages/format.ts`.
+- Related test anchors: `tests/source-ledger.test.ts`, `tests/provenance-tools.test.ts`, `tests/provenance-transports.test.ts`.
 - Acceptance: Registry/CLI/MCP parity; immutable plan binding; denial zero calls; resumable idempotent jobs; migration/rollback; inspectable local crate journey; verify every clause and named fixture above. CLI/core/MCP parity and provenance/limits apply.
-- Status: OPEN; source partial/not fully audited; fixtures not rerun; real execution not exercised; human review not performed.
+- Status: OPEN; explicit strict records, independent rights domains, revision/hash-bound writes and CLI/MCP approvals implemented and fixture-tested. Automatic population for every dependency and ledger-aware shipping admission remain open; no live rights/account or human legal review established.
 
 ### R11-026 — 11. Researched integration options and implementation routes / 11.7 Source and license ledger
 
 Do not hard-code a perpetual legal interpretation into a provider adapter. Represent the evidence and the user's applicable entitlement; require revalidation when terms/model/account conditions materially change. Provide an SBOM or equivalent dependency inventory for release preparation. A source link establishes documentation, not that live access or legal clearance has been tested.
 
 - Assignment: **M1**; required cross-cutting.
-- Existing anchors: `src/commands/registry.ts`, `src/production/recipes.ts`, `src/jobs/durable.ts`, `src/packages/format.ts`.
-- Related test anchors (not execution evidence): `tests/production-recipes.test.ts`, `tests/durable-jobs.test.ts`, `tests/authorized-dispatch.test.ts`.
+- Existing anchors: `src/provenance/ledger.ts`, `src/provenance/exports.ts`, `src/tools/provenance.ts`, `docs/source-evidence.md`.
+- Related test anchors: `tests/source-ledger.test.ts`, `tests/source-exports.test.ts`, `tests/provenance-tools.test.ts`, `tests/provenance-transports.test.ts`.
 - Acceptance: Registry/CLI/MCP parity; immutable plan binding; denial zero calls; resumable idempotent jobs; migration/rollback; inspectable local crate journey; verify every clause and named fixture above. CLI/core/MCP parity and provenance/limits apply.
-- Status: OPEN; source partial/not fully audited; fixtures not rerun; real execution not exercised; human review not performed.
+- Status: OPEN; local inventory/CycloneDX snapshot export and hash-verified resource retrieval implemented and fixture-tested. Release-byte population and terms/model/account-change revalidation integration remain open; documented declarations grant no legal clearance or execution authority.
 
 ### R12-001 — 12. Detailed production backlog and difficult cases
 
