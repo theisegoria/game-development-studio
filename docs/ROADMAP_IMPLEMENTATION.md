@@ -128,3 +128,7 @@ GitHub tarball/skills ZIP publication does not publish the npm registry name.
 Native ZIPs remain explicitly ad-hoc signed and non-notarized. Native interaction,
 three unfamiliar human testers, Developer ID/notarization and clean-Mac acceptance
 remain missing. Local app/Blender/GPU launches remain excluded by Ben's correction.
+
+## Roadmap v2
+
+The October 2026 roadmap brief is planned in [ROADMAP_V2.md](ROADMAP_V2.md). Nothing in it is implemented yet.

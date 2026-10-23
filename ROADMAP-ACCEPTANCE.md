@@ -98,3 +98,7 @@ All 109 native tests pass; independent boundary review found no remaining blocke
 Disposable 1.3.1 package checks verify 479 files, 88 operations and canonical parity.
 Source PR #10 and canonical skills PR #7 carry this patch; source Action-pinning
 PR #7 and skills Action-pinning PR #4 remain unrelated and unmerged.
+
+## Roadmap v2
+
+The next roadmap (audit, milestones, acceptance tests, blocked work) is planned in [docs/ROADMAP_V2.md](docs/ROADMAP_V2.md).
