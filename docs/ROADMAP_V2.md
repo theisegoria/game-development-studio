@@ -10,7 +10,7 @@ Reference: *Game Development Studio: full-roadmap implementation prompt*, resear
 
 - Keep the existing local checkout under `~/Developer/Software Development/`, on `main`. Commit and push coherent verified increments. No long-lived feature branches or extra worktrees; optimization/bisect disposable checkouts remain bounded product functionality, with cleanup and recovery.
 - Preserve the existing owner restrictions: no local app-window, Blender, or GPU launches. Local verification uses CPU fixtures and compile-only lanes; actual external-tool/rendering tests run in authorized CI. A missing runner is a recorded blocker, never a skipped acceptance pass.
-- Include all required production, graph, debugging, and agent journeys. Engine-specific routes and candidate integrations are later conditional work packages, not current permission to install or run them. The previous no-engine execution decision remains in force until the owner changes it; their work and tests remain visible below.
+- Owner clarification (23 October 2026): complete the engine-neutral platform and C/Swift/Rust probe SDK first. Include the production, graph, debugging, and agent journeys through those interfaces. Godot, Unity, and Unreal implementation remains deferred, outside this phase's implementation order and completion criteria. Their future work is retained in M7 for reference and requires a separate owner decision.
 - Existing and new providers use offline contract fixtures initially. Credentials, licensed applications, dependency installation, private uploads, paid calls, external client configuration, signing, tags, releases, and publication require their applicable explicit authority. The request authorizes Git commits and pushes; it does not authorize release publication.
 - Use four independent evidence columns for every capability: source implemented, fixture tests passed, real tool/client exercised, human quality reviewed. Record tested versions, renderer/platform combinations, source SHA, commands, result hashes, and limitations. Do not infer a passing runtime result from compilation.
 - Classify specialized options honestly: bounded painting, IK/contact correction, morph preservation, and event handling are planned production work. Painter parity, arbitrary creature auto-rigging, unrestricted facial transfer, speech/music/voice imitation, neural reconstruction, Gaussian-splat conversion, and cloth/hair automation are not implied. A requested specialized connector needs its own licensed backend and acceptance fixture before becoming supported.
@@ -97,7 +97,7 @@ Implement bounded WAV inspection and deterministic DSP/synthesis first: layers, 
 
 Add variation families, before/after and loop audition reels, diversity diagnostics, positional/stereo roles, and event-bank weights/nonrepeat/cooldown/concurrency metadata. Correlate runtime triggers/voices/animation cues only where an adapter observes them.
 
-**Gate:** six stone footsteps with metadata and audition; deterministic synthesis, sample-accurate edits, impulse/silence/short-clip/NaN/DC/clipping/phase-cancellation/Unicode/long-file fixtures; no unintended output clipping; one tested engine event-bank import in M7 before claiming runtime integration.
+**Gate:** six stone footsteps with metadata and audition; deterministic synthesis, sample-accurate edits, impulse/silence/short-clip/NaN/DC/clipping/phase-cancellation/Unicode/long-file fixtures; no unintended output clipping. Demonstrate event-bank loading and observed audio-event/timing correlation through an engine-neutral probe sample. Engine-specific bank imports belong to deferred M7 and are not a completion gate or compatibility claim for this phase.
 
 ### M5 — Incremental source/asset/runtime graph
 
@@ -117,13 +117,13 @@ Mixamo is user-downloaded import and local retarget only; no unsupported login a
 
 **Gate:** denial yields zero external calls; timeout and repeated submission never blindly regenerate; local cancellation makes no remote-refund promise. Live tests remain blocked until the exact account, rights, upload and spend authority is supplied. Fixture-complete connectors are labelled accordingly, not production-verified.
 
-### M7 — Engine adapters and real import/runtime joins (conditional execution)
+### M7 — Deferred engine adapters (outside this phase)
 
-Keep all three adapter work packages in the roadmap, while honoring the existing deferred-execution decision. Sequence Godot first, Unity second, Unreal third after engine work is authorized. Each reuses shared probe, graph, recipe, package and capture contracts; no parallel engine framework.
+The owner explicitly deferred Godot, Unity, and Unreal implementation until after the engine-neutral platform and probe SDK. Do not start adapter code, engine installation, or engine-specific validation under this phase. Retain the following requirements for a future separately authorized phase; its order and tested versions will be chosen then. Each adapter must reuse shared probe, graph, recipe, package and capture contracts.
 
 Godot uses documented editor/debugger/resource UID/dependency APIs. Unity separates editor AssetDatabase GUID maps from the player probe and discovers available ProfilerRecorder counters; rendering support is pipeline-specific. Unreal separates editor Asset Registry/Python automation from a C++ runtime module and native Insights artifacts. Pin actual tested engine/renderer/build versions; preserve declared versus dynamic dependencies and missing counters.
 
-**Gate per engine:** fixture project with mesh, material, animation, nested scenes, dynamic spawn and audio events; import/reimport preserves overrides or reports conflict; editor/player evidence is distinct; sealed scenario and runtime object-to-source joins verify; unsupported render diagnostics are refused. Missing installs/licenses/runners block that engine's qualification, not independent core work.
+**Future gate per engine:** fixture project with mesh, material, animation, nested scenes, dynamic spawn and audio events; import/reimport preserves overrides or reports conflict; editor/player evidence is distinct; sealed scenario and runtime object-to-source joins verify; unsupported render diagnostics are refused. These requirements do not block completion of the current engine-neutral phase.
 
 ### M8 — Profilers, controlled experiments and temporal depth
 
@@ -173,11 +173,11 @@ Verify pinned actual Codex and Claude clients for discovery, schema use, resourc
 | M4 audio | not started | not started | CI required | not reviewed |
 | M5 graph/probe | not started | not started | real indexer/probe required | not reviewed |
 | M6 optional backends | not started | not started | accounts/tools gated | not reviewed |
-| M7 engines | planned; execution deferred | not started | owner/tools/licenses gated | not reviewed |
+| M7 engines | deferred; outside this phase | not applicable to this phase | not applicable to this phase | not applicable to this phase |
 | M8 profiling/experiments | not started | not started | supported real target required | not reviewed |
 | M9 replay/investigation | not started | not started | supported real target required | not reviewed |
 | M10 delivery/readiness | not started | not started | real clients/native lane required | not reviewed |
 
-Implementation order: M0 → M1 → M2 → M3 → M4 → M5 → M8 → M9 → M10. M6 and conditional M7 can proceed independently after M1/M5 prerequisites. Relevant acceptance is integrated into each slice rather than postponed to M10.
+Implementation order: M0 → M1 → M2 → M3 → M4 → M5 → M8 → M9 → M10. M6 can proceed independently after M1 prerequisites. M7 is deferred and cannot run alongside these milestones. Use engine-neutral fixtures and the probe SDK for graph/runtime joins, audio events, replay and failure investigation. Relevant acceptance is integrated into each slice rather than postponed to M10.
 
-Completion requires every mandatory requirement mapped and satisfied at its declared evidence level. Optional integrations must be implemented and qualified for an explicitly supported combination or clearly recorded as unsupported/blocked with the exact prerequisite and remaining test. A fixture-only connector, a skipped real test or an inaccessible licensed engine cannot count as full production support. No claim of universal engine compatibility, aesthetic quality, causal speedup or target-hardware performance follows from a CPU preview or synthetic fixture.
+Completion of this phase requires every engine-neutral platform and probe-SDK requirement mapped and satisfied at its declared evidence level. Godot, Unity, and Unreal adapter requirements remain explicitly deferred and are excluded from this phase's completion criteria; finishing this phase does not complete those adapters. Optional integrations must be implemented and qualified for an explicitly supported combination or clearly recorded as unsupported/blocked with the exact prerequisite and remaining test. A fixture-only connector or a skipped real test cannot count as full production support. No claim of universal engine compatibility, aesthetic quality, causal speedup or target-hardware performance follows from a CPU preview or synthetic fixture.
