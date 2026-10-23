@@ -80,3 +80,58 @@ Generalized packages, the complete crate recipe, generic background execution,
 actual client/native interactive review and real hardware/provider qualification
 remain open. See `docs/source-evidence.md` for the precise implemented workflow
 and evidence limits.
+
+## Multi-kind package and crate checkpoint
+
+The shared registry now exposes a deterministic local crate plan/construction
+path and separate generalized package plan/build operations. The complete CPU
+fixture journey retains hierarchical editable GLB source, flattened LOD0, reduced
+LOD1, box collision, recipe/LOD chain, validation, PNG previews and receipts.
+Construction does not authorize packaging; packaging does not authorize project
+admission. Parameter, source, destination and recorded implementation drift
+invalidate reviewed plans.
+
+V2 packages have explicit primary files and typed artifact roles for mesh,
+animation, material, audio and flipbook storage. V1 readers/mesh outputs stay
+compatible. Only static geometry and animation presence checks are established;
+material/audio/flipbook semantic quality remains unverified and default v2
+admission refuses unperformed primary validation. Package resources verify every
+roster read and cap responses at 16 MiB, preserving larger local-file fallbacks.
+
+Fresh catalog databases use v2. Existing v1 indexes stay unchanged until explicit
+fingerprint-bound migration. Tests cover verified backup/rollback, atomic failure
+preservation, canonical destination binding, changed lease evidence, stopped-owner
+recovery, unknown newer versions and unmanaged busy writers. Source/ownership
+fingerprints are distinct; recovery never expires a lease by age. A missing
+runtime backup API refuses the operation rather than attempting replacement.
+
+V2 project-copy plans bind current destination, manifest, exact ledger references
+and explicit overrides. Unknown license/rights and unperformed primary validation
+block by default; known denied rights cannot be overridden. Mixed v1/v2 lock
+history remains readable. Fixture-copy overrides demonstrate the workflow only,
+with no legal, engine-import or artistic-quality clearance.
+
+### Checkpoint validation
+
+- The complete CPU suite passed: 128 files passed, two skipped; 1,178 tests passed,
+  30 optional cases skipped. Only the macOS runtime-payload file was excluded;
+  new crate/package/migration/resource/transport tests were included.
+- The actual CLI and MCP fixture journeys pass through plan, refused/confirmed
+  construction, separate refused/confirmed packaging, catalog, verification,
+  resource retrieval, rights blockers and independently authorized copying.
+  CLI `--confirm` alone correctly refused generic project writes; the fixture was
+  corrected to supply the existing separate human-controlled launch ceiling.
+- Typecheck, lint, documentation checks and plugin verification passed. The native
+  schema export now contains 66 tools; runtime/native interactive review remains
+  unperformed. An initial native compile caught a nonexistent route name; the
+  crate entries now use the existing Mesh workspace.
+- Native retest passed: Anvil 126 tests / 11 suites, retained Studio 47 tests /
+  four suites. No application window, Blender, GPU workload or provider launched.
+- `npm run verify` passed for the disposable installed tarball: 124 CLI operations
+  across 25 families, 124 MCP tools over clean stdio, five installed skills and a
+  verified screenshot-free plugin export. No host dependency/profile changes.
+
+Generic background workers, full intent/recipe integration, complete dependency
+byte closure, source-ledger automatic population, semantic validation for the
+remaining asset kinds and real native/client/hardware quality evidence remain
+open. The main roadmap goal remains active.

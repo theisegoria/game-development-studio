@@ -4,8 +4,11 @@
 
 - Add bounded operation-family discovery and input-schema lookup over CLI/MCP, including readonly profile filtering, strict new inputs, direct cost/authority metadata and native catalog coverage.
 - Add opt-in plan-bound durable job storage with idempotency, exclusive ownership, checkpoints, cancellation/uncertainty and explicit recovery; background execution remains in progress.
-- Add strict source/license evidence planning, revision-bound confirmed writes, bounded inspection and inventory/CycloneDX export through CLI/MCP, with hash-verified resources and native schema coverage. Rights remain documented declarations; automatic dependency population and shipping admission integration remain open.
+- Add strict source/license evidence planning, revision-bound confirmed writes, bounded inspection and inventory/CycloneDX export through CLI/MCP, with hash-verified resources and native schema coverage. Rights remain documented declarations; automatic dependency population and legacy admission migration remain open.
 - Serialize durable v2 status reads with updates so a reader cannot observe a new record before its matching event is persisted.
+- Add deterministic local crate planning/construction, retaining editable GLB source, real LODs, box collision, recipes, CPU previews and receipts in a separately approved v2 package workflow.
+- Add strict multi-kind package storage, verified artifact resources and additive v1/v2 readers. Material/audio/flipbook kind semantics remain unverified; storage support does not establish production quality.
+- Add explicit fingerprint-bound catalog migration/rollback with verified backups and stopped-owner recovery, plus v2 project-copy plans binding source rights, destination and overrides. Legacy package/receipt history remains readable.
 
 ## 1.5.1
 

@@ -14,6 +14,30 @@ game-dev credentials status --json
 
 Guided forms and renderer 2.2 settings (including optional Basis appearance decoding and sampled playback) require CLI 1.4.0 or newer; inspect the installed schemas before using them.
 
+## Local crate and multi-kind packages (source builds after 1.5.1)
+
+When the installed registry exposes them, use `plan_procedural_crate` with a typed
+`recipe` and explicit `packageMetadata`. Its normalized operation binds dimensions,
+axes/pivot, seed, metadata, implementation and output. Confirm
+`construct_procedural_crate` only after that plan is authorized. No provider is
+needed; the output contains editable GLB source, real LOD0/1, box collision,
+recipe/chain/validation, CPU appearance previews and a hashed receipt.
+
+Follow its complete `nextOperation` to `plan_generalized_package`; review and
+confirm `build_generalized_package` separately. Preserve all sources/evidence,
+then verify the package. A stale source, metadata, implementation or destination
+needs a new plan. Existing v1 catalogs require explicit planned migration with
+verified backup/rollback before accepting v2 packages. Never silently upgrade
+sealed packages or clear ownership locks.
+
+V2 uses an explicit primary and artifact roles for mesh/animation/material/audio/
+flipbook storage. Only static geometry/clip presence is checked at this checkpoint;
+other kind semantics, engine import and human quality remain unverified. Default
+crate license and rights are unknown, blocking project admission. Separate source
+evidence and admission review are required; a filename or license string is not
+clearance. Inspect the repository's `docs/generalized-packages.md` for bounds and
+recovery, and use installed schemas for the actual requests.
+
 ## Provider jobs
 
 Provider execution requires `game-dev` 1.0.2 or newer. The account holder must

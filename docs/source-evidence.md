@@ -3,8 +3,10 @@
 Source builds after CLI 1.5.1 add a local evidence ledger. Discover the installed
 `provenance` family before using these operations; released 1.5.1 has no ledger.
 This checkpoint supplies explicit record and export workflows. Automatic
-dependency discovery, release-byte population and ledger-aware shipping admission
-are still required by the full roadmap.
+dependency discovery and release-byte population are still required by the full
+roadmap. The subsequent [v2 package checkpoint](generalized-packages.md) consumes
+exact ledger references during v2 project admission; legacy v1 packages retain
+their existing admission behavior.
 
 ## Record workflow
 

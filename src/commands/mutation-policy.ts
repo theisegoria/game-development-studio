@@ -1,6 +1,7 @@
 /** Per-invocation confirmation for roadmap mutations, independent of paid authority. */
 export const ROADMAP_MUTATION_TOOLS: ReadonlySet<string> = new Set([
   'record_source_evidence', 'export_source_ledger',
+  'construct_procedural_crate', 'build_generalized_package', 'migrate_asset_catalog', 'rollback_asset_catalog', 'recover_catalog_leases',
   'rate_provider_result', 'record_provider_outcome', 'recover_durable_job',
   'quarantine_corrupt_job', 'recover_storage_lock',
   'create_asset_review', 'decide_asset_review', 'package_reviewed_asset',
@@ -18,6 +19,7 @@ export const ROADMAP_FREE_TOOLS: ReadonlySet<string> = new Set([
   ...ROADMAP_MUTATION_TOOLS,
   'discover_operations', 'describe_operation',
   'plan_source_record', 'inspect_source_ledger',
+  'plan_procedural_crate', 'plan_generalized_package', 'plan_catalog_migration', 'plan_catalog_rollback',
   'get_provider_history', 'diagnose_durable_jobs', 'inspect_workspace_storage',
   'plan_workspace_retention', 'plan_workspace_purge', 'list_workspace_retention', 'plan_release_change',
   'diagnose_texture_compression', 'diagnose_collision_decomposition', 'plan_production_recipe', 'plan_family_approval', 'plan_platform_preparation', 'validate_platform_asset',

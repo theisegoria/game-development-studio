@@ -1,5 +1,9 @@
 # Asset packages
 
+Source builds after CLI 1.5.1 also provide [multi-kind v2 packages, explicit catalog
+migration and a complete local crate construction path](generalized-packages.md).
+The v1 model package contract and commands below remain supported.
+
 Canonical packages turn a model file into an immutable, inspectable unit that
 can be catalogued and admitted into projects without losing its origin.
 

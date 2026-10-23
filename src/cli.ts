@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFile } from 'node:fs/promises';
+import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArguments, assertKnownFlags, booleanFlag, readRequest, stringFlag, type ParsedArguments } from './cli/arguments.js';
 import { isDirectInvocation } from './util/entrypoint.js';
@@ -22,7 +22,8 @@ import {
 } from './version.js';
 import type { DurableArtifact, DurableJob } from './jobs/durable.js';
 import { isSpendingTool } from './domain/spend.js';
-import { buildAssetPackage, planAssetPackage, readAssetPackage, type AssetProvenanceInput } from './packages/format.js';
+import { buildAssetPackage, planAssetPackage, type AssetProvenanceInput } from './packages/format.js';
+import { readPackage } from './packages/reader.js';
 import { AssetCatalog } from './packages/catalog.js';
 import { admitVendorPackage } from './packages/vendor.js';
 import { executeLaunchPlan, planPackageLaunch, type LaunchApplication } from './packages/launcher.js';
@@ -94,7 +95,7 @@ Usage:
   game-dev catalog show <package-id> [--json]
   game-dev catalog admit <package-path> [--dry-run] [--jsonl]
   game-dev catalog rebuild --confirm [--jsonl]
-  game-dev vendor admit <package-id|path> --project PATH [--destination RELATIVE] [--confirm]
+  game-dev vendor admit <package-id|path> --project PATH [--destination RELATIVE] [--plan-fingerprint SHA256] [--confirm]
   game-dev launch <package-id|path> --with finder|quicklook|blender [--confirm]
   game-dev migrate legacy --from OUTPUT_ROOT [--license SPDX] [--confirm]
   game-dev adapter sample --project NEW_DIRECTORY [--confirm]
@@ -1048,7 +1049,7 @@ async function dispatch(
   if (family === 'package' && ['show', 'verify'].includes(action ?? '')) {
     const reference = requirePositional(parsed, 2, 'package id or path');
     const packagePath = await resolvePackagePath(runtime, reference);
-    const manifest = await readAssetPackage(packagePath);
+    const manifest = await readPackage(packagePath);
     return {
       operation: `package.${action}`,
       data: {
@@ -1142,6 +1143,8 @@ async function dispatch(
       confirm: booleanFlag(parsed, 'confirm'),
       allowUnknownLicense: booleanFlag(parsed, 'allow-unknown-license'),
       allowInvalid: booleanFlag(parsed, 'allow-invalid'),
+      ...(stringFlag(parsed, 'plan-fingerprint') ? { expectedFingerprint: stringFlag(parsed, 'plan-fingerprint') } : {}),
+      sourceLedgerDirectory: path.join(await realpath(runtime.config.outputDir), '.provenance'),
     });
     return {
       operation: 'vendor.admit',

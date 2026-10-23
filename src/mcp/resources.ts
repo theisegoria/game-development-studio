@@ -24,7 +24,8 @@ import path from 'node:path';
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ReadResourceRequestSchema, type ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import { AssetCatalog } from '../packages/catalog.js';
-import { readAssetPackage } from '../packages/format.js';
+import { readPackage, packageArtifactFiles } from '../packages/reader.js';
+import { readPackageArtifact } from '../packages/resource-artifacts.js';
 import { resolveRunPath, verifyRunBundle } from '../harness/run-bundle.js';
 import { sha256 } from '../storage/filesystem.js';
 import { invalidInput, notFound } from '../util/errors.js';
@@ -45,6 +46,9 @@ function mimeFor(relative: string): { mimeType: string; binary: boolean } {
   if (extension === '.jpg' || extension === '.jpeg') return { mimeType: 'image/jpeg', binary: true };
   if (extension === '.json') return { mimeType: 'application/json', binary: false };
   if (extension === '.jsonl') return { mimeType: 'application/x-ndjson', binary: false };
+  if (extension === '.wav') return { mimeType: 'audio/wav', binary: true };
+  if (extension === '.ogg') return { mimeType: 'audio/ogg', binary: true };
+  if (extension === '.mp3') return { mimeType: 'audio/mpeg', binary: true };
   if (extension === '.txt' || extension === '.log' || extension === '.md') return { mimeType: 'text/plain', binary: false };
   return { mimeType: 'application/octet-stream', binary: true };
 }
@@ -256,9 +260,30 @@ export function registerEvidenceResources(server: McpServer, ctx: ToolContext): 
       } finally {
         catalog.close();
       }
-      return json(uri.href, { packagePath, manifest: await readAssetPackage(packagePath) });
+      const manifest = await readPackage(packagePath);
+      return json(uri.href, { packagePath, manifest, artifactUris: packageArtifactFiles(manifest).map(file => ({
+        path: file.path, uri: `game-dev://packages/${packageId}/artifacts/${file.path.split('/').map(encodeURIComponent).join('/')}`,
+      })) });
     },
   );
+  const packageArtifactResource = server.registerResource('package-artifact',
+    new ResourceTemplate('game-dev://packages/{packageId}/artifacts/{+path}', { list: undefined }), {
+      title: 'A verified package artifact',
+      description: 'One artifact from a verified v1/v2 package roster, rehashed on every read. Limited to 16 MiB; larger artifacts remain available as local package files.',
+    }, async (uri, variables) => {
+      const packageId = String(variables.packageId);
+      if (!PACKAGE_ID.test(packageId)) throw invalidInput('Invalid package identity');
+      const catalog = await AssetCatalog.open(ctx.config.catalogPath);
+      let packagePath: string;
+      try { packagePath = catalog.get(packageId).packagePath; } finally { catalog.close(); }
+      const manifest = await readPackage(packagePath);
+      const requested = decodeURIComponent(String(variables.path));
+      const bytes = await readPackageArtifact(packagePath, manifest, requested);
+      const mime = mimeFor(requested);
+      return { contents: [mime.binary
+        ? { uri: uri.href, mimeType: mime.mimeType, blob: bytes.toString('base64') }
+        : { uri: uri.href, mimeType: mime.mimeType, text: bytes.toString('utf8') }] };
+    });
   // Match the original request before URL normalization. Node 22 folds a dot
   // segment to the fixed index URI before the SDK invokes a resource callback.
   // Callback-only validation has already lost the input it needs to reject.
@@ -269,7 +294,7 @@ export function registerEvidenceResources(server: McpServer, ctx: ToolContext): 
     if (raw === 'game-dev://runs') return runsResource.readCallback(uri, extra);
     if (raw === 'game-dev://catalog') return catalogResource.readCallback(uri, extra);
     if (raw === 'game-dev://sources') return sourcesResource.readCallback(uri, extra);
-    for (const resource of [runResource, artifactResource, packageResource, sourceRecordResource, sourceExportResource]) {
+    for (const resource of [runResource, artifactResource, packageResource, packageArtifactResource, sourceRecordResource, sourceExportResource]) {
       const variables = resource.resourceTemplate.uriTemplate.match(raw);
       if (variables) return resource.readCallback(uri, variables, extra);
     }

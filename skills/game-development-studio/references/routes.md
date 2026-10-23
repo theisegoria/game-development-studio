@@ -19,8 +19,29 @@ and CycloneDX files are written. Returned resource URIs let clients read records
 and exported snapshots with hash verification. A changed record/revision needs a
 new plan. Unknown code/model/output rights stay separate and unknown; declarations
 grant no legal clearance or execution authority. Never put credentials, signed
-URLs or private paths into provenance. Automatic dependency population and shipping
-admission integration remain unfinished at this source checkpoint.
+URLs or private paths into provenance. V2 project admission consumes exact source
+references; automatic dependency population and legacy admission migration remain
+unfinished.
+
+For a local crate without provider credentials, discover `plan_procedural_crate`
+and `construct_procedural_crate`. Review normalized dimensions, axes, pivot,
+package metadata, implementation and output fingerprint, then separately confirm
+construction. Its result provides the complete `plan_generalized_package` request:
+editable GLB source, LOD0/1, box collision, recipe, chain, validation and CPU preview
+evidence. Confirm `build_generalized_package` separately against the current plan.
+Verify the package and inspect artifact resources; CPU previews do not establish
+human approval, engine quality or hardware performance.
+
+Fresh catalogs support v2. Existing v1 catalogs need a reviewed
+`plan_catalog_migration` / `migrate_asset_catalog` operation, with closed handles,
+unchanged source/ownership and a preserved backup. Rollback and stopped-lease
+recovery have separate plans/confirmation. Never discard evidence to bypass a
+blocked migration. V2 materials/audio/flipbooks currently retain declared bytes
+without semantic validation; storage support is not production qualification.
+Unknown rights/license and unperformed kind validation block v2 project admission
+by default. Any explicit override stays bound to the plan; denied rights block.
+Generic CLI project tools also require the human-controlled project-write launch
+environment ceiling. Neither a tool argument nor a package fingerprint grants it.
 
 ## Asset request to project admission
 

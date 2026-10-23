@@ -99,6 +99,7 @@ content-addressed:
 | `game-dev://runs/{runId}/artifacts/{path}` | one artifact — a frame as `image/png`, telemetry as `application/x-ndjson`, a profile as JSON |
 | `game-dev://catalog` | every package built on this machine |
 | `game-dev://packages/{packageId}` | one package manifest, re-read from disk |
+| `game-dev://packages/{packageId}/artifacts/{path}` | a verified v1/v2 roster artifact, with a 16 MiB resource cap and local-file fallback |
 | `game-dev://sources` | source and license evidence identities; source builds after 1.5.1 |
 | `game-dev://sources/records/{id}/{sha256}` | one exact current source record, re-verified against the ledger |
 | `game-dev://sources/exports/{format}/{sha256}` | a hash-verified exported inventory or CycloneDX snapshot |

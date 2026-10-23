@@ -6,6 +6,8 @@ import { createAssetReview, decideAssetReview, packageReviewedAsset, nameVisualB
 import { AssetCatalog } from '../packages/catalog.js';
 import { reviewSettingsSchema } from '../review/settings.js';
 import { inspectReviewAnimation } from '../review/animation-info.js';
+import { readPackage, packagePrimaryArtifact } from '../packages/reader.js';
+import { invalidInput } from '../util/errors.js';
 
 /** Local CPU-only library review and sealed-comparison history; no provider authority. */
 export function registerReviewTools(server:ToolRegistrar,ctx:ToolContext):void {
@@ -15,7 +17,14 @@ export function registerReviewTools(server:ToolRegistrar,ctx:ToolContext):void {
   server.registerTool('create_asset_review',{title:'Inspect and compare asset candidates',description:'FREE bounded CPU-only portable HTML review. Optional appearance settings enable texture-mapped metallic/roughness lighting, normal maps and alpha. Explicit decodeBasisTextures opt-in uses the configured pinned Basis CPU decoder for KTX2; planning is process-free. Includes UV estimates, clip inventory and reproducible LINEAR/STEP/CUBICSPLINE animation samples with morph/skin evaluation. Settings, renderer, decoder identity and previews bind to exact GLB bytes; unsupported extensions fail explicitly. No GPU/Blender launch or engine quality certification.',inputSchema:{candidates:z.array(z.object({name:z.string().min(1).max(200),modelPath:z.string().min(1)})).min(1).max(6),settings:reviewSettingsSchema.optional()},annotations},guard(ctx.logger,'create_asset_review',async args=>{
     const candidates=[];
     for(const candidate of args.candidates) {
-      if(candidate.modelPath.startsWith('pkg_')) { const catalog=await AssetCatalog.open(ctx.config.catalogPath); try {candidates.push({...candidate,modelPath:catalog.get(candidate.modelPath).modelPath});} finally {catalog.close();} }
+      if(candidate.modelPath.startsWith('pkg_')) {
+        const catalog=await AssetCatalog.open(ctx.config.catalogPath);
+        try {
+          const asset=catalog.get(candidate.modelPath), manifest=await readPackage(asset.packagePath);
+          if(manifest.schema==='game_dev.asset_package.v2' && !['mesh','animation'].includes(manifest.kind)) throw invalidInput('CPU model review requires a mesh or animation package', {kind:manifest.kind});
+          candidates.push({...candidate,modelPath:path.join(asset.packagePath,packagePrimaryArtifact(manifest).path)});
+        } finally {catalog.close();}
+      }
       else candidates.push(candidate);
     }
     return ok(await createAssetReview(root,candidates,args.settings));

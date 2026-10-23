@@ -465,10 +465,10 @@ Implement and test these as complete journeys with a small number of high-level 
 1. A crate: generate or procedurally construct a crate, normalize dimensions, create target LODs and collision, validate, preview, and package. Without provider credentials, offer a local procedural recipe rather than failing the entire product.
 
 - Assignment: **M1**; required engine-neutral platform/SDK.
-- Existing anchors: `src/commands/registry.ts`, `src/production/recipes.ts`, `src/jobs/durable.ts`, `src/packages/format.ts`.
-- Related test anchors (not execution evidence): `tests/production-recipes.test.ts`, `tests/durable-jobs.test.ts`, `tests/authorized-dispatch.test.ts`.
+- Existing anchors: `src/production/procedural-crate.ts`, `src/tools/procedural-crate.ts`, `src/tools/generalized-packages.ts`, `src/packages/format-v2.ts`.
+- Related test anchors: `tests/procedural-crate.test.ts`, `tests/procedural-crate-tools.test.ts`, `tests/generalized-packages.test.ts`, `tests/crate-journey-transports.test.ts`.
 - Acceptance: Registry/CLI/MCP parity; immutable plan binding; denial zero calls; resumable idempotent jobs; migration/rollback; inspectable local crate journey; verify every clause and named fixture above. CLI/core/MCP parity and provenance/limits apply.
-- Status: OPEN; source partial/not fully audited; fixtures not rerun; real execution not exercised; human review not performed.
+- Status: OPEN; complete local CPU crate construction/package/resource/copy journey fixture-tested through actual CLI and MCP transports, with retained sources, real LODs, collision and separate approvals. Generic background recipe execution, actual Codex/Claude client usability, human quality and engine qualification remain open; fixture copying is not shipping clearance.
 
 ### R10-012 — 10. Make asset creation easy for the calling model / Required agent usability scenarios
 
@@ -768,7 +768,7 @@ For every executable, package, provider, downloaded asset, pretrained model, and
 - Existing anchors: `src/provenance/ledger.ts`, `src/tools/provenance.ts`, `src/mcp/resources.ts`, `src/packages/format.ts`.
 - Related test anchors: `tests/source-ledger.test.ts`, `tests/provenance-tools.test.ts`, `tests/provenance-transports.test.ts`.
 - Acceptance: Registry/CLI/MCP parity; immutable plan binding; denial zero calls; resumable idempotent jobs; migration/rollback; inspectable local crate journey; verify every clause and named fixture above. CLI/core/MCP parity and provenance/limits apply.
-- Status: OPEN; explicit strict records, independent rights domains, revision/hash-bound writes and CLI/MCP approvals implemented and fixture-tested. Automatic population for every dependency and ledger-aware shipping admission remain open; no live rights/account or human legal review established.
+- Status: OPEN; explicit strict records, independent rights domains, revision/hash-bound writes and CLI/MCP approvals implemented and fixture-tested. V2 admission now consumes exact output-rights references and blocks missing/denied evidence by default. Automatic population for every dependency and legacy admission migration remain open; no live rights/account or human legal review established.
 
 ### R11-026 — 11. Researched integration options and implementation routes / 11.7 Source and license ledger
 
@@ -1095,10 +1095,10 @@ Implement in dependency order, keeping each milestone genuinely useful:
 1. **Foundation and honest discovery:** repository audit, capability matrix, schema extensions, source/license ledger, recipe planning, durable execution reuse, approval invariants, and migration fixtures. Finish one small local asset recipe end to end to prove the abstraction.
 
 - Assignment: **M10**; required engine-neutral platform/SDK.
-- Existing anchors: `src/commands/registry.ts`, `src/commands/authorized-dispatch.ts`, `src/skills/bundle.ts`.
-- Related test anchors (not execution evidence): `tests/mcp-resources.test.ts`, `tests/execution-authority.test.ts`, `tests/cli-package-contract.test.ts`.
+- Existing anchors: `src/commands/discovery.ts`, `src/jobs/plan-bound.ts`, `src/provenance/ledger.ts`, `src/packages/catalog.ts`, `src/tools/procedural-crate.ts`.
+- Related test anchors: `tests/discovery-transports.test.ts`, `tests/durable-jobs-v2.test.ts`, `tests/provenance-transports.test.ts`, `tests/catalog-generalized-migration.test.ts`, `tests/crate-journey-transports.test.ts`.
 - Acceptance: Pinned real-client approval/resource/job matrix; cross-platform installed package; native authorized remote review; adversarial/migration/rollback; exact-byte release evidence; verify every clause and named fixture above. CLI/core/MCP parity and provenance/limits apply.
-- Status: OPEN; source partial/not fully audited; fixtures not rerun; real execution not exercised; human review not performed.
+- Status: OPEN; discovery, plan-bound storage, explicit ledger, v2 package/migration and local crate journey implemented with fixture evidence. Generic surviving background execution, full recipe orchestration, actual client/human review and the remaining foundation clauses stay open.
 
 ### R13-003 — 13. Delivery order, prioritization, and evidence gates
 

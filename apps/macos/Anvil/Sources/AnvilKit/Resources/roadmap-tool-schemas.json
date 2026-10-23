@@ -122,6 +122,775 @@
     "additionalProperties": false,
     "$schema": "http://json-schema.org/draft-07/schema#"
   },
+  "plan_generalized_package": {
+    "type": "object",
+    "properties": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.asset_package_request.v2",
+            "default": "game_dev.asset_package_request.v2"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "mesh",
+              "animation",
+              "material",
+              "audio",
+              "flipbook"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$",
+            "maxLength": 100,
+            "default": "1.0.0"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "license": {
+            "type": "string",
+            "pattern": "^[0-9A-Za-z][0-9A-Za-z ._()+:/-]{0,127}$",
+            "default": "unknown"
+          },
+          "primary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "provenance": {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "string",
+                "enum": [
+                  "authored",
+                  "generated",
+                  "imported",
+                  "migrated"
+                ],
+                "default": "authored"
+              },
+              "references": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "sourceId": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$"
+                    },
+                    "recordSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  },
+                  "required": [
+                    "sourceId",
+                    "recordSha256"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 32,
+                "default": []
+              }
+            },
+            "additionalProperties": false,
+            "default": {}
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "$ref": "#/properties/request/properties/primary"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "mesh",
+                    "animation",
+                    "material",
+                    "audio",
+                    "flipbook",
+                    "texture",
+                    "editable-source",
+                    "lod",
+                    "collision",
+                    "lod-chain",
+                    "recipe",
+                    "preview",
+                    "metadata",
+                    "provenance"
+                  ]
+                },
+                "level": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "provenanceRefs": {
+                  "$ref": "#/properties/request/properties/provenance/properties/references"
+                },
+                "sourcePath": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                }
+              },
+              "required": [
+                "path",
+                "role",
+                "sourcePath"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 64
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "primary",
+          "artifacts"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "request"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "build_generalized_package": {
+    "type": "object",
+    "properties": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.asset_package_request.v2",
+            "default": "game_dev.asset_package_request.v2"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "mesh",
+              "animation",
+              "material",
+              "audio",
+              "flipbook"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$",
+            "maxLength": 100,
+            "default": "1.0.0"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "license": {
+            "type": "string",
+            "pattern": "^[0-9A-Za-z][0-9A-Za-z ._()+:/-]{0,127}$",
+            "default": "unknown"
+          },
+          "primary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "provenance": {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "string",
+                "enum": [
+                  "authored",
+                  "generated",
+                  "imported",
+                  "migrated"
+                ],
+                "default": "authored"
+              },
+              "references": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "sourceId": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$"
+                    },
+                    "recordSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  },
+                  "required": [
+                    "sourceId",
+                    "recordSha256"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 32,
+                "default": []
+              }
+            },
+            "additionalProperties": false,
+            "default": {}
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "$ref": "#/properties/request/properties/primary"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "mesh",
+                    "animation",
+                    "material",
+                    "audio",
+                    "flipbook",
+                    "texture",
+                    "editable-source",
+                    "lod",
+                    "collision",
+                    "lod-chain",
+                    "recipe",
+                    "preview",
+                    "metadata",
+                    "provenance"
+                  ]
+                },
+                "level": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "provenanceRefs": {
+                  "$ref": "#/properties/request/properties/provenance/properties/references"
+                },
+                "sourcePath": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                }
+              },
+              "required": [
+                "path",
+                "role",
+                "sourcePath"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 64
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "primary",
+          "artifacts"
+        ],
+        "additionalProperties": false
+      },
+      "approvedFingerprint": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      }
+    },
+    "required": [
+      "request",
+      "approvedFingerprint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "plan_catalog_migration": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "migrate_asset_catalog": {
+    "type": "object",
+    "properties": {
+      "expectedFingerprint": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      }
+    },
+    "required": [
+      "expectedFingerprint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "plan_catalog_rollback": {
+    "type": "object",
+    "properties": {
+      "backupPath": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096
+      }
+    },
+    "required": [
+      "backupPath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "recover_catalog_leases": {
+    "type": "object",
+    "properties": {
+      "expectedFingerprint": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      }
+    },
+    "required": [
+      "expectedFingerprint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "rollback_asset_catalog": {
+    "type": "object",
+    "properties": {
+      "backupPath": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096
+      },
+      "expectedFingerprint": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      }
+    },
+    "required": [
+      "backupPath",
+      "expectedFingerprint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "plan_procedural_crate": {
+    "type": "object",
+    "properties": {
+      "recipe": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.procedural_crate_recipe.v1",
+            "default": "game_dev.procedural_crate_recipe.v1"
+          },
+          "units": {
+            "type": "string",
+            "const": "metres",
+            "default": "metres"
+          },
+          "dimensions": {
+            "type": "object",
+            "properties": {
+              "width": {
+                "type": "number",
+                "minimum": 0.05,
+                "maximum": 100
+              },
+              "height": {
+                "$ref": "#/properties/recipe/properties/dimensions/properties/width"
+              },
+              "depth": {
+                "$ref": "#/properties/recipe/properties/dimensions/properties/width"
+              }
+            },
+            "required": [
+              "width",
+              "height",
+              "depth"
+            ],
+            "additionalProperties": false
+          },
+          "pivot": {
+            "type": "string",
+            "enum": [
+              "bottom-center",
+              "center"
+            ],
+            "default": "bottom-center"
+          },
+          "axes": {
+            "type": "string",
+            "const": "right-handed-y-up",
+            "default": "right-handed-y-up"
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295,
+            "default": 0
+          },
+          "panelThicknessRatio": {
+            "type": "number",
+            "minimum": 0.02,
+            "maximum": 0.2,
+            "default": 0.08
+          },
+          "material": {
+            "type": "object",
+            "properties": {
+              "baseColor": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                ],
+                "default": [
+                  0.32,
+                  0.16,
+                  0.06
+                ]
+              },
+              "frameColor": {
+                "$ref": "#/properties/recipe/properties/material/properties/baseColor",
+                "default": [
+                  0.22,
+                  0.1,
+                  0.035
+                ]
+              },
+              "roughness": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.8
+              }
+            },
+            "additionalProperties": false,
+            "default": {}
+          }
+        },
+        "required": [
+          "dimensions"
+        ],
+        "additionalProperties": false
+      },
+      "packageMetadata": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "default": "Procedural crate"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$",
+            "maxLength": 100,
+            "default": "1.0.0"
+          },
+          "license": {
+            "type": "string",
+            "pattern": "^[0-9A-Za-z][0-9A-Za-z ._()+:/-]{0,127}$",
+            "default": "unknown"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "provenance": {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "string",
+                "enum": [
+                  "authored",
+                  "generated",
+                  "imported",
+                  "migrated"
+                ],
+                "default": "generated"
+              },
+              "references": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "sourceId": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$"
+                    },
+                    "recordSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  },
+                  "required": [
+                    "sourceId",
+                    "recordSha256"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 32,
+                "default": []
+              }
+            },
+            "additionalProperties": false,
+            "default": {}
+          }
+        },
+        "additionalProperties": false,
+        "default": {}
+      }
+    },
+    "required": [
+      "recipe"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "construct_procedural_crate": {
+    "type": "object",
+    "properties": {
+      "recipe": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "game_dev.procedural_crate_recipe.v1",
+            "default": "game_dev.procedural_crate_recipe.v1"
+          },
+          "units": {
+            "type": "string",
+            "const": "metres",
+            "default": "metres"
+          },
+          "dimensions": {
+            "type": "object",
+            "properties": {
+              "width": {
+                "type": "number",
+                "minimum": 0.05,
+                "maximum": 100
+              },
+              "height": {
+                "$ref": "#/properties/recipe/properties/dimensions/properties/width"
+              },
+              "depth": {
+                "$ref": "#/properties/recipe/properties/dimensions/properties/width"
+              }
+            },
+            "required": [
+              "width",
+              "height",
+              "depth"
+            ],
+            "additionalProperties": false
+          },
+          "pivot": {
+            "type": "string",
+            "enum": [
+              "bottom-center",
+              "center"
+            ],
+            "default": "bottom-center"
+          },
+          "axes": {
+            "type": "string",
+            "const": "right-handed-y-up",
+            "default": "right-handed-y-up"
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295,
+            "default": 0
+          },
+          "panelThicknessRatio": {
+            "type": "number",
+            "minimum": 0.02,
+            "maximum": 0.2,
+            "default": 0.08
+          },
+          "material": {
+            "type": "object",
+            "properties": {
+              "baseColor": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                ],
+                "default": [
+                  0.32,
+                  0.16,
+                  0.06
+                ]
+              },
+              "frameColor": {
+                "$ref": "#/properties/recipe/properties/material/properties/baseColor",
+                "default": [
+                  0.22,
+                  0.1,
+                  0.035
+                ]
+              },
+              "roughness": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.8
+              }
+            },
+            "additionalProperties": false,
+            "default": {}
+          }
+        },
+        "required": [
+          "dimensions"
+        ],
+        "additionalProperties": false
+      },
+      "packageMetadata": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "default": "Procedural crate"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$",
+            "maxLength": 100,
+            "default": "1.0.0"
+          },
+          "license": {
+            "type": "string",
+            "pattern": "^[0-9A-Za-z][0-9A-Za-z ._()+:/-]{0,127}$",
+            "default": "unknown"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "provenance": {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "string",
+                "enum": [
+                  "authored",
+                  "generated",
+                  "imported",
+                  "migrated"
+                ],
+                "default": "generated"
+              },
+              "references": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "sourceId": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$"
+                    },
+                    "recordSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  },
+                  "required": [
+                    "sourceId",
+                    "recordSha256"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 32,
+                "default": []
+              }
+            },
+            "additionalProperties": false,
+            "default": {}
+          }
+        },
+        "additionalProperties": false,
+        "default": {}
+      },
+      "approvedFingerprint": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "required": [
+      "recipe",
+      "approvedFingerprint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
   "inspect_review_animation": {
     "type": "object",
     "properties": {

@@ -15,11 +15,13 @@
  */
 
 import path from 'node:path';
+import { realpath } from 'node:fs/promises';
 import { z } from 'zod';
 import type { ToolRegistrar } from '../commands/registry.js';
 import { ASSET_CATEGORIES } from '../domain/asset-spec.js';
 import { AssetCatalog } from '../packages/catalog.js';
-import { buildAssetPackage, planAssetPackage, readAssetPackage } from '../packages/format.js';
+import { buildAssetPackage, planAssetPackage } from '../packages/format.js';
+import { readPackage } from '../packages/reader.js';
 import { admitVendorPackage } from '../packages/vendor.js';
 import { guard, ok, type ToolContext } from './context.js';
 import { assertProjectWriteAuthority } from './project-writes.js';
@@ -139,7 +141,7 @@ export function registerLibraryTools(server: ToolRegistrar, ctx: ToolContext): v
       return ok({
         schema: 'game_dev.package_verification.v1',
         packagePath,
-        manifest: await readAssetPackage(packagePath),
+        manifest: await readPackage(packagePath),
         hashesVerified: true,
         evidence: {
           packageBytesVerified: true,
@@ -200,6 +202,8 @@ export function registerLibraryTools(server: ToolRegistrar, ctx: ToolContext): v
         + 'you cannot license is a legal problem, not a technical one.'),
     allowInvalid: z.boolean().default(false)
       .describe('Admit a package that failed its shipping policy.'),
+    expectedFingerprint: z.string().regex(/^[a-f0-9]{64}$/).optional()
+      .describe('Required for v2 execution: exact fingerprint returned by the reviewed vendor plan. This is not human authorization.'),
   };
 
   server.registerTool(
@@ -221,6 +225,8 @@ export function registerLibraryTools(server: ToolRegistrar, ctx: ToolContext): v
         confirm: false,
         allowUnknownLicense: args.allowUnknownLicense,
         allowInvalid: args.allowInvalid,
+        ...(args.expectedFingerprint ? { expectedFingerprint: args.expectedFingerprint } : {}),
+        sourceLedgerDirectory: path.join(await realpath(ctx.config.outputDir), '.provenance'),
       });
       return ok(result as unknown as Record<string, unknown>);
     }),
@@ -246,6 +252,8 @@ export function registerLibraryTools(server: ToolRegistrar, ctx: ToolContext): v
         confirm: true,
         allowUnknownLicense: args.allowUnknownLicense,
         allowInvalid: args.allowInvalid,
+        ...(args.expectedFingerprint ? { expectedFingerprint: args.expectedFingerprint } : {}),
+        sourceLedgerDirectory: path.join(await realpath(ctx.config.outputDir), '.provenance'),
       });
       const body = ok(result as unknown as Record<string, unknown>);
       // A blocked admission is a failure the caller must act on, not a result

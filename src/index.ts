@@ -15,6 +15,8 @@ export {
   GAME_DEV_CAPABILITIES_SCHEMA,
 } from './version.js';
 export * from './packages/format.js';
+export * from './packages/format-v2.js';
+export * from './packages/reader.js';
 export * from './packages/catalog.js';
 export * from './packages/vendor.js';
 export * from './packages/launcher.js';
@@ -48,3 +50,4 @@ export { verifyReleaseArtifact, planReleaseChange, type ReleaseEvidence, type Re
 
 export * from './commands/discovery.js';
 export * from './provenance/ledger.js';
+export * from './production/procedural-crate.js';

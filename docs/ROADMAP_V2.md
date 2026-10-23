@@ -167,7 +167,7 @@ Verify pinned actual Codex and Claude clients for discovery, schema use, resourc
 | Work | Source | Fixtures | Real tool/client | Human review |
 | --- | --- | --- | --- | --- |
 | M0 baseline and coverage | 153 requirement rows assigned | CPU baseline passed | optional lanes not exercised | not requested |
-| M1 foundation | discovery, durable storage and explicit source ledger/export implemented; generalized packages/background execution/recipe integration open | focused contracts and refreshed CPU suite passed; see progress record | fixtures only | not reviewed |
+| M1 foundation | discovery, durable storage, ledger, multi-kind packages, explicit migration and local crate journey implemented; background execution/full recipe integration open | focused contracts and refreshed CPU suite passed; see progress record | CLI/MCP CPU fixtures only | not reviewed |
 | M2 mesh/animation | not started | not started | CI required | not reviewed |
 | M3 materials/VFX | not started | not started | CI required | not reviewed |
 | M4 audio | not started | not started | CI required | not reviewed |
